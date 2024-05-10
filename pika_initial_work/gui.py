@@ -1,5 +1,5 @@
 import sys
-from PySide6.QtWidgets import QApplication, QPushButton, QVBoxLayout, QWidget, QMessageBox
+from PySide6.QtWidgets import QApplication, QPushButton, QVBoxLayout, QWidget, QMessageBox, QLabel
 
 
 class GUI(QWidget):
@@ -23,6 +23,9 @@ class GUI(QWidget):
         self.button2.clicked.connect(lambda: self.send_task(2))
         layout.addWidget(self.button2)
 
+        self.result_box = QLabel("N/A")
+        layout.addWidget(self.result_box)
+
         self.setLayout(layout)
         self.show()
 
@@ -31,4 +34,4 @@ class GUI(QWidget):
         self.orchestrator.send_task(task, self.backend_queues[backend_num - 1])
 
     def display_result(self, message):
-        print(f"Displaying result: {message}")
+        self.result_box.setText(message)
