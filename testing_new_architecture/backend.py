@@ -61,8 +61,8 @@ def process_task(task_info):
 def send_response(result):
     broker.channel.basic_publish(
         exchange='',
-        routing_key='response_queue',  # Assume this queue is dedicated to receiving results
-        body=result.encode(),
+        routing_key='response_backend_queue',  # Assume this queue is dedicated to receiving results
+        body=str(result),
         properties=pika.BasicProperties(delivery_mode=2)  # Make messages persistent
     )
     print("Response sent back to orchestrator")
