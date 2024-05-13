@@ -1,5 +1,6 @@
 import sys
 import json
+
 import requests
 from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLineEdit, QPushButton, QTextEdit, QLabel
 
@@ -56,7 +57,7 @@ class TaskSubmitter(QWidget):
         response = requests.post(url, json=task_info)
         print(response.text)  # Print the response from the server
 
-    def recieve_response(self):
+    def receive_response(self):
         # use rabbitmq to receive tasks from orchestrator and update GUI
         pass
 

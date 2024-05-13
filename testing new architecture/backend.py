@@ -1,4 +1,5 @@
 import dramatiq
+import pika
 from dramatiq.brokers.rabbitmq import RabbitmqBroker
 import json
 import logging
@@ -8,12 +9,9 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 # Set up the RabbitMQ broker
 broker = RabbitmqBroker(url="amqp://guest:guest@localhost")
-channel = broker.connection.channel()
+# channel = broker.connection.channel()
 dramatiq.set_broker(broker)
 
-# Declare queues for tasks and responses
-channel.queue_declare(queue="task_queue", durable=True)
-channel.queue_declare(queue="response_queue", durable=True)
 
 # Task processing functions
 def sum_values(parameters):
@@ -60,25 +58,11 @@ def process_task(task_info):
         logging.error(f"An error occurred during task processing: {e}")
 
 
-def receive_task():
-    def callback(ch, method, properties, body):
-        process_task.send(body)
-        logging.info(f"Task received: {body}")
-
-    channel.basic_consume(
-        queue='task_queue',
-        on_message_callback=callback,
-        auto_ack=True
-    )
-    logging.info("Waiting for tasks...")
-    channel.start_consuming()
-
 def send_response(result):
-    # Simulate a response
-    response_info = json.dumps(result)
-    channel.basic_publish(
+    broker.channel.basic_publish(
         exchange='',
-        routing_key='response_queue',
-        body=response_info
+        routing_key='response_queue',  # Assume this queue is dedicated to receiving results
+        body=result.encode(),
+        properties=pika.BasicProperties(delivery_mode=2)  # Make messages persistent
     )
     print("Response sent back to orchestrator")
