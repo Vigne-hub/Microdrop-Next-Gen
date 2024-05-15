@@ -21,10 +21,15 @@ if __name__ == '__main__':
     ui_plugin = app.get_plugin('app.ui.plugin')
     print("Available views:", ui_plugin.views)
 
-    # Accessing the analysis service provided by the backend
+    # Accessing the analysis service provided by the backend: this should be the dramatiq Actor that can send to queue
     analysis_service = app.get_service(protocol=IAnalysisService)
+
     if analysis_service:
-        result = analysis_service.run_analysis("sample data")
-        print("Analysis result:", result)
+
+        print(analysis_service.payload_model)
+        # >> '{args: [], kwargs: {}}'
+
+        payload = '{"args": [1,2]}'
+        result = analysis_service.process_task(payload)
 
     app.stop()

@@ -21,7 +21,7 @@ class BackendPlugin(Plugin):
     def _service_offers_default(self):
         pass
 
-    def _create_service(self):
+    def _create_service(self, *args, **kwargs):
         pass
 
     def _register_service_offers(self, service_offers):
@@ -47,11 +47,16 @@ class AnalysisPlugin(BackendPlugin):
 
     def _service_offers_default(self):
         """Return the service offers."""
-        return [ServiceOffer(protocol=IAnalysisService, factory=self._create_service), ]
+        return [
+            ServiceOffer(protocol=IAnalysisService, factory=self._create_service, properties={"operation": "add"}),
+        ]
 
-    def _create_service(self):
+    def _create_service(self, *args, **kwargs):
         """Create an analysis service."""
-        return AnalysisService()
+
+        # TODO: while this cretion happens, automatically we get the kwargs as the properties defined in the service
+        # offer. We have to exploit this somehow. Its a useful behavious potentially
+        return AnalysisService(payload_model='{"args": []}')
 
 
 class LoggingPlugin(BackendPlugin):

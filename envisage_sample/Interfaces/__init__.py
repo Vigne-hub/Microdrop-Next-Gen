@@ -1,12 +1,16 @@
 
-from traits.api import Interface
+from traits.api import Interface, Str
 
 
 class ILoggingService(Interface):
-    def log(message):
+    def log(self, message):
         """Log the given message."""
 
 
 class IAnalysisService(Interface):
-    def run_analysis(data):
+
+    # define payload
+    payload_model = Str
+
+    def process_task(self, task_info):
         """Run analysis on the given data and return the result."""
