@@ -92,6 +92,8 @@ if __name__ == '__main__':
     # message_timestamp=1715811485351)
 
     # The result will bve printed on the dramatiq worker process
+    # You can boot up one by running the following command in a new terminal
+    # dramatiq envisage_sample.services
 
     # Payload model should also have the response queue routing key in the future for a full implementation to
     # get back results
