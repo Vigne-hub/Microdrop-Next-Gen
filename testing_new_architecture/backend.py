@@ -1,3 +1,5 @@
+import time
+
 import dramatiq
 import pika
 from dramatiq.brokers.rabbitmq import RabbitmqBroker
@@ -15,20 +17,26 @@ dramatiq.set_broker(broker)
 
 # Task processing functions
 def sum_values(parameters):
-    return sum(parameters.values())
+    return sum(parameters)
 
 
 def multiply_values(parameters):
     result = 1
-    for value in parameters.values():
+    for value in parameters:
         result *= value
     return result
+
+
+def blocking_task(parameters):
+    time.sleep(parameters[0])
+    return "Done Blocking Task"
 
 
 # Task list with method names mapped to functions
 task_list = {
     "sum": sum_values,
-    "multiply": multiply_values
+    "multiply": multiply_values,
+    "block": blocking_task
 }
 
 
