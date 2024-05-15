@@ -1,6 +1,7 @@
 from envisage.api import Plugin
 from traits.api import List
 
+
 class PlotViewPlugin(Plugin):
     id = 'app.plot.view.plugin'
     views = List(contributes_to='app.ui.views')

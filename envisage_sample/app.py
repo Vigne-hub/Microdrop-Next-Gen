@@ -1,13 +1,16 @@
 from envisage.api import Application
-from plugins.ui_plugin import UIPlugin
-from plugins.plot_view_plugin import PlotViewPlugin
-from plugins.table_view_plugin import TableViewPlugin
-from plugins.analysis_plugin import AnalysisPlugin
-from plugins.logging_plugin import LoggingPlugin
+
+from envisage_sample.Interfaces import IAnalysisService
+from envisage_sample.frontend_plugins.ui_plugin import UIPlugin
+from envisage_sample.frontend_plugins.plot_view_plugin import PlotViewPlugin
+from envisage_sample.frontend_plugins.table_view_plugin import TableViewPlugin
+from backend_plugins import AnalysisPlugin, LoggingPlugin
+
 
 class MyApp(Application):
     def __init__(self, plugins):
         super(MyApp, self).__init__(plugins=plugins)
+
 
 if __name__ == '__main__':
     plugins = [UIPlugin(), PlotViewPlugin(), TableViewPlugin(), AnalysisPlugin(), LoggingPlugin()]
@@ -19,7 +22,7 @@ if __name__ == '__main__':
     print("Available views:", ui_plugin.views)
 
     # Accessing the analysis service provided by the backend
-    analysis_service = app.get_service('services.analysis_service.AnalysisService')
+    analysis_service = app.get_service(protocol=IAnalysisService)
     if analysis_service:
         result = analysis_service.run_analysis("sample data")
         print("Analysis result:", result)
