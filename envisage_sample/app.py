@@ -1,3 +1,5 @@
+import subprocess
+
 from envisage.api import Application
 
 from envisage_sample.Interfaces import IAnalysisService
@@ -13,23 +15,86 @@ class MyApp(Application):
 
 
 if __name__ == '__main__':
+
+    #### Running some tests on the application ####
+
+    # Loading plugins
     plugins = [UIPlugin(), PlotViewPlugin(), TableViewPlugin(), AnalysisPlugin(), LoggingPlugin()]
     app = MyApp(plugins=plugins)
     app.start()
+
+    print(app.plugin_manager._plugins)
+    # >> [Plugin(id='app.ui.plugin', name='UIPlugin'),
+    #  Plugin(id='app.plot.view.plugin', name='Plot View Plugin'),
+    #  Plugin(id='app.table.view.plugin', name='Table View Plugin'),
+    #  Plugin(id='app.analysis.plugin', name='Analysis Plugin'),
+    #  Plugin(id='app.logging.plugin', name='Logging Plugin')]
+
+    print(app.service_registry._services)
+    # >> {1: ('envisage_sample.Interfaces.IAnalysisService',
+    #   <envisage_sample.services.AnalysisService at 0x1f2379f2980>,
+    #   {'type': 'regular'}),
+    #  2: ('envisage_sample.Interfaces.IAnalysisService',
+    #   <envisage_sample.services.DramatiqAnalysisService at 0x1f235c71260>,
+    #   {'type': 'dramatiq', 'id': 'dramatiq_analysis_service'}),
+    #  3: ('envisage_sample.Interfaces.ILoggingService',
+    #   <bound method LoggingPlugin._create_service of Plugin(id='app.logging.plugin', name='Logging Plugin')>,
+    #   {})}
+
+    # We notice the following. With the regular analysis service, we have the AnalysisService type service. Its id
+    # was not declared as a property at the plugin level. So it does not get published to the yellow pages. But is
+    # still available for use.
+    #
+    # The DramatiqAnalysisService has an id property declared at the plugin level. So it is
+    # published to the yellow pages.
+    #
+    # This is a good way to control what services are available to the frontend for
+    # querying.
+
+    # Also notice that the payload_model is not avaialble for either, it was not declared in the property dict.
+
+    # Another interesting thing about payload model. It gets overrided at the plugin level even if set at the service
+    # class level. Eg below
+
+    regular_task = app.get_service(IAnalysisService, query="type=='regular'")
+    dramatiq_task = app.get_service(IAnalysisService, query="type=='dramatiq'")
+
+    print(regular_task.payload_model)
+    # >> ''
+    print(dramatiq_task.payload_model)
+    # >> '{"args_to_sum": []}'
 
     # Accessing the views contributed by plugins
     ui_plugin = app.get_plugin('app.ui.plugin')
     print("Available views:", ui_plugin.views)
 
-    # Accessing the analysis service provided by the backend: this should be the dramatiq Actor that can send to queue
-    analysis_service = app.get_service(protocol=IAnalysisService)
+    # The blocking nature of each service can be tested
 
-    if analysis_service:
+    # lets have a sample payload
+    payload = '{"args_to_sum": [1, 2, 3]}'
 
-        print(analysis_service.payload_model)
-        # >> '{args: [], kwargs: {}}'
+    result = regular_task.process_task(payload)
+    # Received task: {"args_to_sum": [1, 2, 3]}, processing in backend...
+    # Analysis result: 6
+    print(result == 6)
+    # >> True
 
-        payload = '{"args": [1,2]}'
-        result = analysis_service.process_task(payload)
+    # Dramatiq is a bit different. It can be non-blocking. So we need to wait for the result to come back on diff thread
+    # and ensure the workers are running if the .send is invoked. Else same result as before
+    result = dramatiq_task.process_task(payload)
+    print(result == 6)
+    # >> True
+
+    result = dramatiq_task.process_task.send(payload)
+    print(result)
+    # process_task('{"args_to_sum": [1, 2, 3]}') result >> Message(queue_name='default', actor_name='process_task',
+    # args=('{"args_to_sum": [1, 2, 3]}',), kwargs={}, options={}, message_id='ae6e0d05-a4bb-4c9c-bcc1-94b82abbe58d',
+    # message_timestamp=1715811485351)
+
+    # The result will bve printed on the dramatiq worker process
+
+    # Payload model should also have the response queue routing key in the future for a full implementation to
+    # get back results
+
 
     app.stop()

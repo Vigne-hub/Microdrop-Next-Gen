@@ -1,7 +1,7 @@
 from envisage.api import Plugin, ServiceOffer
 from traits.api import List
 from envisage_sample.services import IAnalysisService, ILoggingService
-from envisage_sample.services import AnalysisService, LoggingService
+from envisage_sample.services import AnalysisService, LoggingService, DramatiqAnalysisService
 
 
 class BackendPlugin(Plugin):
@@ -19,9 +19,6 @@ class BackendPlugin(Plugin):
         self._service_ids = self._register_service_offers(self.service_offers)
 
     def _service_offers_default(self):
-        pass
-
-    def _create_service(self, *args, **kwargs):
         pass
 
     def _register_service_offers(self, service_offers):
@@ -48,15 +45,27 @@ class AnalysisPlugin(BackendPlugin):
     def _service_offers_default(self):
         """Return the service offers."""
         return [
-            ServiceOffer(protocol=IAnalysisService, factory=self._create_service, properties={"operation": "add"}),
+            ServiceOffer(protocol=IAnalysisService, factory=self._create_service, properties={"type": "regular"}),
+            ServiceOffer(protocol=IAnalysisService, factory=self._create_service_dramatiq,
+
+                         properties={
+                             "type": "dramatiq",
+                             "id": "dramatiq_analysis_service",
+
+                         })
         ]
 
     def _create_service(self, *args, **kwargs):
         """Create an analysis service."""
 
-        # TODO: while this cretion happens, automatically we get the kwargs as the properties defined in the service
+        # TODO: while this creation happens, automatically we get the kwargs as the properties defined in the service
         # offer. We have to exploit this somehow. Its a useful behavious potentially
-        return AnalysisService(payload_model='{"args": []}')
+        return AnalysisService(id="analysis_service", payload_model='')
+
+    def _create_service_dramatiq(self, id, *args, **kwargs):
+        """Create an analysis service."""
+
+        return DramatiqAnalysisService(id=id)
 
 
 class LoggingPlugin(BackendPlugin):
