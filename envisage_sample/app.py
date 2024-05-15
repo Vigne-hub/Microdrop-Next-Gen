@@ -15,7 +15,6 @@ class MyApp(Application):
 
 
 if __name__ == '__main__':
-
     #### Running some tests on the application ####
 
     # Loading plugins
@@ -91,12 +90,11 @@ if __name__ == '__main__':
     # args=('{"args_to_sum": [1, 2, 3]}',), kwargs={}, options={}, message_id='ae6e0d05-a4bb-4c9c-bcc1-94b82abbe58d',
     # message_timestamp=1715811485351)
 
-    # The result will bve printed on the dramatiq worker process
+    # The result will be printed on the dramatiq worker process
     # You can boot up one by running the following command in a new terminal
     # dramatiq envisage_sample.services
 
     # Payload model should also have the response queue routing key in the future for a full implementation to
     # get back results
-
 
     app.stop()
