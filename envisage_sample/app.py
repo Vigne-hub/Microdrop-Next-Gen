@@ -12,7 +12,7 @@ class MyApp(Application):
 
 
 if __name__ == '__main__':
-    #### Running some tests on the application ####
+######### Running some tests on the application ############################################################################
 
     # Loading plugins
     plugins = [UIPlugin(), PlotViewPlugin(), TableViewPlugin(), AnalysisPlugin(), LoggingPlugin()]
@@ -21,13 +21,17 @@ if __name__ == '__main__':
 
 #########TEST PLUGIN MANAGER AND SERVICE REGISTRY############################################################################
 
+    print("#" * 100)
+    print("Testing plugin manager")
     print(app.plugin_manager._plugins)
     # >> [Plugin(id='app.ui.plugin', name='UIPlugin'),
     #  Plugin(id='app.plot.view.plugin', name='Plot View Plugin'),
     #  Plugin(id='app.table.view.plugin', name='Table View Plugin'),
     #  Plugin(id='app.analysis.plugin', name='Analysis Plugin'),
     #  Plugin(id='app.logging.plugin', name='Logging Plugin')]
+    print("#" * 100)
 
+    print("Testing service registry")
     print(app.service_registry._services)
     # >> {1: ('envisage_sample.Interfaces.IAnalysisService',
     #   <envisage_sample.services.AnalysisService at 0x1f2379f2980>,
@@ -38,7 +42,7 @@ if __name__ == '__main__':
     #  3: ('envisage_sample.Interfaces.ILoggingService',
     #   <bound method LoggingPlugin._create_service of Plugin(id='app.logging.plugin', name='Logging Plugin')>,
     #   {})}
-
+    print("#" * 100)
 #########################################################################################################################
 
     # We notice the following. With the regular analysis service, we have the AnalysisService type service. Its id
@@ -61,11 +65,15 @@ if __name__ == '__main__':
     regular_task = app.get_service(IAnalysisService, query="type=='regular'")
     dramatiq_task = app.get_service(IAnalysisService, query="type=='dramatiq'")
 
+    print("Testing properties access on services")
+    print("#" * 100)
+
     print(f"Regular task payload overriden to be empty at plugin level: {regular_task.payload_model}")
     # >> ''
     print("#" * 100)
-    print(f"Dramatic task Payload, not overriden at plugin level{dramatiq_task.payload_model}")
+    print(f"Dramatic task Payload, not overriden at plugin level: {dramatiq_task.payload_model}")
     # >> '{"args_to_sum": []}'
+    print("#" * 100)
 
 #########################################################################################################################
 
@@ -118,4 +126,5 @@ if __name__ == '__main__':
     # get back results
 
 #########################################################################################################################
+
     app.stop()
