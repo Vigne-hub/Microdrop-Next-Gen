@@ -1,10 +1,28 @@
-from traits.api import HasTraits, Str
+from traits.api import HasTraits
 from traits.has_traits import provides
-from envisage_sample.Interfaces import IAnalysisService, ILoggingService
 import json
 import time
 import dramatiq
+from traits.api import Interface, Str
 
+
+class ILoggingService(Interface):
+    def log(self, message):
+        """Log the given message."""
+
+
+class IAnalysisService(Interface):
+
+    # task_name
+    id = Str
+
+    # define payload
+    payload_model = Str
+
+    # response_queue_id
+
+    def process_task(self, task_info):
+        """Run analysis on the given data and return the result."""
 
 ##### Each of these services would need to have a model to define their payload which can be imported to use this service ####
 
@@ -38,8 +56,9 @@ class DramatiqAnalysisService(HasTraits):
     # define payload
     payload_model = Str('{"args_to_sum": []}')
 
-    @dramatiq.actor
+    @dramatiq.actor(store_results=True)
     def process_task(task_info):
+        return 42
         print(f"Received task: {task_info}, processing in backend...")
         # Deserialize the task info from JSON
         task_data = json.loads(task_info)

@@ -1,4 +1,5 @@
 from envisage.api import Plugin, ServiceOffer
+from envisage.core_plugin import CorePlugin
 from traits.api import List
 from envisage_sample.services import IAnalysisService, ILoggingService
 from envisage_sample.services import AnalysisService, LoggingService, DramatiqAnalysisService
@@ -38,7 +39,7 @@ class BackendPlugin(Plugin):
         return service_id
 
 
-class AnalysisPlugin(BackendPlugin):
+class AnalysisPlugin(CorePlugin):
     id = 'app.analysis.plugin'
     service_offers = List(contributes_to='envisage.service_offers')
 

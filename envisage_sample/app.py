@@ -1,7 +1,4 @@
-import subprocess
-
 from envisage.api import Application
-
 from envisage_sample.Interfaces import IAnalysisService
 from envisage_sample.frontend_plugins.ui_plugin import UIPlugin
 from envisage_sample.frontend_plugins.plot_view_plugin import PlotViewPlugin
@@ -22,6 +19,8 @@ if __name__ == '__main__':
     app = MyApp(plugins=plugins)
     app.start()
 
+#########TEST PLUGIN MANAGER AND SERVICE REGISTRY############################################################################
+
     print(app.plugin_manager._plugins)
     # >> [Plugin(id='app.ui.plugin', name='UIPlugin'),
     #  Plugin(id='app.plot.view.plugin', name='Plot View Plugin'),
@@ -40,17 +39,21 @@ if __name__ == '__main__':
     #   <bound method LoggingPlugin._create_service of Plugin(id='app.logging.plugin', name='Logging Plugin')>,
     #   {})}
 
+#########################################################################################################################
+
     # We notice the following. With the regular analysis service, we have the AnalysisService type service. Its id
     # was not declared as a property at the plugin level. So it does not get published to the yellow pages. But is
     # still available for use.
-    #
+
     # The DramatiqAnalysisService has an id property declared at the plugin level. So it is
     # published to the yellow pages.
-    #
+
     # This is a good way to control what services are available to the frontend for
     # querying.
 
     # Also notice that the payload_model is not avaialble for either, it was not declared in the property dict.
+
+################TEST SERVICES################################################################################################
 
     # Another interesting thing about payload model. It gets overrided at the plugin level even if set at the service
     # class level. Eg below
@@ -58,37 +61,54 @@ if __name__ == '__main__':
     regular_task = app.get_service(IAnalysisService, query="type=='regular'")
     dramatiq_task = app.get_service(IAnalysisService, query="type=='dramatiq'")
 
-    print(regular_task.payload_model)
+    print(f"Regular task payload overriden to be empty at plugin level: {regular_task.payload_model}")
     # >> ''
-    print(dramatiq_task.payload_model)
+    print("#" * 100)
+    print(f"Dramatic task Payload, not overriden at plugin level{dramatiq_task.payload_model}")
     # >> '{"args_to_sum": []}'
+
+#########################################################################################################################
 
     # Accessing the views contributed by plugins
     ui_plugin = app.get_plugin('app.ui.plugin')
     print("Available views:", ui_plugin.views)
+    print("#" * 100)
 
-    # The blocking nature of each service can be tested
+#########################################################################################################################
 
-    # lets have a sample payload
+# The blocking nature of each service can be tested
+# Setting up the payload
     payload = '{"args_to_sum": [1, 2, 3]}'
 
+#########################################################################################################################
+
+    print("Testing regular task")
     result = regular_task.process_task(payload)
     # Received task: {"args_to_sum": [1, 2, 3]}, processing in backend...
     # Analysis result: 6
     print(result == 6)
     # >> True
+    print("#" * 100)
 
+#########################################################################################################################
+
+    print("Testing dramatiq task regular call")
     # Dramatiq is a bit different. It can be non-blocking. So we need to wait for the result to come back on diff thread
     # and ensure the workers are running if the .send is invoked. Else same result as before
     result = dramatiq_task.process_task(payload)
     print(result == 6)
     # >> True
+    print("#" * 100)
 
+#########################################################################################################################
+
+    print("Testing dramatiq task send call")
     result = dramatiq_task.process_task.send(payload)
     print(result)
     # process_task('{"args_to_sum": [1, 2, 3]}') result >> Message(queue_name='default', actor_name='process_task',
     # args=('{"args_to_sum": [1, 2, 3]}',), kwargs={}, options={}, message_id='ae6e0d05-a4bb-4c9c-bcc1-94b82abbe58d',
     # message_timestamp=1715811485351)
+    print("#" * 100)
 
     # The result will be printed on the dramatiq worker process
     # You can boot up one by running the following command in a new terminal
@@ -97,4 +117,5 @@ if __name__ == '__main__':
     # Payload model should also have the response queue routing key in the future for a full implementation to
     # get back results
 
+#########################################################################################################################
     app.stop()

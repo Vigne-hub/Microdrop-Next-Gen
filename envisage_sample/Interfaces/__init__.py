@@ -2,8 +2,6 @@
 from traits.api import Interface, Str
 
 
-
-
 class ILoggingService(Interface):
     def log(self, message):
         """Log the given message."""
