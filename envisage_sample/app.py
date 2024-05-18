@@ -1,9 +1,9 @@
 from envisage.api import Application
-from envisage_sample.Interfaces import IAnalysisService
-from envisage_sample.frontend_plugins.ui_plugin import UIPlugin
-from envisage_sample.frontend_plugins.plot_view_plugin import PlotViewPlugin
-from envisage_sample.frontend_plugins.table_view_plugin import TableViewPlugin
-from backend_plugins import AnalysisPlugin, LoggingPlugin
+from .Interfaces import IAnalysisService
+from .frontend_plugins.ui_plugin import UIPlugin
+from .frontend_plugins.plot_view_plugin import PlotViewPlugin
+from .frontend_plugins.table_view_plugin import TableViewPlugin
+from .backend_plugins import AnalysisPlugin, LoggingPlugin
 
 
 class MyApp(Application):
@@ -11,16 +11,20 @@ class MyApp(Application):
         super(MyApp, self).__init__(plugins=plugins)
 
 
-if __name__ == '__main__':
-######### Running some tests on the application ############################################################################
+def demo():
 
+    # Note that fully fledged unittests for enthought services is available via https://github.com/enthought/envisage/blob/main/envisage/tests
+    # This is just a simple test to show how the services can be used.
+
+    # As well dramatiq has pytests that are comprehensive at https://github.com/Bogdanp/dramatiq/blob/master/tests
+    # Again this is just a simple test just for illustration.
+
+    ######### Running some tests on the application ############################################################################
     # Loading plugins
     plugins = [UIPlugin(), PlotViewPlugin(), TableViewPlugin(), AnalysisPlugin(), LoggingPlugin()]
     app = MyApp(plugins=plugins)
     app.start()
-
-#########TEST PLUGIN MANAGER AND SERVICE REGISTRY############################################################################
-
+    #########TEST PLUGIN MANAGER AND SERVICE REGISTRY############################################################################
     print("#" * 100)
     print("Testing plugin manager")
     print(app.plugin_manager._plugins)
@@ -30,7 +34,6 @@ if __name__ == '__main__':
     #  Plugin(id='app.analysis.plugin', name='Analysis Plugin'),
     #  Plugin(id='app.logging.plugin', name='Logging Plugin')]
     print("#" * 100)
-
     print("Testing service registry")
     print(app.service_registry._services)
     # >> {1: ('envisage_sample.Interfaces.IAnalysisService',
@@ -43,53 +46,38 @@ if __name__ == '__main__':
     #   <bound method LoggingPlugin._create_service of Plugin(id='app.logging.plugin', name='Logging Plugin')>,
     #   {})}
     print("#" * 100)
-#########################################################################################################################
-
+    #########################################################################################################################
     # We notice the following. With the regular analysis service, we have the AnalysisService type service. Its id
     # was not declared as a property at the plugin level. So it does not get published to the yellow pages. But is
     # still available for use.
-
     # The DramatiqAnalysisService has an id property declared at the plugin level. So it is
     # published to the yellow pages.
-
     # This is a good way to control what services are available to the frontend for
     # querying.
-
     # Also notice that the payload_model is not avaialble for either, it was not declared in the property dict.
-
-################TEST SERVICES################################################################################################
-
+    ################TEST SERVICES################################################################################################
     # Another interesting thing about payload model. It gets overrided at the plugin level even if set at the service
     # class level. Eg below
-
     regular_task = app.get_service(IAnalysisService, query="type=='regular'")
     dramatiq_task = app.get_service(IAnalysisService, query="type=='dramatiq'")
-
     print("Testing properties access on services")
     print("#" * 100)
-
     print(f"Regular task payload overriden to be empty at plugin level: {regular_task.payload_model}")
     # >> ''
     print("#" * 100)
     print(f"Dramatic task Payload, not overriden at plugin level: {dramatiq_task.payload_model}")
     # >> '{"args_to_sum": []}'
     print("#" * 100)
-
-#########################################################################################################################
-
+    #########################################################################################################################
     # Accessing the views contributed by plugins
     ui_plugin = app.get_plugin('app.ui.plugin')
     print("Available views:", ui_plugin.views)
     print("#" * 100)
-
-#########################################################################################################################
-
-# The blocking nature of each service can be tested
-# Setting up the payload
+    #########################################################################################################################
+    # The blocking nature of each service can be tested
+    # Setting up the payload
     payload = '{"args_to_sum": [1, 2, 3]}'
-
-#########################################################################################################################
-
+    #########################################################################################################################
     print("Testing regular task")
     result = regular_task.process_task(payload)
     # Received task: {"args_to_sum": [1, 2, 3]}, processing in backend...
@@ -97,9 +85,7 @@ if __name__ == '__main__':
     print(result == 6)
     # >> True
     print("#" * 100)
-
-#########################################################################################################################
-
+    #########################################################################################################################
     print("Testing dramatiq task regular call")
     # Dramatiq is a bit different. It can be non-blocking. So we need to wait for the result to come back on diff thread
     # and ensure the workers are running if the .send is invoked. Else same result as before
@@ -107,9 +93,7 @@ if __name__ == '__main__':
     print(result == 6)
     # >> True
     print("#" * 100)
-
-#########################################################################################################################
-
+    #########################################################################################################################
     print("Testing dramatiq task send call")
     result = dramatiq_task.process_task.send(payload)
     print(result)
@@ -117,14 +101,14 @@ if __name__ == '__main__':
     # args=('{"args_to_sum": [1, 2, 3]}',), kwargs={}, options={}, message_id='ae6e0d05-a4bb-4c9c-bcc1-94b82abbe58d',
     # message_timestamp=1715811485351)
     print("#" * 100)
-
     # The result will be printed on the dramatiq worker process
     # You can boot up one by running the following command in a new terminal
     # dramatiq envisage_sample.services
-
     # Payload model should also have the response queue routing key in the future for a full implementation to
     # get back results
-
-#########################################################################################################################
-
+    #########################################################################################################################
     app.stop()
+
+
+if __name__ == '__main__':
+    demo()
