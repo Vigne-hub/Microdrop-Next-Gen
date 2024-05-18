@@ -1,6 +1,6 @@
 from traits.api import HasTraits, Str
 from traits.has_traits import provides
-from envisage_sample.Interfaces import IAnalysisService, ILoggingService
+from ..Interfaces import IAnalysisService, ILoggingService
 import json
 import time
 import dramatiq
