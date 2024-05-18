@@ -1,3 +1,5 @@
+import time
+
 from envisage.api import Application
 from .Interfaces import IAnalysisService
 from .frontend_plugins.ui_plugin import UIPlugin
@@ -78,24 +80,32 @@ def demo():
     # Setting up the payload
     payload = '{"args_to_sum": [1, 2, 3]}'
     #########################################################################################################################
-    print("Testing regular task")
-    result = regular_task.process_task(payload)
-    # Received task: {"args_to_sum": [1, 2, 3]}, processing in backend...
-    # Analysis result: 6
-    print(result == 6)
-    # >> True
-    print("#" * 100)
-    #########################################################################################################################
-    print("Testing dramatiq task regular call")
-    # Dramatiq is a bit different. It can be non-blocking. So we need to wait for the result to come back on diff thread
-    # and ensure the workers are running if the .send is invoked. Else same result as before
-    result = dramatiq_task.process_task(payload)
-    print(result == 6)
-    # >> True
-    print("#" * 100)
+    # print("Testing regular task")
+    # result = regular_task.process_task(payload)
+    # # Received task: {"args_to_sum": [1, 2, 3]}, processing in backend...
+    # # Analysis result: 6
+    # print(result == 6)
+    # # >> True
+    # print("#" * 100)
+    # #########################################################################################################################
+    # print("Testing dramatiq task regular call")
+    # # Dramatiq is a bit different. It can be non-blocking. So we need to wait for the result to come back on diff thread
+    # # and ensure the workers are running if the .send is invoked. Else same result as before
+    # result = dramatiq_task.process_task(payload)
+    # print(result == 6)
+    # # >> True
+    # print("#" * 100)
     #########################################################################################################################
     print("Testing dramatiq task send call")
-    result = dramatiq_task.process_task.send(payload)
+
+    with open("results.txt", "w") as f:
+        f.write("")
+
+    import subprocess
+    # Start the dramatiq worker in a new terminal
+    process = subprocess.Popen(f'dramatiq {dramatiq_task.__class__.__module__}')
+
+    result = [dramatiq_task.process_task.send(payload) for _ in range(5)]
     print(result)
     # process_task('{"args_to_sum": [1, 2, 3]}') result >> Message(queue_name='default', actor_name='process_task',
     # args=('{"args_to_sum": [1, 2, 3]}',), kwargs={}, options={}, message_id='ae6e0d05-a4bb-4c9c-bcc1-94b82abbe58d',
@@ -108,6 +118,15 @@ def demo():
     # get back results
     #########################################################################################################################
     app.stop()
+    time.sleep(10)
+    with open("results.txt") as f:
+        results = f.readlines()
+        print(results)
+        for el in results:
+            assert el == "Analysis result: 6\n"
+        assert len(results) == 5
+
+    process.terminate()
 
 
 if __name__ == '__main__':
