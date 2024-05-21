@@ -49,7 +49,6 @@ class DramatiqAnalysisService(HasTraits):
         print("Analysis result:", result)
         with open("results.txt", "a") as f:
             f.write(f"Analysis result: {result}\n")
-        return result
 
 
 @provides(ILoggingService)

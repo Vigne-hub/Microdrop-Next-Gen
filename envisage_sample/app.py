@@ -105,8 +105,10 @@ def demo():
     # Start the dramatiq worker in a new terminal
     process = subprocess.Popen(f'dramatiq {dramatiq_task.__class__.__module__}')
 
-    result = [dramatiq_task.process_task.send(payload) for _ in range(5)]
-    print(result)
+    dramatiq_task.process_task.send(payload)
+    dramatiq_task.process_task.send(payload)
+    dramatiq_task.process_task.send(payload)
+
     # process_task('{"args_to_sum": [1, 2, 3]}') result >> Message(queue_name='default', actor_name='process_task',
     # args=('{"args_to_sum": [1, 2, 3]}',), kwargs={}, options={}, message_id='ae6e0d05-a4bb-4c9c-bcc1-94b82abbe58d',
     # message_timestamp=1715811485351)
@@ -117,15 +119,16 @@ def demo():
     # Payload model should also have the response queue routing key in the future for a full implementation to
     # get back results
     #########################################################################################################################
-    app.stop()
+
     time.sleep(10)
     with open("results.txt") as f:
         results = f.readlines()
         print(results)
         for el in results:
             assert el == "Analysis result: 6\n"
-        assert len(results) == 5
+        assert len(results) == 3
 
+    app.stop()
     process.terminate()
 
 
