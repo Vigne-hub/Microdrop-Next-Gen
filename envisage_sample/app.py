@@ -1,5 +1,8 @@
+import json
+import subprocess
 import time
 
+import psutil
 from envisage.api import Application
 from .Interfaces import IAnalysisService
 from .frontend_plugins.ui_plugin import UIPlugin
@@ -14,7 +17,6 @@ class MyApp(Application):
 
 
 def demo():
-
     # Note that fully fledged unittests for enthought services is available via https://github.com/enthought/envisage/blob/main/envisage/tests
     # This is just a simple test to show how the services can be used.
 
@@ -77,37 +79,41 @@ def demo():
     print("#" * 100)
     #########################################################################################################################
     # The blocking nature of each service can be tested
-    # Setting up the payload
-    payload = '{"args_to_sum": [1, 2, 3]}'
+    # Setting up the payload and some settings
+    payload_dict = {"args_to_sum": [1, 2, 3], "sleep_time": 2}
+    payload = json.dumps(payload_dict)
+    N_tasks = 3
     #########################################################################################################################
-    # print("Testing regular task")
-    # result = regular_task.process_task(payload)
-    # # Received task: {"args_to_sum": [1, 2, 3]}, processing in backend...
-    # # Analysis result: 6
-    # print(result == 6)
-    # # >> True
-    # print("#" * 100)
+    print("Testing regular task")
+    result = regular_task.process_task(payload)
+    # Received task: {"args_to_sum": [1, 2, 3]}, processing in backend...
+    # Analysis result: 6
+    print(result == 6)
+    # >> True
+    print("#" * 100)
     # #########################################################################################################################
-    # print("Testing dramatiq task regular call")
-    # # Dramatiq is a bit different. It can be non-blocking. So we need to wait for the result to come back on diff thread
-    # # and ensure the workers are running if the .send is invoked. Else same result as before
-    # result = dramatiq_task.process_task(payload)
-    # print(result == 6)
-    # # >> True
-    # print("#" * 100)
+    print("Testing dramatiq task regular call")
+    # Dramatiq is a bit different. It can be non-blocking. So we need to wait for the result to come back on diff thread
+    # and ensure the workers are running if the .send is invoked. Else same result as before
+    result = dramatiq_task.process_task(payload)
+    print(result == 6)
+    # >> True
+    print("#" * 100)
     #########################################################################################################################
     print("Testing dramatiq task send call")
 
     with open("results.txt", "w") as f:
         f.write("")
 
-    import subprocess
     # Start the dramatiq worker in a new terminal
-    process = subprocess.Popen(f'dramatiq {dramatiq_task.__class__.__module__}')
+    cmd = f'dramatiq {dramatiq_task.__class__.__module__}'
 
-    dramatiq_task.process_task.send(payload)
-    dramatiq_task.process_task.send(payload)
-    dramatiq_task.process_task.send(payload)
+    # The os.setsid() is passed in the argument preexec_fn so
+    # it's run after the fork() and before  exec() to run the shell.
+    pro = subprocess.Popen(cmd)
+
+    for i in range(N_tasks):
+        dramatiq_task.process_task.send(payload)
 
     # process_task('{"args_to_sum": [1, 2, 3]}') result >> Message(queue_name='default', actor_name='process_task',
     # args=('{"args_to_sum": [1, 2, 3]}',), kwargs={}, options={}, message_id='ae6e0d05-a4bb-4c9c-bcc1-94b82abbe58d',
@@ -120,16 +126,32 @@ def demo():
     # get back results
     #########################################################################################################################
 
-    time.sleep(10)
+    time.sleep(1 + (payload_dict["sleep_time"] * N_tasks))
     with open("results.txt") as f:
         results = f.readlines()
         print(results)
         for el in results:
             assert el == "Analysis result: 6\n"
-        assert len(results) == 3
+        assert len(results) == N_tasks
 
-    app.stop()
-    process.terminate()
+    end_tasks(pro)
+    pro.wait()
+
+
+def end_tasks(process):
+    # Get the process ID
+    pid = process.pid
+
+    # Use psutil to find all child processes and terminate them
+    parent = psutil.Process(pid)
+    for child in parent.children(recursive=True):
+        child.terminate()
+
+    # Terminate the parent process
+    parent.terminate()
+
+    # Wait for the processes to terminate (optional)
+    process.wait()
 
 
 if __name__ == '__main__':

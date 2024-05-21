@@ -44,11 +44,14 @@ class DramatiqAnalysisService(HasTraits):
         # Deserialize the task info from JSON
         task_data = json.loads(task_info)
         parameters = task_data.get('args_to_sum')
-        time.sleep(2)
+        sleep_time = task_data.get('sleep_time')
+        time.sleep(sleep_time)
         result = sum(parameters)
         print("Analysis result:", result)
         with open("results.txt", "a") as f:
             f.write(f"Analysis result: {result}\n")
+
+        return result
 
 
 @provides(ILoggingService)
