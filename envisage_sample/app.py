@@ -1,4 +1,6 @@
 import time
+
+from dramatiq import Worker
 from envisage.api import Application
 from .Interfaces import IAnalysisService
 from .frontend_plugins.ui_plugin import UIPlugin
