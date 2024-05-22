@@ -137,6 +137,7 @@ class DropbotController():
         Args:
             voltage (int): Desired voltage setting.
         """
+        print(voltage)
         if self.proxy is not None:
             self.proxy.voltage = voltage
         logger.info("Voltage set to %d", voltage)

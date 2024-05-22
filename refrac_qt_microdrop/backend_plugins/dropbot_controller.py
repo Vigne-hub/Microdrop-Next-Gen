@@ -18,6 +18,7 @@ for el in dramatiq.get_broker().middleware:
     if el.__module__ == "dramatiq.middleware.prometheus":
         dramatiq.get_broker().middleware.remove(el)
 
+
 class DropbotControllerPlugin(Plugin):
     id = 'refrac_qt_microdrop.dropbot_controller'
     name = 'Dropbot Plugin'
@@ -55,12 +56,15 @@ class DropbotControllerPlugin(Plugin):
 class DropbotActor:
 
     @staticmethod
-    @dramatiq.actor(queue='dropbot_actions')
+    @dramatiq.actor(queue_name='dropbot_actions')
     def process_task(task):
         print(f"Processing task: {task}")
         task_name = task.get("name")
+        print(f"Task name: {task_name}")
         task_args = task.get("args")
+        print(f"Task args: {task_args}")
         task_kwargs = task.get("kwargs")
+        print(f"Task kwargs: {task_kwargs}")
         logger.info(f"Processing task: {task}")
 
         # Map task names to DropbotController methods
@@ -77,6 +81,7 @@ class DropbotActor:
 
         if task_name in task_map:
             result = task_map[task_name]()
+            print(f"Task {task_name} completed with result: {result}")
             logger.info(f"Task {task_name} completed with result: {result}")
             return result
         else:
