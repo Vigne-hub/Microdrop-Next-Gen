@@ -20,10 +20,8 @@ class AnalysisService(HasTraits):
     @staticmethod
     def process_task(task_info):
         print(f"Received task: {task_info}, processing in backend...")
-        # Deserialize the task info from JSON
-        task_data = json.loads(task_info)
-        parameters = task_data.get('args_to_sum')
-        time.sleep(2)
+        parameters = task_info['args_to_sum']
+        time.sleep(task_info["sleep_time"])
         result = sum(parameters)
         print("Analysis result:", result)
         return result
@@ -36,22 +34,19 @@ class DramatiqAnalysisService(HasTraits):
     id = Str
 
     # define payload
-    payload_model = Str('{"args_to_sum": []}')
+    payload_model = Str('{"args_to_sum": [], "sleep_time": 2, "reply": 1}')
 
     @dramatiq.actor
     def process_task(task_info):
         print(f"Received task: {task_info}, processing in backend...")
-        # Deserialize the task info from JSON
-        task_data = json.loads(task_info)
-        parameters = task_data.get('args_to_sum')
-        sleep_time = task_data.get('sleep_time')
-        time.sleep(sleep_time)
-        result = sum(parameters)
+        time.sleep(task_info["sleep_time"])
+        result = sum(task_info["args_to_sum"])
         print("Analysis result:", result)
         with open("results.txt", "a") as f:
             f.write(f"Analysis result: {result}\n")
 
-        return result
+        if task_info["reply"]:
+            return result
 
 
 @provides(ILoggingService)

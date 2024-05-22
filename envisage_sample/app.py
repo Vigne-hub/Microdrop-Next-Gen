@@ -1,17 +1,24 @@
-# setup dramatiq broker (should be done in seperate file)
-from dramatiq import get_broker
+########################@@@@@@@@### BROKER SETUP (should be seperated)##################################################
+
+from dramatiq import get_broker, Worker
 
 BROKER = get_broker()
 
+# remove prometheus metrics for now
+for el in BROKER.middleware:
+    if el.__module__ == "dramatiq.middleware.prometheus":
+        BROKER.middleware.remove(el)
+
+#########################################################################################################################
+
 import json
-import subprocess
 import time
-import psutil
 from envisage.api import Application
 from .Interfaces import IAnalysisService
 from .frontend_plugins.ui_plugin import UIPlugin
 from .frontend_plugins.plot_view_plugin import PlotViewPlugin
 from .frontend_plugins.table_view_plugin import TableViewPlugin
+
 
 class MyApp(Application):
     def __init__(self, plugins, broker=None):
@@ -101,9 +108,9 @@ def demo():
     print("#" * 100)
     #########################################################################################################################
     # The blocking nature of each service can be tested
+    # But first test normal calls
     # Setting up the payload and some settings
-    payload_dict = {"args_to_sum": [1, 2, 3], "sleep_time": 2}
-    payload = json.dumps(payload_dict)
+    payload = {"args_to_sum": [1, 2, 3], "sleep_time": 0.1, "reply": 1}
     N_tasks = 3
     #########################################################################################################################
     print("Testing regular task")
@@ -124,22 +131,45 @@ def demo():
     #########################################################################################################################
     print("Testing dramatiq task send call")
 
+    # clear results
     with open("results.txt", "w") as f:
         f.write("")
 
-    # Start the dramatiq worker in a new terminal
-    cmd = f'dramatiq {dramatiq_task.__class__.__module__}'
+#########################################################################################################################
 
-    # The os.setsid() is passed in the argument preexec_fn so
-    # it's run after the fork() and before  exec() to run the shell.
-    pro = subprocess.Popen(cmd)
+    # class Worker:
+    """Workers consume messages off of all declared queues and
+    distribute those messages to individual worker threads for
+    processing.  Workers don't block the current thread so it's
+    up to the caller to keep it alive.
+
+    Don't run more than one Worker per process.
+
+    Parameters:
+      broker(Broker)
+      queues(Set[str]): An optional subset of queues to listen on.  By
+        default, if this is not provided, the worker will listen on
+        all declared queues.
+      worker_timeout(int): The number of milliseconds workers should
+        wake up after if the queue is idle.
+      worker_threads(int): The number of worker threads to spawn.
+    """
+
+#########################################################################################################################
+
+    # start workers
+    worker = Worker(broker=BROKER, queues=None, worker_timeout=1000, worker_threads=N_tasks)
+
+    worker.start()
+    # spawns 5 threads (3 for the tasks and 2 for managing the tasks)
+
+    # make task blocking and send multiple tasks with no reply here. The results will be written to a file by actor.
+    payload["sleep_time"] = 2
+    payload["reply"] = 0
 
     for i in range(N_tasks):
         dramatiq_task.process_task.send(payload)
 
-    # process_task('{"args_to_sum": [1, 2, 3]}') result >> Message(queue_name='default', actor_name='process_task',
-    # args=('{"args_to_sum": [1, 2, 3]}',), kwargs={}, options={}, message_id='ae6e0d05-a4bb-4c9c-bcc1-94b82abbe58d',
-    # message_timestamp=1715811485351)
     print("#" * 100)
     # The result will be printed on the dramatiq worker process
     # You can boot up one by running the following command in a new terminal
@@ -148,7 +178,7 @@ def demo():
     # get back results
     #########################################################################################################################
 
-    time.sleep(1 + (payload_dict["sleep_time"] * N_tasks))
+    time.sleep(1 + (payload["sleep_time"] * N_tasks))
     with open("results.txt") as f:
         results = f.readlines()
         print(results)
@@ -156,24 +186,10 @@ def demo():
             assert el == "Analysis result: 6\n"
         assert len(results) == N_tasks
 
-    end_tasks(pro)
-    pro.wait()
+    print("All tests passed")
 
-
-def end_tasks(process):
-    # Get the process ID
-    pid = process.pid
-
-    # Use psutil to find all child processes and terminate them
-    parent = psutil.Process(pid)
-    for child in parent.children(recursive=True):
-        child.terminate()
-
-    # Terminate the parent process
-    parent.terminate()
-
-    # Wait for the processes to terminate (optional)
-    process.wait()
+    app.stop()
+    worker.stop()
 
 
 if __name__ == '__main__':
