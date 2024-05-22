@@ -1,18 +1,20 @@
+# setup dramatiq broker (should be done in seperate file)
+from dramatiq import get_broker
+
+BROKER = get_broker()
+
 import json
 import subprocess
 import time
-
 import psutil
 from envisage.api import Application
 from .Interfaces import IAnalysisService
 from .frontend_plugins.ui_plugin import UIPlugin
 from .frontend_plugins.plot_view_plugin import PlotViewPlugin
 from .frontend_plugins.table_view_plugin import TableViewPlugin
-from .backend_plugins import AnalysisPlugin, LoggingPlugin
-
 
 class MyApp(Application):
-    def __init__(self, plugins):
+    def __init__(self, plugins, broker=None):
         super(MyApp, self).__init__(plugins=plugins)
 
 
@@ -22,6 +24,26 @@ def demo():
 
     # As well dramatiq has pytests that are comprehensive at https://github.com/Bogdanp/dramatiq/blob/master/tests
     # Again this is just a simple test just for illustration.
+
+    ###################### Running test on dramatiq actor declaration with the broker ################################
+    # Upon importing the abalysius plugin, the dramtic actor should get registerd with the dramatiq broker
+
+    # NOTE: this fails if you improt anything that indirectly imports anything containing a dramatic actor. So loggingplugin
+    # needs to be imported here as well. This is because the module with loggingplugin also has analysisplugin, so
+    # analysis service (which has the dramatic actor) gets imported and thus its actor declared with the broker.
+
+    print("#" * 100)
+    print("Testing actor declaration with the broker\n")
+    # before...
+    assert len(BROKER.get_declared_actors()) == 0
+    print(f"Declared actors before: {BROKER.get_declared_actors()}\n")
+
+    # importing plugin with an actor
+    from .backend_plugins import AnalysisPlugin, LoggingPlugin
+
+    # after...
+    assert len(BROKER.get_declared_actors()) == 1
+    print(f"Declared actors after: {BROKER.get_declared_actors()}\n")
 
     ######### Running some tests on the application ############################################################################
     # Loading plugins
