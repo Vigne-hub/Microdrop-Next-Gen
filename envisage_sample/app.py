@@ -1,23 +1,11 @@
-########################@@@@@@@@### BROKER SETUP (should be seperated)##################################################
-
-from dramatiq import get_broker, Worker
-
-BROKER = get_broker()
-
-# remove prometheus metrics for now
-for el in BROKER.middleware:
-    if el.__module__ == "dramatiq.middleware.prometheus":
-        BROKER.middleware.remove(el)
-
-#########################################################################################################################
-
-import json
 import time
 from envisage.api import Application
 from .Interfaces import IAnalysisService
 from .frontend_plugins.ui_plugin import UIPlugin
 from .frontend_plugins.plot_view_plugin import PlotViewPlugin
 from .frontend_plugins.table_view_plugin import TableViewPlugin
+
+from .common import BROKER
 
 
 class MyApp(Application):
