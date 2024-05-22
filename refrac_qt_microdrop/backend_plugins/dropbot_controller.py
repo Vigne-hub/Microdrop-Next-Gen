@@ -1,23 +1,25 @@
-import numpy as np
-from typing import Union
 from envisage.api import Plugin, ServiceOffer
 from traits.api import List
 import dramatiq
 from dramatiq.brokers.rabbitmq import RabbitmqBroker
-import dropbot
-import serial
 import logging
+
+from refrac_qt_microdrop.helpers.dropbot_controller_helper import DropbotController
 from refrac_qt_microdrop.interfaces import IDropbotControllerService
 
+# Initialize logger
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
+# Setup RabbitMQ broker for Dramatiq
 rabbitmq_broker = RabbitmqBroker(url="amqp://guest:guest@localhost/")
 dramatiq.set_broker(rabbitmq_broker)
-
+# remove prometheus metrics for now
+for el in dramatiq.get_broker().middleware:
+    if el.__module__ == "dramatiq.middleware.prometheus":
+        dramatiq.get_broker().middleware.remove(el)
 
 class DropbotControllerPlugin(Plugin):
-    id = 'refrac__qt_microdrop.dropbot_controller'
+    id = 'refrac_qt_microdrop.dropbot_controller'
     name = 'Dropbot Plugin'
     service_offers = List(contributes_to='envisage.service_offers')
 
@@ -25,12 +27,11 @@ class DropbotControllerPlugin(Plugin):
         super().start()
         self._register_services()
         logger.info("DropbotController Plugin started")
+        self._start_worker()
 
     def _register_services(self):
         dropbot_service = self._create_service()
         self.application.register_service(IDropbotControllerService, dropbot_service)
-
-        self._start_worker()
 
     def _service_offers_default(self):
         return [
@@ -51,110 +52,32 @@ class DropbotControllerPlugin(Plugin):
         worker_thread.start()
 
 
-class DropbotControllerLogic:
-    def __init__(self):
-        self.proxy: Union[None, dropbot.SerialProxy] = None
-        self.last_state = np.zeros(128, dtype='uint8')
-        self.init_dropbot_proxy()
+class DropbotActor:
 
-    def init_dropbot_proxy(self):
-        try:
-            port = serial.serial_for_url('hwgrep://USB Serial', do_not_open=True).port
-            self.proxy = dropbot.SerialProxy(port=port)
-        except (IOError, AttributeError):
-            self.proxy = None
-            return False
+    @staticmethod
+    @dramatiq.actor(queue='dropbot_actions')
+    def process_task(task):
+        print(f"Processing task: {task}")
+        task_name = task.get("name")
+        task_args = task.get("args")
+        task_kwargs = task.get("kwargs")
+        logger.info(f"Processing task: {task}")
 
-        self.proxy.hv_output_enabled = False
-        self.proxy.voltage = 0
-        self.proxy.frequency = 10000
-        self.last_state = np.array(self.proxy.state_of_channels)
-        self.last_state = self.get_channels()
+        # Map task names to DropbotController methods
+        task_map = {
+            "poll_voltage": lambda: DropbotController().poll_voltage(),
+            "set_voltage": lambda: DropbotController().set_voltage(*task_args, **task_kwargs),
+            "set_frequency": lambda: DropbotController().set_frequency(*task_args, **task_kwargs),
+            "set_hv": lambda: DropbotController().set_hv(*task_args, **task_kwargs),
+            "get_channels": lambda: DropbotController().get_channels(),
+            "set_channels": lambda: DropbotController().set_channels(*task_args, **task_kwargs),
+            "set_channel_single": lambda: DropbotController().set_channel_single(*task_args, **task_kwargs),
+            "droplet_search": lambda: DropbotController().droplet_search(*task_args, **task_kwargs),
+        }
 
-        OUTPUT_ENABLE_PIN = 22
-        if self.proxy.digital_read(OUTPUT_ENABLE_PIN):
-            self.notify_output_state_changed(False)
+        if task_name in task_map:
+            result = task_map[task_name]()
+            logger.info(f"Task {task_name} completed with result: {result}")
+            return result
         else:
-            self.notify_output_state_changed(True)
-        return True
-
-    @dramatiq.actor(queue_name='notifications')
-    def notify_output_state_changed(self, state: bool):
-        logger.info(f"Output state changed: {state}")
-        # Publish to a specific queue for notifications
-
-    @dramatiq.actor
-    def poll_voltage(self):
-        if self.proxy is not None:
-            try:
-                voltage = self.proxy.high_voltage()
-                self.notify_voltage_changed(voltage)
-            except OSError:
-                pass
-
-    @dramatiq.actor(queue_name='notifications')
-    def notify_voltage_changed(self, voltage: float):
-        logger.info(f"Voltage changed: {voltage}")
-        # Publish to a specific queue for notifications
-
-    @dramatiq.actor
-    def set_voltage(self, voltage=int):
-        if self.proxy is not None:
-            self.proxy.voltage = voltage
-        logger.info(f"Voltage set to {voltage}")
-
-    @dramatiq.actor
-    def set_frequency(self, frequency: int):
-        if self.proxy is not None:
-            self.proxy.frequency = frequency
-        logger.info(f"Frequency set to {frequency}")
-
-    @dramatiq.actor
-    def set_hv(self, on: bool):
-        if self.proxy is not None:
-            self.proxy.hv_output_enabled = on
-
-    @dramatiq.actor
-    def get_channels(self):
-        if self.proxy is None:
-            return np.zeros(128, dtype='uint8')
-
-        channels = np.array(self.proxy.state_of_channels)
-        if (self.last_state != channels).any():
-            self.last_state = channels
-            self.notify_channels_changed(channels)
-        return channels
-
-    @dramatiq.actor
-    def notify_channels_changed(self, channels):
-        logger.info(f"Channels changed: {channels}")
-        # Publish to a specific queue for notifications
-
-    @dramatiq.actor
-    def set_channels(self, channels):
-        if self.proxy is None:
-            return
-        self.proxy.state_of_channels = np.array(channels)
-        self.last_state = self.get_channels()
-
-    @dramatiq.actor
-    def set_channel_single(self, channel: int, state: bool):
-        if self.proxy is None:
-            return
-        channels = self.get_channels()
-        channels[channel] = state
-        self.set_channels(channels)
-
-    @dramatiq.actor
-    def droplet_search(self, threshold: float = 0):
-        if self.proxy is not None:
-            self.set_channels(np.zeros_like(self.last_state))
-            drops = list(self.last_state)
-            for drop in self.proxy.get_drops(capacitance_threshold=threshold):
-                for electrode in drop:
-                    drops[electrode] = 'droplet'
-            self.notify_channels_metastate_changed(drops)
-
-    @dramatiq.actor(queue_name='notifications')
-    def notify_channels_metastate_changed(self, drops):
-        logger.info(f"Channels metastate changed: {drops}")
+            logger.error(f"Unknown task name: {task_name}")

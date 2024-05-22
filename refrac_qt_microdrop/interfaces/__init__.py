@@ -1,8 +1,7 @@
 from traits.api import Interface
 
+
 class IDropbotControllerService(Interface):
-    def init_dropbot_proxy(self):
-        pass
 
     def poll_voltage(self):
         pass

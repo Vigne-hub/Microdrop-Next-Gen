@@ -3,6 +3,7 @@ from envisage.api import Plugin
 from traits.api import List, Instance
 from refrac_qt_microdrop.interfaces import IDropbotControllerService
 
+
 class MainWindow(QMainWindow):
     def __init__(self, dropbot_service):
         super().__init__()
@@ -41,8 +42,9 @@ class MainWindow(QMainWindow):
         self.dropbot_service.set_voltage(voltage)
         self.status_label.setText(f"Status: Voltage set to {voltage}")
 
+
 class GUIPlugin(Plugin):
-    id = 'refrac__qt_microdrop.gui_plugin'
+    id = 'refrac_qt_microdrop.gui_plugin'
 
     def start(self):
         super().start()

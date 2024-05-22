@@ -1,35 +1,52 @@
 from traits.api import HasTraits, provides
 from refrac_qt_microdrop.interfaces import IDropbotControllerService
-from refrac_qt_microdrop.backend_plugins.dropbot_controller import DropbotControllerLogic
+from refrac_qt_microdrop.helpers.dropbot_controller_helper import DropbotController
+from refrac_qt_microdrop.backend_plugins.dropbot_controller import DropbotActor
+
 
 @provides(IDropbotControllerService)
 class DropbotService(HasTraits):
-    def __init__(self):
-        self.controller = DropbotControllerLogic()
-
-    def init_dropbot_proxy(self):
-        return self.controller.init_dropbot_proxy()
+    controller = DropbotController()
+    dropbot_actor = DropbotActor()
 
     def poll_voltage(self):
-        return self.controller.poll_voltage.send()
+        self.dropbot_actor.process_task.send({"name": "poll_voltage",
+                                              "args": [],
+                                              "kwargs": {}})
 
     def set_voltage(self, voltage: int):
-        return self.controller.set_voltage.send_with_options(voltage)
+        print(f"Attempting to send set_voltage command to queue")
+        self.dropbot_actor.process_task.send(queue_name='dropbot_actions',
+                                             kwargs={"name": "set_voltage",
+                                              "args": [voltage],
+                                              "kwargs": {}})
 
     def set_frequency(self, frequency: int):
-        return self.controller.set_frequency.send(frequency)
+        self.dropbot_actor.process_task.send({"name": "set_frequency",
+                                              "args": [frequency],
+                                              "kwargs": {}})
 
     def set_hv(self, on: bool):
-        return self.controller.set_hv.send(on)
+        self.dropbot_actor.process_task.send({"name": "set_hv",
+                                              "args": [on],
+                                              "kwargs": {}})
 
     def get_channels(self):
-        return self.controller.get_channels.send()
+        self.dropbot_actor.process_task.send({"name": "get_channels",
+                                              "args": [],
+                                              "kwargs": {}})
 
     def set_channels(self, channels):
-        return self.controller.set_channels.send(channels)
+        self.dropbot_actor.process_task.send({"name": "set_channels",
+                                              "args": [channels],
+                                              "kwargs": {}})
 
     def set_channel_single(self, channel: int, state: bool):
-        return self.controller.set_channel_single.send(channel, state)
+        self.dropbot_actor.process_task.send({"name": "set_channel_single",
+                                              "args": [channel, state],
+                                              "kwargs": {}})
 
     def droplet_search(self, threshold: float = 0):
-        return self.controller.droplet_search.send(threshold)
+        self.dropbot_actor.process_task.send({"name": "droplet_search",
+                                              "args": [threshold],
+                                              "kwargs": {}})
