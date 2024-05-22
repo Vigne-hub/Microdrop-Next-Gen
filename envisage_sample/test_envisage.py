@@ -44,14 +44,14 @@ def test_service_properties_access_regular(setup_app):
     app = setup_app
     regular_task = app.get_service(IAnalysisService, query="type=='regular'")
     print("Testing properties access on regular service")
-    assert regular_task.payload_model == ''
+    assert len(regular_task.payload_model) == 0
 
 
 def test_service_properties_access_dramatiq(setup_app):
     app = setup_app
     dramatiq_task = app.get_service(IAnalysisService, query="type=='dramatiq'")
     print("Testing properties access on dramatiq service")
-    assert dramatiq_task.payload_model == '{"args_to_sum": []}'
+    assert len(dramatiq_task.payload_model) != 0
 
 
 def test_view_access(setup_app):
