@@ -1,57 +1,35 @@
-from traits.api import HasTraits, Float, Bool, Array, Event, provides
-from refrac_qt_microdrop.interfaces import IVoltageService, IOutputService, IChannelService
-import numpy as np
-from nptyping import NDArray, Shape, UInt8
-import dropbot
-import serial
+from traits.api import HasTraits, provides
+from refrac_qt_microdrop.interfaces import IDropbotControllerService
+from refrac_qt_microdrop.backend_plugins.dropbot_controller import DropbotControllerLogic
 
-@provides(IVoltageService)
-class VoltageService(HasTraits):
-    voltage_changed = Event(Float)
-    proxy: dropbot.SerialProxy = None
+@provides(IDropbotControllerService)
+class DropbotService(HasTraits):
+    def __init__(self):
+        self.controller = DropbotControllerLogic()
+
+    def init_dropbot_proxy(self):
+        return self.controller.init_dropbot_proxy()
+
+    def poll_voltage(self):
+        return self.controller.poll_voltage.send()
 
     def set_voltage(self, voltage: int):
-        if self.proxy is not None:
-            self.proxy.voltage = voltage
+        return self.controller.set_voltage.send_with_options(voltage)
 
-    def get_voltage(self) -> float:
-        if self.proxy is not None:
-            return self.proxy.high_voltage()
-        return 0.0
+    def set_frequency(self, frequency: int):
+        return self.controller.set_frequency.send(frequency)
 
-@provides(IOutputService)
-class OutputService(HasTraits):
-    output_state_changed = Event(Bool)
-    proxy: dropbot.SerialProxy = None
+    def set_hv(self, on: bool):
+        return self.controller.set_hv.send(on)
 
-    def set_output(self, on: bool):
-        if self.proxy is not None:
-            self.proxy.hv_output_enabled = on
+    def get_channels(self):
+        return self.controller.get_channels.send()
 
-@provides(IChannelService)
-class ChannelService(HasTraits):
-    channels_changed = Event(Array)
-    proxy: dropbot.SerialProxy = None
-    last_state: NDArray[Shape['*, 1'], UInt8] = np.zeros(128, dtype='uint8')
+    def set_channels(self, channels):
+        return self.controller.set_channels.send(channels)
 
     def set_channel_single(self, channel: int, state: bool):
-        if self.proxy is None:
-            return
-        channels = self.get_channels()
-        channels[channel] = state
-        self.set_channels(channels)
+        return self.controller.set_channel_single.send(channel, state)
 
-    def get_channels(self) -> NDArray[Shape['*, 1'], UInt8]:
-        if self.proxy is None:
-            return np.zeros(128, dtype='uint8')
-        channels = np.array(self.proxy.state_of_channels)
-        if (self.last_state != channels).any():
-            self.last_state = channels
-            self.channels_changed = channels
-        return channels
-
-    def set_channels(self, channels: NDArray[Shape['*, 1'], UInt8]):
-        if self.proxy is None:
-            return
-        self.proxy.state_of_channels = np.array(channels)
-        self.last_state = self.get_channels()
+    def droplet_search(self, threshold: float = 0):
+        return self.controller.droplet_search.send(threshold)

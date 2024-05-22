@@ -1,30 +1,29 @@
-# interfaces.py
+from traits.api import Interface
 
-from traits.api import Interface, Float, Bool, Array, Event
+class IDropbotControllerService(Interface):
+    def init_dropbot_proxy(self):
+        pass
 
-
-class IVoltageService(Interface):
-    voltage_changed = Event(Float)
+    def poll_voltage(self):
+        pass
 
     def set_voltage(self, voltage: int):
         pass
 
-    def get_voltage(self) -> float:
+    def set_frequency(self, frequency: int):
         pass
 
-
-class IOutputService(Interface):
-    output_state_changed = Event(Bool)
-
-    def set_output(self, on: bool):
+    def set_hv(self, on: bool):
         pass
 
+    def get_channels(self):
+        pass
 
-class IChannelService(Interface):
-    channels_changed = Event(Array)
+    def set_channels(self, channels):
+        pass
 
     def set_channel_single(self, channel: int, state: bool):
         pass
 
-    def get_channels(self) -> Array:
+    def droplet_search(self, threshold: float = 0):
         pass
