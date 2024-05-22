@@ -1,7 +1,4 @@
-import json
 import time
-
-import dramatiq
 import pytest
 from .app import MyApp
 from .Interfaces import IAnalysisService
@@ -10,6 +7,17 @@ from .frontend_plugins.plot_view_plugin import PlotViewPlugin
 from .frontend_plugins.table_view_plugin import TableViewPlugin
 from .backend_plugins import AnalysisPlugin, LoggingPlugin
 from .common import worker, BROKER
+
+
+@pytest.fixture(scope="module")
+def results_file():
+    from pathlib import Path
+    test_results = Path(__file__).parent / "results.txt"
+    with open(test_results, "w") as f:
+        f.write("")
+
+    return test_results
+
 
 @pytest.fixture(scope="module")
 def setup_app():
@@ -81,14 +89,11 @@ def test_dramatiq_task_processing_regular_call(dramatiq_task_setup):
     assert result == 6
 
 
-def test_dramatiq_task_send_call(dramatiq_task_setup):
+def test_dramatiq_task_send_call(dramatiq_task_setup, results_file):
     dramatiq_task = dramatiq_task_setup
 
-    payload = {"args_to_sum": [1, 2, 3], "sleep_time": 2, "reply": 0}
+    payload = {"args_to_sum": [1, 2, 3], "sleep_time": 2, "reply": 0, "results_file": str(results_file)}
     N_tasks = 3
-
-    with open("results.txt", "w") as f:
-        f.write("")
 
     with worker(broker=BROKER, queues=None, worker_timeout=1000, worker_threads=N_tasks) as test_worker:
 
@@ -98,7 +103,7 @@ def test_dramatiq_task_send_call(dramatiq_task_setup):
 
     time.sleep(0.2)
 
-    with open("results.txt") as f:
+    with open(results_file) as f:
         results = f.readlines()
         for el in results:
             assert el == "Analysis result: 6\n"

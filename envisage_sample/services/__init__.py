@@ -39,13 +39,21 @@ class DramatiqAnalysisService(HasTraits):
     @dramatiq.actor
     def process_task(task_info):
         print(f"Received task: {task_info}, processing in backend...")
-        time.sleep(task_info["sleep_time"])
-        result = sum(task_info["args_to_sum"])
+
+        # get args from task_info
+        time_sleep = task_info.get("sleep_time", 2)
+        args_to_sum = task_info.get("args_to_sum", [0])
+        reply = task_info.get("reply", 1)
+        results_file = task_info.get("results_file", "results.txt")
+
+        time.sleep(time_sleep)
+        result = sum(args_to_sum)
+
         print("Analysis result:", result)
-        with open("results.txt", "a") as f:
+        with open(results_file, "a") as f:
             f.write(f"Analysis result: {result}\n")
 
-        if task_info["reply"]:
+        if reply:
             return result
 
 

@@ -16,13 +16,15 @@ class MyApp(Application):
 
 
 def demo():
-    # Note that fully fledged unittests for enthought services is available via https://github.com/enthought/envisage/blob/main/envisage/tests
+
+    # Note that fully fledged unittests for enthought services is available via
+    # https://github.com/enthought/envisage/blob/main/envisage/tests
     # This is just a simple test to show how the services can be used.
 
     # As well dramatiq has pytests that are comprehensive at https://github.com/Bogdanp/dramatiq/blob/master/tests
     # Again this is just a simple test just for illustration.
 
-    ###################### Running test on dramatiq actor declaration with the broker ################################
+###################### Running test on dramatiq actor declaration with the broker ######################################
     # Upon importing the abalysius plugin, the dramtic actor should get registerd with the dramatiq broker
 
     # NOTE: this fails if you improt anything that indirectly imports anything containing a dramatic actor. So loggingplugin
@@ -42,12 +44,15 @@ def demo():
     assert len(BROKER.get_declared_actors()) == 1
     print(f"Declared actors after: {BROKER.get_declared_actors()}\n")
 
-    ######### Running some tests on the application ############################################################################
+######### Running some tests on the application ############################################################################
+
     # Loading plugins
     plugins = [UIPlugin(), PlotViewPlugin(), TableViewPlugin(), AnalysisPlugin(), LoggingPlugin()]
     app = MyApp(plugins=plugins)
     app.start()
-    #########TEST PLUGIN MANAGER AND SERVICE REGISTRY############################################################################
+
+#########TEST PLUGIN MANAGER AND SERVICE REGISTRY############################################################################
+
     print("#" * 100)
     print("Testing plugin manager")
     print(app.plugin_manager._plugins)
@@ -69,7 +74,8 @@ def demo():
     #   <bound method LoggingPlugin._create_service of Plugin(id='app.logging.plugin', name='Logging Plugin')>,
     #   {})}
     print("#" * 100)
-    #########################################################################################################################
+#########################################################################################################################
+
     # We notice the following. With the regular analysis service, we have the AnalysisService type service. Its id
     # was not declared as a property at the plugin level. So it does not get published to the yellow pages. But is
     # still available for use.
@@ -78,9 +84,12 @@ def demo():
     # This is a good way to control what services are available to the frontend for
     # querying.
     # Also notice that the payload_model is not avaialble for either, it was not declared in the property dict.
-    ################TEST SERVICES################################################################################################
+
+################TEST SERVICES################################################################################################
+
     # Another interesting thing about payload model. It gets overrided at the plugin level even if set at the service
     # class level. Eg below
+
     regular_task = app.get_service(IAnalysisService, query="type=='regular'")
     dramatiq_task = app.get_service(IAnalysisService, query="type=='dramatiq'")
     print("Testing properties access on services")
@@ -91,18 +100,24 @@ def demo():
     print(f"Dramatic task Payload, not overriden at plugin level: {dramatiq_task.payload_model}")
     # >> '{"args_to_sum": []}'
     print("#" * 100)
-    #########################################################################################################################
+
+#########################################################################################################################
+
     # Accessing the views contributed by plugins
     ui_plugin = app.get_plugin('app.ui.plugin')
     print("Available views:", ui_plugin.views)
     print("#" * 100)
-    #########################################################################################################################
+
+#########################################################################################################################
+
     # The blocking nature of each service can be tested
     # But first test normal calls
     # Setting up the payload and some settings
     payload = {"args_to_sum": [1, 2, 3], "sleep_time": 0.1, "reply": 1}
     N_tasks = 3
-    #########################################################################################################################
+
+#########################################################################################################################
+
     print("Testing regular task")
     result = regular_task.process_task(payload)
     # Received task: {"args_to_sum": [1, 2, 3]}, processing in backend...
@@ -110,7 +125,9 @@ def demo():
     print(result == 6)
     # >> True
     print("#" * 100)
-    # #########################################################################################################################
+
+##########################################################################################################################
+
     print("Testing dramatiq task regular call")
     # Dramatiq is a bit different. It can be non-blocking. So we need to wait for the result to come back on diff thread
     # and ensure the workers are running if the .send is invoked. Else same result as before
@@ -118,7 +135,9 @@ def demo():
     print(result == 6)
     # >> True
     print("#" * 100)
-    #########################################################################################################################
+
+#########################################################################################################################
+
     print("Testing dramatiq task send call")
 
     # clear results
@@ -161,12 +180,14 @@ def demo():
         dramatiq_task.process_task.send(payload)
 
     print("#" * 100)
+
     # The result will be printed on the dramatiq worker process
     # You can boot up one by running the following command in a new terminal
     # dramatiq envisage_sample.services
     # Payload model should also have the response queue routing key in the future for a full implementation to
     # get back results
-    #########################################################################################################################
+
+#########################################################################################################################
 
     time.sleep(1 + (payload["sleep_time"] * N_tasks))
     with open("results.txt") as f:
