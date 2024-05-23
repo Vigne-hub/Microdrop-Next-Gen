@@ -134,7 +134,7 @@ def test_dramatiq_task_send_call(dramatiq_task_setup, results_file):
             dramatiq_task.process_task.send(payload)
         test_worker.join()
 
-    time.sleep(0.2)
+    time.sleep(1)
 
     with open(results_file) as f:
         results = f.readlines()
