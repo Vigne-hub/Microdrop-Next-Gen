@@ -1,6 +1,8 @@
 from PySide6.QtCore import QTimer
 
 from refrac_qt_microdrop.helpers.logger import initialize_logger
+from refrac_qt_microdrop.pydantic_models.dropbot_controller_output_state_model import DBOutputStateModel, \
+    DBChannelsChangedModel, DBVoltageChangedModel, DBChannelsMetastateChanged
 
 logger = initialize_logger(__name__)
 
@@ -24,7 +26,10 @@ for m in to_delete:
 import numpy as np
 from nptyping import NDArray, Shape, UInt8
 
-class DropbotController():
+
+class DropbotController:
+    output_state_true = DBOutputStateModel(Signal='output_state_changed', OutputState=True)
+    output_state_false = DBOutputStateModel(Signal='output_state_changed', OutputState=False)
 
     def __init__(self, parent=None):
         """
@@ -40,7 +45,7 @@ class DropbotController():
         self.connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
         self.channel = self.connection.channel()
 
-        self.channel.exchange_declare(exchange='signals', exchange_type='fanout')
+        self.channel.exchange_declare(exchange='dropbot_signals', exchange_type='fanout')
 
         # self.init_dropbot_proxy()
 
@@ -48,9 +53,9 @@ class DropbotController():
         self.dropbot_timer.timeout.connect(self.init_dropbot_proxy)
         self.dropbot_timer.start(1000)
 
-    def emit_signal(self, signal_name, message):
-        self.channel.basic_publish(exchange='signals', routing_key=signal_name, body=f'{signal_name} {message}')
-        logger.info(f"Emitted signal: {signal_name} with message: {message}")
+    def emit_signal(self, message):
+        self.channel.basic_publish(exchange='dropbot_signals', routing_key='', body=message)
+        logger.info(f"Emitted: {message}")
 
     def init_dropbot_proxy(self):
         """
@@ -96,9 +101,9 @@ class DropbotController():
         # Explicitly check if chip is inserted by reading **active low**
         # `OUTPUT_ENABLE_PIN`.
         if self.proxy.digital_read(OUTPUT_ENABLE_PIN):
-            self.emit_signal('output_state_changed', 'False')
+            self.emit_signal(self.output_state_false)
         else:
-            self.emit_signal('output_state_changed', 'True')
+            self.emit_signal(self.output_state_true)
 
     def output_state_changed(self, signal: dict[str, str]):
         """
@@ -109,9 +114,9 @@ class DropbotController():
             signal (dict[str, str]): The signal data containing the event type.
         """
         if signal['event'] == 'output_enabled':
-            self.emit_signal('output_state_changed', 'True')
+            self.emit_signal(self.output_state_true)
         elif signal['event'] == 'output_disabled':
-            self.emit_signal('output_state_changed', 'False')
+            self.emit_signal(self.output_state_false)
         else:
             logger.warning("Unknown signal received: %s", signal)
 
@@ -126,7 +131,7 @@ class DropbotController():
         if self.proxy is not None:
             try:
                 voltage = self.proxy.high_voltage()
-                self.emit_signal('voltage_changed', str(voltage))
+                self.emit_signal(DBVoltageChangedModel(Signal='voltage_changed', voltage=str(voltage)))
             except OSError:  # No dropbot connected
                 pass
 
@@ -177,7 +182,7 @@ class DropbotController():
         channels = np.array(self.proxy.state_of_channels)
         if (self.last_state != channels).any():
             self.last_state = channels
-            self.emit_signal('channels_changed', str(channels))
+            self.emit_signal(DBChannelsChangedModel(Signal='channels_changed', channels=str(channels)))
         return channels
 
     def set_channels(self, channels: NDArray[Shape['*, 1'], UInt8]):
@@ -226,4 +231,4 @@ class DropbotController():
                 for electrode in drop:
                     drops[electrode] = 'droplet'
 
-            self.emit_signal('channels_metastate_changed', str(drops))
+            self.emit_signal(DBChannelsMetastateChanged(Signal='channels_metastate_changed', Drops=str(drops)))
