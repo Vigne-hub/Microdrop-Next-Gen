@@ -3,7 +3,7 @@ import time
 from traits.has_traits import provides, HasTraits
 from traits.trait_types import Str
 
-from envisage_sample.interfaces.i_analysis_service import IAnalysisService
+from ..interfaces.i_analysis_service import IAnalysisService
 
 
 @provides(IAnalysisService)
