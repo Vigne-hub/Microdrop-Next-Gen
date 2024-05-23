@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QPushButton, QLabel
 from envisage.api import Plugin
 from traits.api import List, Instance
-from refrac_qt_microdrop.interfaces import IDropbotControllerService
+from refrac_qt_microdrop.interfaces.dropbot_interface import IDropbotControllerService
 
 
 class MainWindow(QMainWindow):
