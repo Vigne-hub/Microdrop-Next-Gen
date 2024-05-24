@@ -3,17 +3,17 @@ from traits.api import Interface
 
 class IElectrodeControllerService(Interface):
 
-    def toggle_state(self, channel: int):
+    def toggle_all_electrodes_off(self):
         pass
 
-    def set_state(self, channel: int, state: bool):
+    def toggle_on_batch(self, electrodes):
         pass
 
-    def get_state(self, channel: int) -> bool:
+    def sync_electrode_states(self, states):
         pass
 
-    def set_metastate(self, channel: int, metastate: object):
+    def sync_electrode_metastates(self, metastates):
         pass
 
-    def get_metastate(self, channel: int) -> object:
+    def check_electrode_range(self, n_channels):
         pass

@@ -1,6 +1,7 @@
 from PySide6.QtCore import QTimer
 
 from refrac_qt_microdrop.helpers.logger import initialize_logger
+from refrac_qt_microdrop.helpers.pub_sub_manager import PubSubManager
 from refrac_qt_microdrop.pydantic_models.dropbot_controller_output_state_model import DBOutputStateModel, \
     DBChannelsChangedModel, DBVoltageChangedModel, DBChannelsMetastateChanged
 
@@ -42,10 +43,11 @@ class DropbotController:
         self.proxy: Union[None, dropbot.SerialProxy] = None
         self.last_state: NDArray[Shape['*, 1'], UInt8] = np.zeros(128, dtype='uint8')
 
-        self.connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
-        self.channel = self.connection.channel()
-
-        self.channel.exchange_declare(exchange='dropbot_signals', exchange_type='fanout')
+        self.pub_sub_manager = PubSubManager()
+        self.pub_sub_manager.create_publisher(publisher_name=f'dropbot_publisher', exchange_name='output_state_changed')
+        self.pub_sub_manager.create_publisher(publisher_name=f'dropbot_publisher', exchange_name='channels_changed')
+        self.pub_sub_manager.create_publisher(publisher_name=f'dropbot_publisher', exchange_name='voltage_changed')
+        self.pub_sub_manager.create_publisher(publisher_name=f'dropbot_publisher', exchange_name='channels_metastate_changed')
 
         # self.init_dropbot_proxy()
 
@@ -54,7 +56,7 @@ class DropbotController:
         self.dropbot_timer.start(1000)
 
     def emit_signal(self, message):
-        self.channel.basic_publish(exchange='dropbot_signals', routing_key='', body=message)
+        self.pub_sub_manager.publish(message=message, publisher=f'dropbot_publisher')
         logger.info(f"Emitted: {message}")
 
     def init_dropbot_proxy(self):

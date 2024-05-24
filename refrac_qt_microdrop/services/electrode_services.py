@@ -10,30 +10,22 @@ logger = initialize_logger(__name__)
 class ElectrodeService(HasTraits):
     electrode_actor = ElectrodeActor()
 
-    def toggle_state(self, channel: int):
-        logger.debug(f"Attempting to send toggle_state command to queue for channel {channel}")
-        self.electrode_actor.process_task.send({"name": "toggle_state", "args": [channel], "kwargs": {}})
+    def toggle_all_electrodes_off(self):
+        logger.debug("Sending toggle_all_electrodes_off command to queue")
+        self.electrode_actor.process_task.send({"name": "toggle_all_electrodes_off", "args": [], "kwargs": {}})
 
-    def set_state(self, channel: int, state: bool):
-        logger.debug(f"Attempting to send set_state command to queue for channel {channel} with state {state}")
-        self.electrode_actor.process_task.send({"name": "set_state", "args": [channel, state], "kwargs": {}})
+    def toggle_on_batch(self, electrodes):
+        logger.debug("Sending toggle_on_batch command to queue with electrodes: %s", electrodes)
+        self.electrode_actor.process_task.send({"name": "toggle_on_batch", "args": [electrodes], "kwargs": {}})
 
-    def get_state(self, channel: int) -> bool:
-        logger.debug(f"Attempting to send get_state command to queue for channel {channel}")
-        return self.electrode_actor.process_task.send_with_options(
-            {"name": "get_state", "args": [channel], "kwargs": {}},
-            block=True,
-            result_returning=True,
-        ).result()
+    def sync_electrode_states(self, states):
+        logger.debug("Sending sync_electrode_states command to queue with states: %s", states)
+        self.electrode_actor.process_task.send({"name": "sync_electrode_states", "args": [states], "kwargs": {}})
 
-    def set_metastate(self, channel: int, metastate: object):
-        logger.debug(f"Attempting to send set_metastate command to queue for channel {channel} with metastate {metastate}")
-        self.electrode_actor.process_task.send({"name": "set_metastate", "args": [channel, metastate], "kwargs": {}})
+    def sync_electrode_metastates(self, metastates):
+        logger.debug("Sending sync_electrode_metastates command to queue with metastates: %s", metastates)
+        self.electrode_actor.process_task.send({"name": "sync_electrode_metastates", "args": [metastates], "kwargs": {}})
 
-    def get_metastate(self, channel: int) -> object:
-        logger.debug(f"Attempting to send get_metastate command to queue for channel {channel}")
-        return self.electrode_actor.process_task.send_with_options(
-            {"name": "get_metastate", "args": [channel], "kwargs": {}},
-            block=True,
-            result_returning=True,
-        ).result()
+    def check_electrode_range(self, n_channels):
+        logger.debug("Sending check_electrode_range command to queue with n_channels: %s", n_channels)
+        self.electrode_actor.process_task.send({"name": "check_electrode_range", "args": [n_channels], "kwargs": {}})

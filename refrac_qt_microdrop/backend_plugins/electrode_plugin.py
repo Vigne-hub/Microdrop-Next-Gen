@@ -1,4 +1,3 @@
-# plugins/electrode_plugin.py
 from envisage.api import Plugin, ServiceOffer
 from traits.api import List
 import dramatiq
@@ -18,6 +17,7 @@ dramatiq.set_broker(rabbitmq_broker)
 for el in dramatiq.get_broker().middleware:
     if el.__module__ == "dramatiq.middleware.prometheus":
         dramatiq.get_broker().middleware.remove(el)
+
 
 class ElectrodeControllerPlugin(Plugin):
     id = 'refrac_qt_microdrop.electrode_controller'
@@ -51,35 +51,37 @@ class ElectrodeControllerPlugin(Plugin):
         worker_thread.daemon = True
         worker_thread.start()
 
+
 class ElectrodeActor:
 
     @staticmethod
     @dramatiq.actor(queue_name='electrode_actions')
     def process_task(task):
-        from refrac_qt_microdrop.helpers.electrode_helper import Electrode, Electrodes
+        from refrac_qt_microdrop.helpers.electrode_helper import Electrodes
+
         electrodes = Electrodes()
 
-        print(f"Processing task: {task}")
-        task_name = task.get("name")
-        print(f"Task name: {task_name}")
-        task_args = task.get("args")
-        print(f"Task args: {task_args}")
-        task_kwargs = task.get("kwargs")
-        print(f"Task kwargs: {task_kwargs}")
         logger.info(f"Processing task: {task}")
+        task_name = task.get("name")
+        task_args = task.get("args")
+        task_kwargs = task.get("kwargs")
+
+        print(f"Processing task: {task}")
+        print(f"Task name: {task_name}")
+        print(f"Task args: {task_args}")
+        print(f"Task kwargs: {task_kwargs}")
 
         # Map task names to Electrode methods
         task_map = {
-            "toggle_state": lambda: electrodes[task_args[0]].toggle_state(),
-            "set_state": lambda: electrodes[task_args[0]].set_state(*task_args[1:], **task_kwargs),
-            "get_state": lambda: electrodes[task_args[0]].get_state(),
-            "set_metastate": lambda: electrodes[task_args[0]].set_metastate(*task_args[1:], **task_kwargs),
-            "get_metastate": lambda: electrodes[task_args[0]].get_metastate(),
+            "toggle_all_electrodes_off": electrodes.toggle_all_electrodes_off,
+            "toggle_on_batch": lambda: electrodes.toggle_on_batch(*task_args, **task_kwargs),
+            "sync_electrode_states": lambda: electrodes.sync_electrode_states(*task_args),
+            "sync_electrode_metastates": lambda: electrodes.sync_electrode_metastates(*task_args),
+            "check_electrode_range": lambda: electrodes.check_electrode_range(*task_args)
         }
 
         if task_name in task_map:
             result = task_map[task_name]()
-            print(f"Task {task_name} completed with result: {result}")
             logger.info(f"Task {task_name} completed with result: {result}")
             return result
         else:
