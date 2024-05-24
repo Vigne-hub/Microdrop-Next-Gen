@@ -1,59 +1,85 @@
-# frontend_plugins/dropbot_test_GUI.py
-from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QPushButton, QLabel
+# dropbot_test_GUI.py
 from envisage.api import Plugin
-from refrac_qt_microdrop.control_plugins.event_hub import EventHubPlugin
+from traits.api import List
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QLabel, QLineEdit, QFormLayout
+from refrac_qt_microdrop.interfaces.event_hub_interface import IEventHubService
 
-
-class MainWindow(QMainWindow):
-    def __init__(self, event_hub):
+class DropbotGUI(QWidget):
+    def __init__(self, event_hub_service):
         super().__init__()
-        self.event_hub = event_hub
+        self.event_hub_service = event_hub_service
         self.init_ui()
 
     def init_ui(self):
-        self.setWindowTitle("Controller Test GUI")
-        self.setGeometry(100, 100, 600, 400)
-
-        central_widget = QWidget(self)
-        self.setCentralWidget(central_widget)
+        self.setWindowTitle('Dropbot Controller')
+        self.setGeometry(100, 100, 300, 200)
 
         layout = QVBoxLayout()
 
-        # Dropbot Controls
-        self.status_label_dropbot = QLabel("Dropbot Status: Ready", self)
-        layout.addWidget(self.status_label_dropbot)
+        form_layout = QFormLayout()
 
-        init_btn = QPushButton("Initialize Dropbot", self)
-        init_btn.clicked.connect(lambda: self.event_hub.init_dropbot(self.update_status_dropbot))
-        layout.addWidget(init_btn)
+        self.voltage_input = QLineEdit()
+        self.frequency_input = QLineEdit()
+        self.channel_input = QLineEdit()
+        self.state_input = QLineEdit()
+        self.threshold_input = QLineEdit()
 
-        voltage_btn = QPushButton("Set Voltage to 10", self)
-        voltage_btn.clicked.connect(lambda: self.event_hub.set_voltage(10, self.update_status_dropbot))
-        layout.addWidget(voltage_btn)
+        form_layout.addRow('Voltage:', self.voltage_input)
+        form_layout.addRow('Frequency:', self.frequency_input)
+        form_layout.addRow('Channel:', self.channel_input)
+        form_layout.addRow('State:', self.state_input)
+        form_layout.addRow('Threshold:', self.threshold_input)
 
-        frequency_btn = QPushButton("Set Frequency to 10000", self)
-        frequency_btn.clicked.connect(lambda: self.event_hub.set_frequency(10000, self.update_status_dropbot))
-        layout.addWidget(frequency_btn)
+        self.status_label = QLabel('Status: Ready')
 
-        hv_btn = QPushButton("Enable High Voltage", self)
-        hv_btn.clicked.connect(lambda: self.event_hub.set_hv(True, self.update_status_dropbot))
-        layout.addWidget(hv_btn)
+        self.buttons = {
+            "Poll Voltage": QPushButton('Poll Voltage'),
+            "Set Voltage": QPushButton('Set Voltage'),
+            "Set Frequency": QPushButton('Set Frequency'),
+            "Set HV": QPushButton('Set HV'),
+            "Get Channels": QPushButton('Get Channels'),
+            "Set Channels": QPushButton('Set Channels'),
+            "Set Channel Single": QPushButton('Set Channel Single'),
+            "Droplet Search": QPushButton('Droplet Search')
+        }
 
-        channels_btn = QPushButton("Get Channels", self)
-        channels_btn.clicked.connect(lambda: self.event_hub.get_channels(self.update_status_dropbot))
-        layout.addWidget(channels_btn)
+        for button_name, button in self.buttons.items():
+            layout.addWidget(button)
+            button.clicked.connect(lambda _, bn=button_name: self.button_clicked(bn))
 
-        central_widget.setLayout(layout)
+        layout.addWidget(self.status_label)
+        self.setLayout(layout)
 
-    def update_status_dropbot(self, status):
-        self.status_label_dropbot.setText(status)
+    def button_clicked(self, button_name):
+        task_map = {
+            "Poll Voltage": ("DropbotControllerService", "poll_voltage", [], {}),
+            "Set Voltage": ("IDropbotControllerService", "set_voltage", [self.voltage_input.text()], {}),
+            "Set Frequency": ("IDropbotControllerService", "set_frequency", [self.frequency_input.text()], {}),
+            "Set HV": ("IDropbotControllerService", "set_hv", [self.state_input.text()], {}),
+            "Get Channels": ("IDropbotControllerService", "get_channels", [], {}),
+            "Set Channels": ("IDropbotControllerService", "set_channels", [self.channel_input.text()], {}),
+            "Set Channel Single": ("IDropbotControllerService", "set_channel_single", [self.channel_input.text(), self.state_input.text()], {}),
+            "Droplet Search": ("IDropbotControllerService", "droplet_search", [self.threshold_input.text()], {})
+        }
 
+        if button_name in task_map:
+            plugin_name, task_name, args, kwargs = task_map[button_name]
+            self.event_hub_service.send_task(plugin_name, task_name, args, kwargs)
+            self.status_label.setText(f'Status: {button_name} clicked...')
 
-class GUIPlugin(Plugin):
-    id = 'refrac_qt_microdrop.gui_plugin'
+class DropbotGUIPlugin(Plugin):
+    id = 'refrac_qt_microdrop.gui'
+    name = 'Dropbot GUI Plugin'
+    service_offers = List(contributes_to='envisage.service_offers')
 
     def start(self):
         super().start()
-        event_hub = self.application.get_service(EventHubPlugin)
-        self.window = MainWindow(event_hub)
-        self.window.show()
+        self._register_services()
+        self._create_gui()
+
+    def _register_services(self):
+        event_hub_service = self.application.get_service(IEventHubService)
+        self._gui = DropbotGUI(event_hub_service)
+
+    def _create_gui(self):
+        self._gui.show()

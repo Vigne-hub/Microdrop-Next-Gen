@@ -3,14 +3,14 @@ import sys
 from PySide6.QtWidgets import QApplication
 from envisage.api import Application
 from backend_plugins.dropbot_controller import DropbotControllerPlugin
-from frontend_plugins.dropbot_test_GUI import GUIPlugin
+from frontend_plugins.dropbot_test_GUI import DropbotGUIPlugin
 from refrac_qt_microdrop.control_plugins.event_hub import EventHubPlugin
 
 
 def main():
     app = QApplication(sys.argv)
 
-    plugins = [DropbotControllerPlugin(), EventHubPlugin(), GUIPlugin()]
+    plugins = [DropbotControllerPlugin(), EventHubPlugin(), DropbotGUIPlugin()]
     envisage_app = Application(plugins=plugins)
     envisage_app.start()
 

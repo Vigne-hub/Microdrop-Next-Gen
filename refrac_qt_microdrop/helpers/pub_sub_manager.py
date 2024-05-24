@@ -19,7 +19,7 @@ class PubSubManager:
         channel = connection.channel()
         channel.exchange_declare(exchange=exchange_name, exchange_type='fanout')
         self.publishers[publisher_name] = (connection, channel, exchange_name)
-        print("created {publisher_name} for {exchange_name}")
+        print(f"created {publisher_name} for {exchange_name}")
         logger.info(f"Publisher {publisher_name} created for exchange {exchange_name}")
 
     def publish(self, message: BaseModel, publisher: str):
