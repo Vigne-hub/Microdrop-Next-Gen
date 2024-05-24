@@ -1,6 +1,6 @@
 from traits.api import HasTraits, provides
 from refrac_qt_microdrop.interfaces.dropbot_interface import IDropbotControllerService
-from refrac_qt_microdrop.helpers.dropbot_controller_helper import DropbotController
+from refrac_qt_microdrop.backend_logic.dropbot_controller_helper import DropbotController
 from refrac_qt_microdrop.backend_plugins.dropbot_controller import DropbotActor
 from refrac_qt_microdrop.helpers.logger import initialize_logger
 

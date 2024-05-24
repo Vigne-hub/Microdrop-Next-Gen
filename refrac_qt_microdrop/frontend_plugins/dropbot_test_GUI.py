@@ -1,8 +1,7 @@
 # frontend_plugins/dropbot_test_GUI.py
 from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QPushButton, QLabel
-from PySide6.QtCore import Qt
 from envisage.api import Plugin
-from refrac_qt_microdrop.event_hub import EventHubPlugin
+from refrac_qt_microdrop.control_plugins.event_hub import EventHubPlugin
 
 
 class MainWindow(QMainWindow):
@@ -44,37 +43,10 @@ class MainWindow(QMainWindow):
         channels_btn.clicked.connect(lambda: self.event_hub.get_channels(self.update_status_dropbot))
         layout.addWidget(channels_btn)
 
-        # Electrode Controls
-        self.status_label_electrode = QLabel("Electrode Status: Ready", self)
-        layout.addWidget(self.status_label_electrode)
-
-        toggle_all_off_btn = QPushButton("Toggle All Electrodes Off", self)
-        toggle_all_off_btn.clicked.connect(lambda: self.event_hub.toggle_all_electrodes_off(self.update_status_electrode))
-        layout.addWidget(toggle_all_off_btn)
-
-        toggle_batch_btn = QPushButton("Toggle Batch Electrodes On", self)
-        toggle_batch_btn.clicked.connect(lambda: self.event_hub.toggle_on_batch(["electrode1", "electrode2"], self.update_status_electrode))
-        layout.addWidget(toggle_batch_btn)
-
-        sync_states_btn = QPushButton("Sync Electrode States", self)
-        sync_states_btn.clicked.connect(lambda: self.event_hub.sync_electrode_states([0, 1, 0, 1], self.update_status_electrode))
-        layout.addWidget(sync_states_btn)
-
-        sync_metastates_btn = QPushButton("Sync Electrode Metastates", self)
-        sync_metastates_btn.clicked.connect(lambda: self.event_hub.sync_electrode_metastates(["state1", "state2"], self.update_status_electrode))
-        layout.addWidget(sync_metastates_btn)
-
-        check_range_btn = QPushButton("Check Electrode Range", self)
-        check_range_btn.clicked.connect(lambda: self.event_hub.check_electrode_range(128, self.update_status_electrode))
-        layout.addWidget(check_range_btn)
-
         central_widget.setLayout(layout)
 
     def update_status_dropbot(self, status):
         self.status_label_dropbot.setText(status)
-
-    def update_status_electrode(self, status):
-        self.status_label_electrode.setText(status)
 
 
 class GUIPlugin(Plugin):

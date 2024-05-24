@@ -4,7 +4,7 @@ import dramatiq
 from dramatiq.brokers.rabbitmq import RabbitmqBroker
 import logging
 
-from refrac_qt_microdrop.helpers.dropbot_controller_helper import DropbotController
+from refrac_qt_microdrop.backend_logic.dropbot_controller_helper import DropbotController
 from refrac_qt_microdrop.interfaces.dropbot_interface import IDropbotControllerService
 
 # Initialize logger
