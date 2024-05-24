@@ -17,11 +17,6 @@ class DeviceViewerWidget(QWidget):
     """
     A widget for viewing the device
     """
-    manual_mode_changed: SignalInstance = Signal(bool)
-    voltage_changed: SignalInstance = Signal(int)
-    frequency_changed: SignalInstance = Signal(int)
-    find_drops_activated: SignalInstance = Signal(float)
-    new_electrode_layer_signal: SignalInstance = Signal(ElectrodeLayer)
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
@@ -65,7 +60,6 @@ class DeviceViewerWidget(QWidget):
         self.voltage_spinbox = QSpinBox()
         self.voltage_spinbox.setSuffix('V')
         self.voltage_spinbox.setRange(0, 140)
-        self.voltage_spinbox.valueChanged.connect(self.voltage_changed)
         self.manual_layout.addWidget(self.voltage_spinbox, row, 1)
 
         # Frequency
@@ -75,7 +69,6 @@ class DeviceViewerWidget(QWidget):
         self.frequency_spinbox.setStepType(QSpinBox.StepType.AdaptiveDecimalStepType)
         self.frequency_spinbox.setSuffix('Hz')
         self.frequency_spinbox.setValue(10000)
-        self.frequency_spinbox.valueChanged.connect(self.frequency_changed)
         self.manual_layout.addWidget(self.frequency_spinbox, row, 1)
 
         self.manual_layout.addWidget(QLabel('Threshold:'), row := row + 1, 0)
@@ -98,11 +91,9 @@ class DeviceViewerWidget(QWidget):
         if checked:
             for i in range(self.manual_layout.count()):
                 self.manual_layout.itemAt(i).widget().show()
-                self.manual_mode_changed.emit(True)
         else:
             for i in range(self.manual_layout.count()):
                 self.manual_layout.itemAt(i).widget().hide()
-                self.manual_mode_changed.emit(False)
 
     def set_voltage(self, voltage: float):
         self.voltage_label.setText(f'Voltage: {voltage:.2f} V')
@@ -129,10 +120,6 @@ class DeviceViewerWidget(QWidget):
         # add the new electrode layer
         self.add_layer(new_electrode_layer)
         logger.debug(f"Layer {new_electrode_layer.id} added -> {device_path}")
-
-        # setup dropbot controller connections for this new electrode layer
-        # connected to new_electrode_layer_connections slot in the main App
-        self.new_electrode_layer_signal.emit(new_electrode_layer)
 
         # set the current electrode layer to this new electrode layer
         self.current_electrode_layer = new_electrode_layer
