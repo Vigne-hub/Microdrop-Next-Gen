@@ -1,4 +1,5 @@
 # plugins/event_hub_plugin.py
+import importlib
 import logging
 
 import dramatiq
@@ -57,6 +58,9 @@ class EventHubPlugin(Plugin):
 
 class EventHubActor:
 
+    list_of_protocols = {}
+    imported_modules = []
+
     @staticmethod
     @dramatiq.actor(queue_name='eventhub_actions')
     def process_task(task):
@@ -71,9 +75,17 @@ class EventHubActor:
             logger.error("No Envisage application instance found.")
             return
 
-        service = application.get_service(service_name)
-        if not service:
-            logger.error(f"Service '{service_name}' not found.")
+        interface_module, protocol_name = service_name.split('.')
+
+        if interface_module not in EventHubActor.list_of_protocols:
+            EventHubActor.list_of_protocols[interface_module] = protocol_name
+            imported_module = importlib.import_module(f"refrac_qt_microdrop.interfaces.{interface_module}")
+            EventHubActor.imported_modules.append(imported_module)
+
+        try:
+            service = application.get_service(getattr(importlib.import_module(f"refrac_qt_microdrop.interfaces.{interface_module}"), protocol_name))
+        except AttributeError as e:
+            logger.error(f"Error while getting service: {e}")
             return
 
         if not hasattr(service, task_name):

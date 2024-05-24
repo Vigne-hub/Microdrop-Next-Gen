@@ -52,14 +52,14 @@ class DropbotGUI(QWidget):
 
     def button_clicked(self, button_name):
         task_map = {
-            "Poll Voltage": ("DropbotControllerService", "poll_voltage", [], {}),
-            "Set Voltage": ("IDropbotControllerService", "set_voltage", [self.voltage_input.text()], {}),
-            "Set Frequency": ("IDropbotControllerService", "set_frequency", [self.frequency_input.text()], {}),
-            "Set HV": ("IDropbotControllerService", "set_hv", [self.state_input.text()], {}),
-            "Get Channels": ("IDropbotControllerService", "get_channels", [], {}),
-            "Set Channels": ("IDropbotControllerService", "set_channels", [self.channel_input.text()], {}),
-            "Set Channel Single": ("IDropbotControllerService", "set_channel_single", [self.channel_input.text(), self.state_input.text()], {}),
-            "Droplet Search": ("IDropbotControllerService", "droplet_search", [self.threshold_input.text()], {})
+            "Poll Voltage": ("dropbot_interface.IDropbotControllerService", "poll_voltage", [], {}),
+            "Set Voltage": ("dropbot_interface.IDropbotControllerService", "set_voltage", [self.voltage_input.text()], {}),
+            "Set Frequency": ("dropbot_interface.IDropbotControllerService", "set_frequency", [self.frequency_input.text()], {}),
+            "Set HV": ("dropbot_interface.IDropbotControllerService", "set_hv", [self.state_input.text()], {}),
+            "Get Channels": ("dropbot_interface.IDropbotControllerService", "get_channels", [], {}),
+            "Set Channels": ("dropbot_interface.IDropbotControllerService", "set_channels", [self.channel_input.text()], {}),
+            "Set Channel Single": ("dropbot_interface.IDropbotControllerService", "set_channel_single", [self.channel_input.text(), self.state_input.text()], {}),
+            "Droplet Search": ("dropbot_interface.IDropbotControllerService", "droplet_search", [self.threshold_input.text()], {})
         }
 
         if button_name in task_map:
