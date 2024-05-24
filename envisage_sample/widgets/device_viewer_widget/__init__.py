@@ -1,8 +1,4 @@
 import os
-import time
-import numpy as np
-
-from datetime import datetime
 
 from PySide6.QtCore import Signal, SignalInstance, QSize
 from PySide6.QtGui import QSurfaceFormat
@@ -12,7 +8,7 @@ from PySide6.QtWidgets import QWidget, QPushButton, QGraphicsScene, QBoxLayout, 
     QSpinBox, QFileDialog
 
 from envisage_sample.widgets import initialize_logger
-from .device_viewer_helpers import ElectrodeLayer, AutoFitGraphicsView
+from .electrodes_view import ElectrodeLayer, AutoFitGraphicsView
 
 logger = initialize_logger(__name__)
 
@@ -82,18 +78,7 @@ class DeviceViewerWidget(QWidget):
         self.frequency_spinbox.valueChanged.connect(self.frequency_changed)
         self.manual_layout.addWidget(self.frequency_spinbox, row, 1)
 
-        # Find Drops
-        self.find_drops_button = QPushButton('Find Drops')
-        self.manual_layout.addWidget(self.find_drops_button, row := row + 1, 0)
-        self.find_drops_button.clicked.connect(self.find_drops)
-        self.clear_drops_button = QPushButton('Clear Drops')
-        self.clear_drops_button.clicked.connect(self.clear_drops)
-        self.manual_layout.addWidget(self.clear_drops_button, row, 1)
-        self.find_drops_threshold_spinbox = QSpinBox()
-        self.find_drops_threshold_spinbox.setSuffix('pF')
-        self.find_drops_threshold_spinbox.setRange(0, 500)
         self.manual_layout.addWidget(QLabel('Threshold:'), row := row + 1, 0)
-        self.manual_layout.addWidget(self.find_drops_threshold_spinbox, row, 1)
 
         self.current_electrode_layer = None
 
@@ -119,9 +104,6 @@ class DeviceViewerWidget(QWidget):
                 self.manual_layout.itemAt(i).widget().hide()
                 self.manual_mode_changed.emit(False)
 
-    def find_drops(self):
-        self.find_drops_activated.emit(self.find_drops_threshold_spinbox.value() * 1e-12)
-
     def set_voltage(self, voltage: float):
         self.voltage_label.setText(f'Voltage: {voltage:.2f} V')
 
@@ -130,15 +112,6 @@ class DeviceViewerWidget(QWidget):
             self.set_frame_colour('green')
         else:
             self.set_frame_colour('red')
-
-    def clear_drops(self):
-        layer = self.current_electrode_layer
-        try:
-            layer.clear_states()
-            layer.clear_metastates()
-
-        except AttributeError:
-            print("No SVG mapping has been set")
 
     def set_frame_colour(self, colour: str):
         self.view.setStyleSheet(f'#device_view {{ border: 5px solid {colour}; }}')
@@ -176,7 +149,6 @@ class DeviceViewerWidget(QWidget):
             self.scene.removeItem(self.current_electrode_layer)
             logger.debug("Removed current electrode layer")
             self.scene.clear()
-            # self.scene.removeItem(self.current_electrode_layer)
             logger.debug("Removed current electrode layer")
             self.current_electrode_layer = None
             self.scene.update()

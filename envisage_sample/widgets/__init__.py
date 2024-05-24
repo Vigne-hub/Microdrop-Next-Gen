@@ -8,7 +8,7 @@ from PySide6.QtCore import QCoreApplication, QSettings
 APP_LEVEl_LOGFILE = f"application_logs{os.sep}application.log.{time.strftime('%Y-%m-%d_%H-%M-%S')}"
 
 
-def initialize_logger(name, level="INFO", log_file_path=APP_LEVEl_LOGFILE):
+def initialize_logger(name, level="DEBUG", log_file_path=APP_LEVEl_LOGFILE):
     levels = {
         "DEBUG": logging.DEBUG,
         "INFO": logging.INFO,
