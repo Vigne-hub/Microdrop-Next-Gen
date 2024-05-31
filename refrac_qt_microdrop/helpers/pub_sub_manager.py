@@ -34,6 +34,7 @@ class PubSubManager:
             logger.info(f"Published message: {message.model_dump_json()} to {exchange_name}")
         else:
             logger.error(f"Publisher {publisher} not found")
+            raise KeyError(f"Publisher {publisher} not found")
 
     def create_subscriber(self, subscriber_name: str):
         connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
@@ -53,6 +54,7 @@ class PubSubManager:
             self.info_to_start_consumer[subscriber] = (sub_channel, queue_name)
         else:
             logger.error(f"Subscriber {subscriber} not found")
+            raise KeyError(f"Subscriber {subscriber} not found")
 
     def start_consumer(self, subscriber: str, func: Callable[[Any, Any, Any, Any], None]):
         print("Attempting to start consumer")

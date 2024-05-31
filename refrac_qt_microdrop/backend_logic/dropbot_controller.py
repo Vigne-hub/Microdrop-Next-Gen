@@ -120,7 +120,7 @@ class DropbotController:
         elif signal['event'] == 'output_disabled':
             self.emit_signal(self.output_state_false)
         else:
-            logger.warning("Unknown signal received: %s", signal)
+            raise ValueError("Unknown signal received")
 
     # def signal_wrapper(self, signal):
     #     self.dropbot_signal.emit(signal)
