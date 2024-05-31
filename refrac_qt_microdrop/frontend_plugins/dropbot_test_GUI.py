@@ -3,6 +3,7 @@ from envisage.api import Plugin
 from traits.api import List
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QLabel, QLineEdit, QFormLayout
 from refrac_qt_microdrop.interfaces.event_hub_interface import IEventHubService
+import numpy as np
 
 
 class DropbotGUI(QWidget):
@@ -55,17 +56,17 @@ class DropbotGUI(QWidget):
         task_map = {
             "Poll Voltage": ("dropbot_interface.IDropbotControllerService", "poll_voltage", [], {}),
             "Set Voltage": (
-            "dropbot_interface.IDropbotControllerService", "set_voltage", [self.voltage_input.text()], {}),
+            "dropbot_interface.IDropbotControllerService", "set_voltage", [10], {}),
             "Set Frequency": (
-            "dropbot_interface.IDropbotControllerService", "set_frequency", [self.frequency_input.text()], {}),
-            "Set HV": ("dropbot_interface.IDropbotControllerService", "set_hv", [self.state_input.text()], {}),
+            "dropbot_interface.IDropbotControllerService", "set_frequency", [8], {}),
+            "Set HV": ("dropbot_interface.IDropbotControllerService", "set_hv", [12], {}),
             "Get Channels": ("dropbot_interface.IDropbotControllerService", "get_channels", [], {}),
             "Set Channels": (
-            "dropbot_interface.IDropbotControllerService", "set_channels", [self.channel_input.text()], {}),
+            "dropbot_interface.IDropbotControllerService", "set_channels", [np.zeros(128, dtype='uint8').tolist()], {}),
             "Set Channel Single": ("dropbot_interface.IDropbotControllerService", "set_channel_single",
-                                   [self.channel_input.text(), self.state_input.text()], {}),
+                                   [1, True], {}),
             "Droplet Search": (
-            "dropbot_interface.IDropbotControllerService", "droplet_search", [self.threshold_input.text()], {})
+            "dropbot_interface.IDropbotControllerService", "droplet_search", [3.3], {})
         }
 
         if button_name in task_map:

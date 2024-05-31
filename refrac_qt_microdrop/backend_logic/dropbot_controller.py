@@ -1,3 +1,5 @@
+from time import sleep
+
 from PySide6.QtCore import QTimer
 
 from refrac_qt_microdrop.helpers.logger import initialize_logger
@@ -144,6 +146,7 @@ class DropbotController:
         Args:
             voltage (int): Desired voltage setting.
         """
+        sleep(10)
         print(voltage)
         if self.proxy is not None:
             self.proxy.voltage = voltage
@@ -156,6 +159,7 @@ class DropbotController:
         Args:
             frequency (int): Desired frequency setting.
         """
+        print(frequency)
         if self.proxy is not None:
             self.proxy.frequency = frequency
         logger.info("Frequency set to %d", frequency)
