@@ -4,6 +4,11 @@ from envisage.api import Application
 from refrac_qt_microdrop.backend_plugins.dropbot_controller import DropbotControllerPlugin
 from unittest.mock import MagicMock
 
+"""
+This testing module is used to test the Plugin structure with an initial focus on the dropbot plugin.
+The DropbotControllerPlugin is a plugin that provides the DropbotControllerService to the application.
+This tests the plugin registration, service registration, and service methods
+"""
 
 @pytest.fixture(scope="module")
 def app():

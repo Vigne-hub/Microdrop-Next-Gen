@@ -4,6 +4,13 @@ import pytest
 from pydantic import BaseModel
 from refrac_qt_microdrop.helpers.pub_sub_manager import PubSubManager
 
+"""
+This testing module is used to test the PubSubManager class. 
+The PubSubManager class is used to manage the publishers and subscribers in the application.
+This tests publisher, subscriber creation, binding, and message publishing.
+
+Note for future: Error type everything in the code instead of just logger error messages.
+"""
 
 class TestMessage(BaseModel):
     data: str

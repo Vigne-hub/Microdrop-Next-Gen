@@ -1,13 +1,17 @@
 import pytest
 from unittest.mock import MagicMock, patch
 import numpy as np
-from nptyping import NDArray, Shape, UInt8
-from refrac_qt_microdrop.pydantic_models.dropbot_controller_output_state_model import (
-    DBOutputStateModel, DBChannelsChangedModel, DBVoltageChangedModel, DBChannelsMetastateChanged
-)
 from refrac_qt_microdrop.backend_logic.dropbot_controller import DropbotController
 from refrac_qt_microdrop.helpers.pub_sub_manager import PubSubManager
 
+"""
+This testing module is used to test the DropbotController class (refractored mike+vig/mig updated version).
+The DropbotController class is used to manage the Dropbot system via a serial proxy.
+This tests the initialization, signal emission, output state change, voltage, frequency, hv, channels, and droplet search.
+
+Note for future: figure out how to do the testing with internal messaging signals in the methods 
+so that I can test without using exact code and just call methods
+"""
 
 @pytest.fixture
 def dropbot_controller():
