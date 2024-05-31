@@ -29,6 +29,7 @@ class DropbotControllerPlugin(Plugin):
         self._register_services()
         logger.info("DropbotController Plugin started")
         self._start_worker()
+        init_global_dropbot()
 
     def _register_services(self):
         dropbot_service = self._create_service()
@@ -53,6 +54,14 @@ class DropbotControllerPlugin(Plugin):
         worker_thread.start()
 
 
+global dropbot
+
+
+def init_global_dropbot():
+    global dropbot
+    dropbot = DropbotController()
+
+
 class DropbotActor:
 
     @staticmethod
@@ -67,16 +76,20 @@ class DropbotActor:
         print(f"Task kwargs: {task_kwargs}")
         logger.info(f"Processing task: {task}")
 
+        if dropbot is None:
+            logger.error("DropbotController instance is not initialized.")
+            return
+
         # Map task names to DropbotController methods
         task_map = {
-            "poll_voltage": lambda: DropbotController().poll_voltage(),
-            "set_voltage": lambda: DropbotController().set_voltage(*task_args, **task_kwargs),
-            "set_frequency": lambda: DropbotController().set_frequency(*task_args, **task_kwargs),
-            "set_hv": lambda: DropbotController().set_hv(*task_args, **task_kwargs),
-            "get_channels": lambda: DropbotController().get_channels(),
-            "set_channels": lambda: DropbotController().set_channels(*task_args, **task_kwargs),
-            "set_channel_single": lambda: DropbotController().set_channel_single(*task_args, **task_kwargs),
-            "droplet_search": lambda: DropbotController().droplet_search(*task_args, **task_kwargs),
+            "poll_voltage": lambda: dropbot.poll_voltage(),
+            "set_voltage": lambda: dropbot.set_voltage(*task_args, **task_kwargs),
+            "set_frequency": lambda: dropbot.set_frequency(*task_args, **task_kwargs),
+            "set_hv": lambda: dropbot.set_hv(*task_args, **task_kwargs),
+            "get_channels": lambda: dropbot.get_channels(),
+            "set_channels": lambda: dropbot.set_channels(*task_args, **task_kwargs),
+            "set_channel_single": lambda: dropbot.set_channel_single(*task_args, **task_kwargs),
+            "droplet_search": lambda: dropbot.droplet_search(*task_args, **task_kwargs),
         }
 
         if task_name in task_map:

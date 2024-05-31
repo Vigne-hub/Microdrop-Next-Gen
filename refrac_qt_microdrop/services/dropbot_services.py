@@ -9,7 +9,6 @@ logger = initialize_logger(__name__)
 
 @provides(IDropbotControllerService)
 class DropbotService(HasTraits):
-    controller = DropbotController()
     dropbot_actor = DropbotActor()
 
     def poll_voltage(self):
