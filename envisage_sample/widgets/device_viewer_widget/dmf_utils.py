@@ -38,13 +38,15 @@ class SvgUtil:
         self.electrodes: dict[str, ElectrodeDict] = {}
         self.connections: list[NDArray[Shape['*, 1, 1'], Float]] = []
 
-        if self._filename is not None:
-            self.set_filename(self._filename)
+        if self._filename:
+            self.get_device_paths(self._filename)
 
-    def get_filename(self) -> Union[str, Path]:
+    @property
+    def filename(self) -> Union[str, Path]:
         return self._filename
 
-    def set_filename(self, filename: Union[str, Path]):
+    @filename.setter
+    def filename(self, filename: Union[str, Path]):
         self._filename = filename
         self.get_device_paths(self._filename)
 
