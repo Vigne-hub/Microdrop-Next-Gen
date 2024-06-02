@@ -10,7 +10,7 @@ from refrac_qt_microdrop.control_plugins.event_hub import EventHubPlugin
 def main():
     app = QApplication(sys.argv)
 
-    plugins = [DropbotControllerPlugin(), EventHubPlugin(), DropbotGUIPlugin()]
+    plugins = []
     envisage_app = Application(plugins=plugins)
     envisage_app.start()
 
