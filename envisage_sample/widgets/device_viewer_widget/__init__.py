@@ -1,6 +1,6 @@
 import os
 
-from PySide6.QtCore import Signal, SignalInstance, QSize
+from PySide6.QtCore import QSize
 from PySide6.QtGui import QSurfaceFormat
 
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
