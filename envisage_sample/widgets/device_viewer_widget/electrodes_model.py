@@ -1,29 +1,28 @@
 from __future__ import annotations
 from typing import Sequence
-from nptyping import NDArray, Shape, Float
-from .dmf_utils import ElectrodeDict
 from envisage_sample.widgets import initialize_logger
+
+from traits.api import HasTraits, Int, Bool, Array, Float, Any
 
 logger = initialize_logger(__name__)
 
 
-class Electrode:
+class Electrode(HasTraits):
     """
     Electrode class for managing individual electrodes
     """
 
-    @classmethod
-    def from_dict(cls, d: ElectrodeDict):
-        return cls(d['channel'], d['path'])
+    #: Channel number
+    channel = Int()
 
-    def __init__(self, channel: int, path: NDArray[Shape['*, 1, 1'], Float]):
+    #: NDArray path to electrode
+    path = Array(dtype=Float, shape=(None, 1, 2))
 
-        self.channel = channel  # electrode id
-        self.path = path  # NDArray path to electrode
-        self._state = False
-        self._metastate = None
+    #: State of the electrode (On or Off)
+    _state = Bool(False)
 
-        logger.debug("Electrode %s created", self.channel)  # on test loaded 93 electrodes
+    #: Metastates of the electrode (Droplet in or not for example and other properties)
+    _metastate = Any()
 
     @property
     def state(self) -> bool:
