@@ -1,10 +1,10 @@
 # This needs to be run as a module: python -m envisage_sample.app
 
 import time
+
 from dramatiq import Worker
 from envisage.api import Application
-
-from .interfaces.i_analysis_service import IAnalysisService
+from envisage_sample.interfaces.i_analysis_service import IAnalysisService
 from .frontend_plugins.ui_plugin import UIPlugin
 from .frontend_plugins.plot_view_plugin import PlotViewPlugin
 from .frontend_plugins.table_view_plugin import TableViewPlugin
