@@ -1,7 +1,7 @@
 import tempfile
 import shutil
 import pytest
-from envisage_sample.widgets.device_viewer_widget.dmf_utils import *
+from envisage_sample.utils.dmf_utils import *
 
 
 @pytest.fixture
