@@ -1,6 +1,5 @@
 from pathlib import Path
 from typing import Union
-
 import numpy as np
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QPainterPath, QPen, QBrush, QFont
@@ -140,7 +139,6 @@ class ElectrodeLayer(QGraphicsItemGroup):
     def __init__(self, id_: str, svg_file: Union[str, Path], parent=None):
         super().__init__(parent=parent)
 
-        self._electrodes = Electrodes()
         self.id = id_
         self.setHandlesChildEvents(False)  # Pass events to children
 
@@ -157,29 +155,17 @@ class ElectrodeLayer(QGraphicsItemGroup):
                                                                     modifier * v['path'][:, 0, :])
             self.addToGroup(self.electrode_graphic_items[k])
 
-        self.electrodes = electrodes
+        self._electrodes = electrodes
 
         self.connections = [con * modifier for con in svg.connections]
         self.connection_items = []
         self.draw_connections()
 
-    @property
-    def electrodes(self) -> Electrodes:
-        return self._electrodes
-
-    @property
-    def electrodes_dict(self):
-        return self._electrodes.electrodes
-
-    @electrodes.setter
-    def electrodes(self, electrodes: Electrodes):
-        self._electrodes = electrodes
-
     def change_alphas(self, alpha: float, **kwargs):
         if kwargs.get('path'):
             self.update_connection_alpha(alpha)
             kwargs.pop('path')
-        for name, e in self.electrodes.items():
+        for name, e in self._electrodes.items():
             for k in kwargs.keys():
                 if k in ['line', 'fill', 'text']:
                     self.electrode_graphic_items[name].alphas[k] = alpha

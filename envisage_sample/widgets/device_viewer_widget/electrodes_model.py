@@ -1,9 +1,6 @@
-from __future__ import annotations
-from typing import Sequence
-
 from envisage_sample.widgets import initialize_logger
 
-from traits.api import HasTraits, Int, Bool, Array, Float, Any, Dict, Str, List
+from traits.api import HasTraits, Int, Bool, Array, Float, Any, Dict, Str, List, Property
 
 logger = initialize_logger(__name__)
 
@@ -25,22 +22,24 @@ class Electrode(HasTraits):
     #: Metastates of the electrode (Droplet in or not for example and other properties)
     _metastate = Any()
 
-    @property
-    def state(self) -> bool:
+    #: Property for state
+    state = Property(Bool, depends_on='_state')
+
+    #: Property for metastate
+    metastate = Property(Any, depends_on='_metastate')
+
+    def _get_state(self) -> Bool:
         return self._state
 
-    @state.setter
-    def state(self, state: bool):
+    def _set_state(self, state: Bool):
         if state != self._state and self.channel is not None:
             self._state = state
             logger.debug("State changed to %s for %s", self.state, self.channel)
 
-    @property
-    def metastate(self) -> object:
+    def _get_metastate(self) -> object:
         return self._metastate
 
-    @metastate.setter
-    def metastate(self, metastate: object):
+    def _set_metastate(self, metastate: object):
         if metastate != self._metastate:
             self._metastate = metastate
 
@@ -51,15 +50,17 @@ class Electrodes(HasTraits):  # QObject
     Electrodes class for managing multiple electrodes
     """
 
-    _electrodes = Dict(Str, Electrode, desc="Dictionary of electrodes")
+    #: "Dictionary of electrodes with keys being an electrode id and values being the electrode object"
+    _electrodes = Dict(Str, Electrode, desc="Dictionary of electrodes with keys being an electrode id and values "
+                                            "being the electrode object")
 
-    @property
-    def electrodes(self) -> Dict(Str, Electrode):
+    electrode = Property(Dict(Str, Electrode), depends_on='_electrodes')
+
+    def _get_electrode(self) -> Dict(Str, Electrode):
         return self._electrodes
 
-    @electrodes.setter
-    def electrodes(self, electrodes: Dict(Str, Electrode)):
-        self._electrodes = electrodes
+    def _set_electrode(self, electrode: Dict(Str, Electrode)):
+        self._electrodes = electrode
 
     def __getitem__(self, item: Str) -> Electrode:
         return self._electrodes[item]
@@ -76,21 +77,21 @@ class Electrodes(HasTraits):  # QObject
     def items(self):
         return self._electrodes.items()
 
-    def sync_electrode_states(self, states: Sequence[str | int]):
+    def sync_electrode_states(self, states: Array(Str or Int)):
         for k, v in self.items():
             try:
                 v.state = states[v.channel]
             except KeyError:
                 logger.warning(f"Channel {v.channel} not found in states")
 
-    def sync_electrode_metastates(self, metastates: Sequence[str | int]):
+    def sync_electrode_metastates(self, metastates: Array(Str or Int)):
         for k, v in self.items():
             try:
                 v.metastate = metastates[v.channel]
             except KeyError:
                 logger.warning(f"Channel {v.channel} not found in metastates")
 
-    def check_electrode_range(self, n_channels: Int) -> List[Str]:
+    def check_electrode_range(self, n_channels: Int) -> List(Str):
         """
         Checks that the electrode channel numbers are within n_channels
         :param n_channels: number of channels present
