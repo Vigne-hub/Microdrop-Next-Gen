@@ -54,13 +54,13 @@ class Electrodes(HasTraits):  # QObject
     _electrodes = Dict(Str, Electrode, desc="Dictionary of electrodes with keys being an electrode id and values "
                                             "being the electrode object")
 
-    electrode = Property(Dict(Str, Electrode), depends_on='_electrodes')
+    electrodes = Property(Dict(Str, Electrode), depends_on='_electrodes')
 
-    def _get_electrode(self) -> Dict(Str, Electrode):
+    def _get_electrodes(self) -> Dict(Str, Electrode):
         return self._electrodes
 
-    def _set_electrode(self, electrode: Dict(Str, Electrode)):
-        self._electrodes = electrode
+    def _set_electrodes(self, electrodes: Dict(Str, Electrode)):
+        self._electrodes = electrodes
 
     def __getitem__(self, item: Str) -> Electrode:
         return self._electrodes[item]
