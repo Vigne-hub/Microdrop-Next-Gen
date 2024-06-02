@@ -1,10 +1,10 @@
 # This needs to be run as a module: python -m envisage_sample.app
 
 import time
-
 from dramatiq import Worker
 from envisage.api import Application
-from envisage_sample.interfaces.i_analysis_service import IAnalysisService
+
+from .interfaces.i_analysis_service import IAnalysisService
 from .frontend_plugins.ui_plugin import UIPlugin
 from .frontend_plugins.plot_view_plugin import PlotViewPlugin
 from .frontend_plugins.table_view_plugin import TableViewPlugin
@@ -30,8 +30,8 @@ def demo():
 ###################### Running test on dramatiq actor declaration with the broker ######################################
     # Upon importing the abalysius plugin, the dramtic actor should get registerd with the dramatiq broker
 
-    # NOTE: this fails if you improt anything that indirectly imports anything containing a dramatic actor.
-    # This is because the module with loggingplugin also has analysisplugin, so
+    # NOTE: this fails if you improt anything that indirectly imports anything containing a dramatic actor. So loggingplugin
+    # needs to be imported here as well. This is because the module with loggingplugin also has analysisplugin, so
     # analysis service (which has the dramatic actor) gets imported and thus its actor declared with the broker.
 
     print("#" * 100)
@@ -41,7 +41,7 @@ def demo():
     print(f"Declared actors before: {BROKER.get_declared_actors()}\n")
 
     # importing plugin with an actor
-    from envisage_sample.backend_plugins.analysis_plugin import AnalysisPlugin
+    from .backend_plugins import AnalysisPlugin, LoggingPlugin
 
     # after...
     assert len(BROKER.get_declared_actors()) == 1
@@ -204,3 +204,7 @@ def demo():
 
     app.stop()
     worker.stop()
+
+
+if __name__ == '__main__':
+    demo()

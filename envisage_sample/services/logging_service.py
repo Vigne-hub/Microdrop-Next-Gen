@@ -1,6 +1,6 @@
 from traits.has_traits import provides
 
-from envisage_sample.interfaces.i_logging_service import ILoggingService
+from ..interfaces.i_logging_service import ILoggingService
 
 
 @provides(ILoggingService)
