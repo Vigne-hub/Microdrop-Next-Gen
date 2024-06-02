@@ -1,8 +1,9 @@
 from __future__ import annotations
 from typing import Sequence
+
 from envisage_sample.widgets import initialize_logger
 
-from traits.api import HasTraits, Int, Bool, Array, Float, Any
+from traits.api import HasTraits, Int, Bool, Array, Float, Any, Dict, Str, List
 
 logger = initialize_logger(__name__)
 
@@ -44,28 +45,23 @@ class Electrode(HasTraits):
             self._metastate = metastate
 
 
-class Electrodes:  # QObject
+class Electrodes(HasTraits):  # QObject
 
     """
     Electrodes class for managing multiple electrodes
     """
 
-    def __init__(self, electrodes: dict[str, Electrode] = None):
-
-        if electrodes:
-            self._electrodes = electrodes
-        else:
-            self._electrodes: dict[str, Electrode] = {}
+    _electrodes = Dict(Str, Electrode, desc="Dictionary of electrodes")
 
     @property
-    def electrodes(self) -> dict[str, Electrode]:
+    def electrodes(self) -> Dict(Str, Electrode):
         return self._electrodes
 
     @electrodes.setter
-    def electrodes(self, electrodes: dict[str, Electrode]):
+    def electrodes(self, electrodes: Dict(Str, Electrode)):
         self._electrodes = electrodes
 
-    def __getitem__(self, item: str) -> Electrode:
+    def __getitem__(self, item: Str) -> Electrode:
         return self._electrodes[item]
 
     def __setitem__(self, key, value):
@@ -94,7 +90,7 @@ class Electrodes:  # QObject
             except KeyError:
                 logger.warning(f"Channel {v.channel} not found in metastates")
 
-    def check_electrode_range(self, n_channels: int) -> list[str]:
+    def check_electrode_range(self, n_channels: Int) -> List[Str]:
         """
         Checks that the electrode channel numbers are within n_channels
         :param n_channels: number of channels present
