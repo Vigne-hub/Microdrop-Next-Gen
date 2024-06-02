@@ -152,7 +152,7 @@ class ElectrodeLayer(QGraphicsItemGroup):
         modifier = max(640 / (svg.max_x - svg.min_x), 360 / (svg.max_y - svg.min_y))
 
         for k, v in svg.electrodes.items():
-            electrodes[k] = Electrode.from_dict(v)
+            electrodes[k] = Electrode(channel=v['channel'], path=v['path'])
             self.electrode_graphic_items[k] = ElectrodeGraphicsItem(k, electrodes[k],
                                                                     modifier * v['path'][:, 0, :])
             self.addToGroup(self.electrode_graphic_items[k])
