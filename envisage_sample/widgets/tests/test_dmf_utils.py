@@ -1,7 +1,9 @@
 import tempfile
 import shutil
 import pytest
-from envisage_sample.utils.dmf_utils import *
+from pathlib import Path
+from xml.etree import ElementTree as ET
+from ..utils.dmf_utils import SvgUtil
 
 
 @pytest.fixture
@@ -33,8 +35,8 @@ def test_svg_util(clean_svg):
 
 def test_filename(clean_svg):
     svg = SvgUtil()
-    svg.set_filename(clean_svg)
-    assert svg.get_filename() == clean_svg
+    svg.filename = clean_svg
+    assert svg.filename == clean_svg
 
 
 def test_set_fill_black(svg_electrode_layer):

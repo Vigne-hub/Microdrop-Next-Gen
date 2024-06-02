@@ -7,7 +7,7 @@ from PySide6.QtOpenGLWidgets import QOpenGLWidget
 from PySide6.QtWidgets import QWidget, QPushButton, QGraphicsScene, QBoxLayout, QLabel, QGroupBox, QGridLayout, \
     QSpinBox, QFileDialog
 
-from envisage_sample.widgets import initialize_logger
+from .. import initialize_logger
 from .electrodes_view import ElectrodeLayer, AutoFitGraphicsView
 
 logger = initialize_logger(__name__)

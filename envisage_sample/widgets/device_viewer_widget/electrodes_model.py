@@ -1,4 +1,4 @@
-from envisage_sample.widgets import initialize_logger
+from .. import initialize_logger
 
 from traits.api import HasTraits, Int, Bool, Array, Float, Any, Dict, Str, List, Property
 

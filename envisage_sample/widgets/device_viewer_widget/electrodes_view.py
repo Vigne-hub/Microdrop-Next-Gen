@@ -6,9 +6,9 @@ from PySide6.QtGui import QColor, QPainterPath, QPen, QBrush, QFont
 from PySide6.QtWidgets import (QGraphicsItemGroup, QGraphicsView, QGraphicsItem,
                                QGraphicsPathItem, QGraphicsTextItem)
 
-from ...utils.dmf_utils import SvgUtil
+from ..utils.dmf_utils import SvgUtil
 from .electrodes_model import Electrode, Electrodes
-from envisage_sample.widgets import initialize_logger
+from .. import initialize_logger
 
 logger = initialize_logger(__name__, level='DEBUG')
 
