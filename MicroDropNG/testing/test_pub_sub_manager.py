@@ -1,26 +1,12 @@
-# test_plugins.py
+# This testing module is used to test the PubSubManager class.
+# The PubSubManager class is used to manage the publishers and subscribers in the application.
+# This tests publisher, subscriber creation, binding, and message publishing.
+#
+# Note for future: Error type everything in the code instead of just logger error messages.
+
 from unittest.mock import MagicMock, patch
 import pytest
-from pydantic import BaseModel
-
-from MicroDropNG.services.pub_sub_manager_services import PubSubManager
-
-"""
-This testing module is used to test the PubSubManager class. 
-The PubSubManager class is used to manage the publishers and subscribers in the application.
-This tests publisher, subscriber creation, binding, and message publishing.
-
-Note for future: Error type everything in the code instead of just logger error messages.
-"""
-
-
-class TestMessage(BaseModel):
-    data: str
-
-
-@pytest.fixture
-def pubsub_manager():
-    return PubSubManager()
+from .common import TestMessage
 
 
 def test_create_publisher(pubsub_manager):
@@ -31,7 +17,7 @@ def test_create_publisher(pubsub_manager):
 
 
 def test_publish_success(pubsub_manager):
-    with patch('pika.BlockingConnection') as mock_connection:
+    with patch('pika.BlockingConnection'):
         pubsub_manager.create_publisher('test_publisher', 'test_exchange')
         message = TestMessage(data="test")
         pubsub_manager.publish(message, 'test_publisher')
@@ -94,5 +80,20 @@ def test_start_consumer_failure(pubsub_manager):
         pubsub_manager.start_consumer('nonexistent_subscriber', MagicMock())
 
 
+def test_pub_sub_service_retrieval_from_envisage_app(setup_app, pubsub_manager):
+    from ..interfaces.i_pub_sub_manager_service import IPubSubManagerService
+
+    app = setup_app
+    pubsub_manager_service = app.get_service(IPubSubManagerService)
+
+    # note: if more than one service is registered, the first one is returned. Need to add a proeprty tag on service
+    # offer to query for a specific service with the same interface and use it. See envisage_sample for an example.
+
+    assert pubsub_manager_service.__class__ == pubsub_manager.__class__
+
+    for methods in pubsub_manager_service.__dir__():
+        assert methods in pubsub_manager.__dir__()
+
+
 if __name__ == '__main__':
-    pytest.main(['-v', 'test_plugins.py'])
+    pytest.main()
