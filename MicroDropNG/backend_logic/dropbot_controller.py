@@ -2,9 +2,9 @@ from time import sleep
 
 from PySide6.QtCore import QTimer
 
-from refrac_qt_microdrop.helpers.logger import initialize_logger
-from refrac_qt_microdrop.helpers.pub_sub_manager import PubSubManager
-from refrac_qt_microdrop.pydantic_models.dropbot_controller_output_state_model import DBOutputStateModel, \
+from MicroDropNG.utils.logger import initialize_logger
+from MicroDropNG.services.pub_sub_manager_services import PubSubManager
+from MicroDropNG.pydantic_models.dropbot_controller_output_state_model import DBOutputStateModel, \
     DBChannelsChangedModel, DBVoltageChangedModel, DBChannelsMetastateChanged
 
 logger = initialize_logger(__name__)

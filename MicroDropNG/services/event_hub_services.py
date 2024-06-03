@@ -1,10 +1,9 @@
 # eventhub_services.py
 from traits.api import HasTraits, provides
-from envisage.api import Application
 
-from refrac_qt_microdrop.control_plugins.event_hub import EventHubActor
-from refrac_qt_microdrop.interfaces.event_hub_interface import IEventHubService
-from refrac_qt_microdrop.helpers.logger import initialize_logger
+from MicroDropNG.control_plugins.event_hub import EventHubActor
+from MicroDropNG.interfaces.event_hub_interface import IEventHubService
+from MicroDropNG.utils.logger import initialize_logger
 
 logger = initialize_logger(__name__)
 

@@ -4,8 +4,8 @@ import dramatiq
 from dramatiq.brokers.rabbitmq import RabbitmqBroker
 import logging
 
-from refrac_qt_microdrop.backend_logic.dropbot_controller import DropbotController
-from refrac_qt_microdrop.interfaces.dropbot_interface import IDropbotControllerService
+from MicroDropNG.backend_logic.dropbot_controller import DropbotController
+from MicroDropNG.interfaces.dropbot_interface import IDropbotControllerService
 
 # Initialize logger
 logger = logging.getLogger(__name__)
@@ -41,7 +41,7 @@ class DropbotControllerPlugin(Plugin):
         ]
 
     def _create_service(self, *args, **kwargs):
-        from refrac_qt_microdrop.services.dropbot_services import DropbotService
+        from MicroDropNG.services.dropbot_services import DropbotService
         return DropbotService()
 
     def _start_worker(self):

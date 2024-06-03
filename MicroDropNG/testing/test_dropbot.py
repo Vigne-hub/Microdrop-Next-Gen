@@ -1,8 +1,8 @@
 import pytest
 from unittest.mock import MagicMock, patch
 import numpy as np
-from refrac_qt_microdrop.backend_logic.dropbot_controller import DropbotController
-from refrac_qt_microdrop.helpers.pub_sub_manager import PubSubManager
+from MicroDropNG.backend_logic.dropbot_controller import DropbotController
+from MicroDropNG.utils.pub_sub_manager import PubSubManager
 
 """
 This testing module is used to test the DropbotController class (refractored mike+vig/mig updated version).

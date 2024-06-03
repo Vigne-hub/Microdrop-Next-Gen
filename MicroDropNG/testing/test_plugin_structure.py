@@ -1,7 +1,7 @@
 import pytest
 from PySide6.QtWidgets import QApplication
 from envisage.api import Application
-from refrac_qt_microdrop.backend_plugins.dropbot_controller import DropbotControllerPlugin
+from MicroDropNG.backend_plugins.dropbot_controller import DropbotControllerPlugin
 from unittest.mock import MagicMock
 
 """

@@ -2,7 +2,7 @@
 from envisage.api import Plugin
 from traits.api import List
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QLabel, QLineEdit, QFormLayout
-from refrac_qt_microdrop.interfaces.event_hub_interface import IEventHubService
+from MicroDropNG.interfaces.event_hub_interface import IEventHubService
 import numpy as np
 
 

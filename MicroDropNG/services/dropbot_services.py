@@ -1,8 +1,7 @@
 from traits.api import HasTraits, provides
-from refrac_qt_microdrop.interfaces.dropbot_interface import IDropbotControllerService
-from refrac_qt_microdrop.backend_logic.dropbot_controller import DropbotController
-from refrac_qt_microdrop.backend_plugins.dropbot_controller import DropbotActor
-from refrac_qt_microdrop.helpers.logger import initialize_logger
+from MicroDropNG.interfaces.dropbot_interface import IDropbotControllerService
+from MicroDropNG.backend_plugins.dropbot_controller import DropbotActor
+from MicroDropNG.utils.logger import initialize_logger
 
 logger = initialize_logger(__name__)
 

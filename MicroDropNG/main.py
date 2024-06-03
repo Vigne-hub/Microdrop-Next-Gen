@@ -4,7 +4,7 @@ from PySide6.QtWidgets import QApplication
 from envisage.api import Application
 from backend_plugins.dropbot_controller import DropbotControllerPlugin
 from frontend_plugins.dropbot_test_GUI import DropbotGUIPlugin
-from refrac_qt_microdrop.control_plugins.event_hub import EventHubPlugin
+from MicroDropNG.control_plugins.event_hub import EventHubPlugin
 
 
 def main():

@@ -2,7 +2,8 @@
 from unittest.mock import MagicMock, patch
 import pytest
 from pydantic import BaseModel
-from refrac_qt_microdrop.helpers.pub_sub_manager import PubSubManager
+
+from MicroDropNG.services.pub_sub_manager_services import PubSubManager
 
 """
 This testing module is used to test the PubSubManager class. 
@@ -11,6 +12,7 @@ This tests publisher, subscriber creation, binding, and message publishing.
 
 Note for future: Error type everything in the code instead of just logger error messages.
 """
+
 
 class TestMessage(BaseModel):
     data: str
