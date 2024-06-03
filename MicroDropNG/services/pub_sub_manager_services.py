@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from traits.api import Dict, Callable, Any, HasTraits, provides
 from traits.trait_types import Str
 
-from MicroDropNG.interfaces.i_pub_sub_manager_service import IPubSubManagerService
+from ..interfaces.i_pub_sub_manager_service import IPubSubManagerService
 
 logger = logging.getLogger(__name__)
 

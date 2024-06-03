@@ -1,21 +1,17 @@
 from time import sleep
 
 from PySide6.QtCore import QTimer
-
-from MicroDropNG.utils.logger import initialize_logger
-from MicroDropNG.services.pub_sub_manager_services import PubSubManager
-from MicroDropNG.pydantic_models.dropbot_controller_output_state_model import DBOutputStateModel, \
+import logging
+from ..services.pub_sub_manager_services import PubSubManager
+from ..pydantic_models.dropbot_controller_output_state_model import DBOutputStateModel, \
     DBChannelsChangedModel, DBVoltageChangedModel, DBChannelsMetastateChanged
 
-logger = initialize_logger(__name__)
+logger = logging.getLogger(__name__)
 
-from typing import Union, Callable
-from functools import partial
-import pika
+from typing import Union
 import dropbot
 from dropbot.monitor import DROPBOT_SIGNAL_NAMES
 import serial
-
 import sys
 
 to_delete = []
@@ -49,7 +45,8 @@ class DropbotController:
         self.pub_sub_manager.create_publisher(publisher_name=f'dropbot_publisher', exchange_name='output_state_changed')
         self.pub_sub_manager.create_publisher(publisher_name=f'dropbot_publisher', exchange_name='channels_changed')
         self.pub_sub_manager.create_publisher(publisher_name=f'dropbot_publisher', exchange_name='voltage_changed')
-        self.pub_sub_manager.create_publisher(publisher_name=f'dropbot_publisher', exchange_name='channels_metastate_changed')
+        self.pub_sub_manager.create_publisher(publisher_name=f'dropbot_publisher',
+                                              exchange_name='channels_metastate_changed')
 
         # self.init_dropbot_proxy()
 
@@ -146,8 +143,7 @@ class DropbotController:
         Args:
             voltage (int): Desired voltage setting.
         """
-        sleep(10)
-        print(voltage)
+        logging.debug(f"Setting voltage to {voltage}")
         if self.proxy is not None:
             self.proxy.voltage = voltage
         logger.info("Voltage set to %d", voltage)
@@ -159,7 +155,7 @@ class DropbotController:
         Args:
             frequency (int): Desired frequency setting.
         """
-        print(frequency)
+        logging.debug(f"Setting frequency to {frequency}")
         if self.proxy is not None:
             self.proxy.frequency = frequency
         logger.info("Frequency set to %d", frequency)
