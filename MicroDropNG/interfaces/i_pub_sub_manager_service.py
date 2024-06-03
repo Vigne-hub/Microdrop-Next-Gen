@@ -3,8 +3,8 @@ from pydantic import BaseModel
 from traits.has_traits import Interface
 from traits.trait_types import Str, Callable, Any
 
-class IPubSubManagerService(Interface):
 
+class IPubSubManagerService(Interface):
     #: task_name
     id = Str
 
