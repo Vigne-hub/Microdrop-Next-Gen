@@ -2,7 +2,8 @@
 from unittest.mock import MagicMock, patch
 import pytest
 from pydantic import BaseModel
-from refrac_qt_microdrop.helpers.pub_sub_manager import PubSubManager
+
+from MicrodropNG.services.pub_sub_manager_services import PubSubManager
 
 """
 This testing module is used to test the PubSubManager class. 

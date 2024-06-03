@@ -1,14 +1,16 @@
+import logging
 import threading
+from typing import Callable, Any
 
 import pika
-from typing import Callable, Any
 from pydantic import BaseModel
-import logging
+
+from MicrodropNG.interfaces.pub_sub_manager_interface import IPubSubManagerService
 
 logger = logging.getLogger(__name__)
 
 
-class PubSubManager:
+class PubSubManager(IPubSubManagerService):
     def __init__(self):
         self.publishers = {}
         self.subscribers = {}
