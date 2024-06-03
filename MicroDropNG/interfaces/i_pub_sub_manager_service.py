@@ -3,10 +3,6 @@ from pydantic import BaseModel
 from traits.has_traits import Interface
 from traits.trait_types import Str, Callable, Any
 
-# Initialize logger
-logger = logging.getLogger(__name__)
-
-
 class IPubSubManagerService(Interface):
 
     #: task_name
