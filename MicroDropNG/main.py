@@ -2,9 +2,9 @@
 import sys
 from PySide6.QtWidgets import QApplication
 from envisage.api import Application
-from backend_plugins.dropbot_controller import DropbotControllerPlugin
-from frontend_plugins.dropbot_test_GUI import DropbotGUIPlugin
-from MicroDropNG.control_plugins.event_hub import EventHubPlugin
+from MicroDropNG.plugins.backend_plugins.dropbot_controller import DropbotControllerPlugin
+from MicroDropNG.plugins.frontend_plugins.dropbot_test_GUI import DropbotGUIPlugin
+from MicroDropNG.plugins.control_plugins.event_hub import EventHubPlugin
 
 
 def main():
