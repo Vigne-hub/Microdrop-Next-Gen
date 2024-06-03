@@ -9,6 +9,18 @@ import pytest
 from .common import TestMessage
 
 
+@pytest.fixture(scope="module")
+def setup_app():
+    from ..app import MyApp
+    from ..plugins.utility_plugins.pub_sub_manager_plugin import PubSubManagerPlugin
+
+    # Assuming `MyApp` and related plugins are defined elsewhere
+    plugins = [PubSubManagerPlugin()]
+    app = MyApp(plugins=plugins)
+    app.start()
+    return app
+
+
 def test_create_publisher(pubsub_manager):
     with patch('pika.BlockingConnection') as mock_connection:
         pubsub_manager.create_publisher('test_publisher', 'test_exchange')

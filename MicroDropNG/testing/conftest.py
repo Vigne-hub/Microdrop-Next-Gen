@@ -147,15 +147,3 @@ def results_file():
         f.write("")
 
     return test_results
-
-
-@pytest.fixture
-def setup_app():
-    from ..app import MyApp
-    from ..plugins.utility_plugins.pub_sub_manager_plugin import PubSubManagerPlugin
-
-    # Assuming `MyApp` and related plugins are defined elsewhere
-    plugins = [PubSubManagerPlugin()]
-    app = MyApp(plugins=plugins)
-    app.start()
-    return app
