@@ -92,3 +92,7 @@ def test_start_consumer_success(pubsub_manager):
 def test_start_consumer_failure(pubsub_manager):
     with pytest.raises(ValueError):
         pubsub_manager.start_consumer('nonexistent_subscriber', MagicMock())
+
+
+if __name__ == '__main__':
+    pytest.main(['-v', 'test_plugins.py'])

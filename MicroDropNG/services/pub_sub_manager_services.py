@@ -1,22 +1,34 @@
 import logging
 import threading
-from typing import Callable, Any
-
 import pika
 from pydantic import BaseModel
+from traits.api import Dict, Callable, Any, HasTraits, provides
+from traits.trait_types import Str
 
-from MicroDropNG.interfaces.pub_sub_manager_interface import IPubSubManagerService
+from MicroDropNG.interfaces.i_pub_sub_manager_service import IPubSubManagerService
 
 logger = logging.getLogger(__name__)
 
 
-class PubSubManager(IPubSubManagerService):
-    def __init__(self):
-        self.publishers = {}
-        self.subscribers = {}
-        self.info_to_start_consumer = {}
+@provides(IPubSubManagerService)
+class PubSubManager(HasTraits):
+    """
+    PubSubManager class to manage publishers and subscribers
+    """
+    id = Str("pub_sub_manager")
+    name = Str("PubSub Manager")
+
+    publishers = Dict(desc="Publishers")
+    subscribers = Dict(desc="Subscribers")
+    info_to_start_consumer = Dict(desc="Information required to start a consumer")
 
     def create_publisher(self, publisher_name: str, exchange_name: str):
+        """
+        Create a publisher for a given exchange
+        :param publisher_name: name of the publisher
+        :param exchange_name: rabbitmq exchange name
+        :return: None
+        """
         connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
         channel = connection.channel()
         channel.exchange_declare(exchange=exchange_name, exchange_type='fanout')
@@ -25,6 +37,13 @@ class PubSubManager(IPubSubManagerService):
         logger.info(f"Publisher {publisher_name} created for exchange {exchange_name}")
 
     def publish(self, message: BaseModel, publisher: str):
+        """
+        Publish a message to a given exchange
+        :param message:
+        :param publisher:
+        :return:
+        """
+
         if publisher in self.publishers:
             connection, channel, exchange_name = self.publishers[publisher]
             channel.basic_publish(
@@ -39,6 +58,11 @@ class PubSubManager(IPubSubManagerService):
             raise KeyError(f"Publisher {publisher} not found")
 
     def create_subscriber(self, subscriber_name: str):
+        """
+        Create a subscriber
+        :param subscriber_name:
+        :return:
+        """
         connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
         channel = connection.channel()
         self.subscribers[subscriber_name] = (connection, channel)
@@ -46,6 +70,12 @@ class PubSubManager(IPubSubManagerService):
         logger.info(f"Subscriber {subscriber_name} created")
 
     def bind_sub_to_pub(self, subscriber: str, exchange_name: str):
+        """
+        Bind a subscriber to a publisher
+        :param subscriber:
+        :param exchange_name:
+        :return:
+        """
         if subscriber in self.subscribers:
             _, sub_channel = self.subscribers[subscriber]
             result = sub_channel.queue_declare(queue='', exclusive=True)
@@ -58,7 +88,9 @@ class PubSubManager(IPubSubManagerService):
             logger.error(f"Subscriber {subscriber} not found")
             raise KeyError(f"Subscriber {subscriber} not found")
 
-    def start_consumer(self, subscriber: str, func: Callable[[Any, Any, Any, Any], None]):
+    def start_consumer(self, subscriber: str, func: Callable(Any)):
+        """ Method to Start the consumer"""
+
         print("Attempting to start consumer")
         if subscriber not in self.info_to_start_consumer:
             logger.error(f"Subscriber {subscriber} not found")
@@ -69,6 +101,10 @@ class PubSubManager(IPubSubManagerService):
         print(f"Attempting to consume message on {queue_name} with {func}")
 
         def consumer_thread():
+            """
+            Consumer thread
+            :return:
+            """
             sub_channel.basic_consume(queue=queue_name, on_message_callback=func, auto_ack=False)
             logger.info(f"Starting consumer for subscriber {subscriber}")
             sub_channel.start_consuming()
