@@ -1,8 +1,8 @@
 import pytest
 from unittest.mock import MagicMock, patch
 import numpy as np
-from MicroDropNG.backend_logic.dropbot_controller import DropbotController
-from MicroDropNG.services.pub_sub_manager_services import PubSubManager
+from ..backend_logic.dropbot_controller import DropbotController
+from ..services.pub_sub_manager_services import PubSubManager
 
 """
 This testing module is used to test the DropbotController class (refractored mike+vig/mig updated version).
@@ -12,6 +12,7 @@ This tests the initialization, signal emission, output state change, voltage, fr
 Note for future: figure out how to do the testing with internal messaging signals in the methods 
 so that I can test without using exact code and just call methods
 """
+
 
 @pytest.fixture
 def dropbot_controller():
@@ -132,3 +133,7 @@ def test_droplet_search(dropbot_controller, pub_sub_manager):
     dropbot_controller.proxy.get_drops.return_value = [[1, 2, 3]]
     dropbot_controller.droplet_search(0.5)
     assert dropbot_controller.proxy.get_drops.called
+
+
+if __name__ == '__main__':
+    pytest.main()
