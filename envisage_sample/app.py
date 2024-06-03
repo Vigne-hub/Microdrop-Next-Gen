@@ -41,7 +41,8 @@ def demo():
     print(f"Declared actors before: {BROKER.get_declared_actors()}\n")
 
     # importing plugin with an actor
-    from .backend_plugins import AnalysisPlugin, LoggingPlugin
+    from .backend_plugins.analysis_plugin import AnalysisPlugin
+    from .backend_plugins.logging_plugin import LoggingPlugin
 
     # after...
     assert len(BROKER.get_declared_actors()) == 1
