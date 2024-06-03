@@ -4,7 +4,6 @@ from PySide6.QtWidgets import QApplication
 from envisage.api import Application
 
 
-
 def main():
     app = QApplication(sys.argv)
 

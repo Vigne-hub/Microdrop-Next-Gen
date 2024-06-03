@@ -1,28 +1,20 @@
 import logging
 
-from envisage.api import Plugin, ServiceOffer
+from envisage.api import ServiceOffer
+from envisage.core_plugin import CorePlugin
 from traits.api import List
 
-from MicroDropNG.interfaces.pub_sub_manager_interface import IPubSubManagerService
+from MicroDropNG.interfaces.i_pub_sub_manager_service import IPubSubManagerService
 from MicroDropNG.services.pub_sub_manager_services import PubSubManager
 
 # Initialize logger
 logger = logging.getLogger(__name__)
 
 
-class PubSubManagerPlugin(Plugin):
-    id = 'my_app.pubsub_manager'
+class PubSubManagerPlugin(CorePlugin):
+    id = 'app.pubsub_manager'
     name = 'PubSub Manager Plugin'
     service_offers = List(contributes_to='envisage.service_offers')
-
-    def start(self):
-        super().start()
-        self._register_services()
-        logger.info("PubSubManager Plugin started")
-
-    def _register_services(self):
-        pubsub_service = self._create_service()
-        self.application.register_service(IPubSubManagerService, pubsub_service)
 
     def _service_offers_default(self):
         return [
