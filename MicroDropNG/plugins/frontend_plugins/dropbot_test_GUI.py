@@ -54,29 +54,25 @@ class DropbotGUI(QWidget):
 
     def button_clicked(self, button_name):
         task_map = {
-            "Poll Voltage": ("dropbot_interface.IDropbotControllerService", "poll_voltage", [], {}),
-            "Set Voltage": (
-            "dropbot_interface.IDropbotControllerService", "set_voltage", [10], {}),
-            "Set Frequency": (
-            "dropbot_interface.IDropbotControllerService", "set_frequency", [8], {}),
-            "Set HV": ("dropbot_interface.IDropbotControllerService", "set_hv", [12], {}),
-            "Get Channels": ("dropbot_interface.IDropbotControllerService", "get_channels", [], {}),
-            "Set Channels": (
-            "dropbot_interface.IDropbotControllerService", "set_channels", [np.zeros(128, dtype='uint8').tolist()], {}),
-            "Set Channel Single": ("dropbot_interface.IDropbotControllerService", "set_channel_single",
+            "Poll Voltage": ("dropbot_interface", "IDropbotControllerService", "poll_voltage", [], {}),
+            "Set Voltage": ("dropbot_interface", "IDropbotControllerService", "set_voltage", [10], {}),
+            "Set Frequency": ("dropbot_interface", "IDropbotControllerService", "set_frequency", [8], {}),
+            "Set HV": ("dropbot_interface", "IDropbotControllerService", "set_hv", [12], {}),
+            "Get Channels": ("dropbot_interface", "IDropbotControllerService", "get_channels", [], {}),
+            "Set Channels": ("dropbot_interface", "IDropbotControllerService", "set_channels", [np.zeros(128, dtype='uint8').tolist()], {}),
+            "Set Channel Single": ("dropbot_interface", "IDropbotControllerService", "set_channel_single",
                                    [1, True], {}),
-            "Droplet Search": (
-            "dropbot_interface.IDropbotControllerService", "droplet_search", [3.3], {})
+            "Droplet Search": ("dropbot_interface", "IDropbotControllerService", "droplet_search", [3.3], {})
         }
 
         if button_name in task_map:
-            plugin_name, task_name, args, kwargs = task_map[button_name]
-            self.event_hub_service.send_task(plugin_name, task_name, args, kwargs)
+            interface_name, service, task_name, args, kwargs = task_map[button_name]
+            self.event_hub_service.send_task(interface_name, service, task_name, args, kwargs)
             self.status_label.setText(f'Status: {button_name} clicked...')
 
 
 class DropbotGUIPlugin(Plugin):
-    id = 'refrac_qt_microdrop.gui'
+    id = 'app.example_gui'
     name = 'Dropbot GUI Plugin'
     service_offers = List(contributes_to='envisage.service_offers')
 
