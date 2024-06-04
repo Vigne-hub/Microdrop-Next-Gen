@@ -1,8 +1,9 @@
 import pytest
 from unittest.mock import MagicMock, patch
 import numpy as np
-from ..backend_logic.dropbot_controller import DropbotController
-from ..services.pub_sub_manager_services import PubSubManager
+
+from MicroDropNG.backend_logic.dropbot_controller import DropbotController
+from MicroDropNG.interfaces.i_pub_sub_manager_service import IPubSubManagerService
 
 """
 This testing module is used to test the DropbotController class (refractored mike+vig/mig updated version).
@@ -15,13 +16,25 @@ so that I can test without using exact code and just call methods
 
 
 @pytest.fixture
-def dropbot_controller():
-    return DropbotController()
+def app():
+    from ..app import MyApp
+    from ..plugins.utility_plugins.pub_sub_manager_plugin import PubSubManagerPlugin
+    from ..plugins.backend_plugins.dropbot_controller import DropbotControllerPlugin
+
+    # Initialize the application with the required plugins
+    plugins = [PubSubManagerPlugin(), DropbotControllerPlugin()]
+    app = MyApp(plugins=plugins)
+    app.start()
+    return app
 
 
 @pytest.fixture
-def pub_sub_manager():
-    return PubSubManager()
+def dropbot_controller(app):
+    return DropbotController(app)
+
+@pytest.fixture
+def pub_sub_manager(app):
+    return app.get_service(IPubSubManagerService)
 
 
 def test_initialize_dropbot_controller(dropbot_controller):
@@ -128,7 +141,7 @@ def test_set_channel_single_no_proxy(dropbot_controller):
     assert dropbot_controller.proxy is None
 
 
-def test_droplet_search(dropbot_controller, pub_sub_manager):
+def test_droplet_search(dropbot_controller):
     dropbot_controller.proxy = MagicMock()
     dropbot_controller.proxy.get_drops.return_value = [[1, 2, 3]]
     dropbot_controller.droplet_search(0.5)
