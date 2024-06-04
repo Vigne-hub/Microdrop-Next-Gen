@@ -4,7 +4,7 @@ import logging
 
 import dramatiq
 from dramatiq.brokers.rabbitmq import RabbitmqBroker
-from envisage.api import Plugin
+from envisage.core_plugin import CorePlugin
 from envisage.service_offer import ServiceOffer
 from traits.api import List
 
@@ -20,8 +20,8 @@ for el in dramatiq.get_broker().middleware:
         dramatiq.get_broker().middleware.remove(el)
 
 
-class EventHubPlugin(Plugin):
-    id = 'refrac_qt_microdrop.event_hub'
+class EventHubPlugin(CorePlugin):
+    id = 'app.event_hub'
     name = 'Event Hub Plugin'
     service_offers = List(contributes_to='envisage.service_offers')
 
@@ -65,6 +65,7 @@ class EventHubActor:
     @dramatiq.actor(queue_name='eventhub_actions')
     def process_task(task):
         print(f"Processing task: {task}")
+        interface_name = task.get("interface_name")
         service_name = task.get("service_name")
         task_name = task.get("task_name")
         args = task.get("args", [])
@@ -75,15 +76,8 @@ class EventHubActor:
             logger.error("No Envisage application instance found.")
             return
 
-        interface_module, protocol_name = service_name.split('.')
-
-        if interface_module not in EventHubActor.list_of_protocols:
-            EventHubActor.list_of_protocols[interface_module] = protocol_name
-            imported_module = importlib.import_module(f"refrac_qt_microdrop.interfaces.{interface_module}")
-            EventHubActor.imported_modules.append(imported_module)
-
         try:
-            service = application.get_service(getattr(importlib.import_module(f"refrac_qt_microdrop.interfaces.{interface_module}"), protocol_name))
+            service = application.get_service(f"MicroDropNG.interfaces.{interface_name}.{service_name}")
         except AttributeError as e:
             logger.error(f"Error while getting service: {e}")
             return
