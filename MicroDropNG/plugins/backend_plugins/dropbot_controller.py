@@ -1,4 +1,5 @@
-from envisage.api import Plugin, ServiceOffer
+from envisage.api import ServiceOffer
+from envisage.core_plugin import CorePlugin
 from traits.api import List
 import dramatiq
 from dramatiq.brokers.rabbitmq import RabbitmqBroker
@@ -19,8 +20,8 @@ for el in dramatiq.get_broker().middleware:
         dramatiq.get_broker().middleware.remove(el)
 
 
-class DropbotControllerPlugin(Plugin):
-    id = 'refrac_qt_microdrop.dropbot_controller'
+class DropbotControllerPlugin(CorePlugin):
+    id = 'app.dropbot_controller'
     name = 'Dropbot Plugin'
     service_offers = List(contributes_to='envisage.service_offers')
 
@@ -29,7 +30,7 @@ class DropbotControllerPlugin(Plugin):
         self._register_services()
         logger.info("DropbotController Plugin started")
         self._start_worker()
-        init_global_dropbot()
+        init_global_dropbot(self.application)
 
     def _register_services(self):
         dropbot_service = self._create_service()
@@ -57,9 +58,9 @@ class DropbotControllerPlugin(Plugin):
 global dropbot
 
 
-def init_global_dropbot():
+def init_global_dropbot(app):
     global dropbot
-    dropbot = DropbotController()
+    dropbot = DropbotController(app)
 
 
 class DropbotActor:
