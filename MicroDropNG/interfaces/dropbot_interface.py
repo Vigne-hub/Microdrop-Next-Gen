@@ -4,25 +4,25 @@ from traits.api import Interface
 class IDropbotControllerService(Interface):
 
     def poll_voltage(self):
-        pass
+        """ Poll the voltage from the Dropbot """
 
     def set_voltage(self, voltage: int):
-        pass
+        """ Set the voltage of the Dropbot """
 
     def set_frequency(self, frequency: int):
-        pass
+        """ Set the frequency of the Dropbot """
 
     def set_hv(self, on: bool):
-        pass
+        """ Enable or disable the high voltage output of the Dropbot """
 
     def get_channels(self):
-        pass
+        """ Get the current state of all channels from the Dropbot """
 
     def set_channels(self, channels):
-        pass
+        """ Set the state of all channels on the Dropbot """
 
     def set_channel_single(self, channel: int, state: bool):
-        pass
+        """ Set the state of a single channel on the Dropbot """
 
     def droplet_search(self, threshold: float = 0):
-        pass
+        """ Search for droplets on the Dropbot """
