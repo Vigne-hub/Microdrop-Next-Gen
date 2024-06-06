@@ -39,3 +39,5 @@ skip_without_gevent = pytest.mark.skipif(not is_gevent_active(), reason="Behavio
 RABBITMQ_USERNAME = os.getenv("RABBITMQ_USERNAME", "guest")
 RABBITMQ_PASSWORD = os.getenv("RABBITMQ_PASSWORD", "guest")
 RABBITMQ_CREDENTIALS = pika.credentials.PlainCredentials(RABBITMQ_USERNAME, RABBITMQ_PASSWORD)
+
+TEST_PATH = os.getenv("TEST_PATH", os.path.dirname(os.path.abspath(__file__)))
