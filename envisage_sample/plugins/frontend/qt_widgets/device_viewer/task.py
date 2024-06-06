@@ -12,7 +12,7 @@ from .pane import DeviceViewerPane
 class DeviceViewerTask(Task):
     #### 'Task' interface #####################################################
 
-    id = "envisage_sample.widgets.device_viewer.task"
+    id = "envisage_sample.plugins.frontend.qt_widgets.device_viewer.task"
     name = "Device Viewer"
 
     menu_bar = SMenuBar(
@@ -54,10 +54,6 @@ class DeviceViewerTask(Task):
 
     def _default_layout_default(self):
         return TaskLayout(
-            left=Tabbed(
-                PaneItem("widgets.device_viewer.model_config_pane"),
-                PaneItem("widgets.device_viewer.model_help_pane"),
-            )
         )
 
         #### Trait change handlers ################################################
