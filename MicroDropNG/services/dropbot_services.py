@@ -1,7 +1,7 @@
 from traits.api import HasTraits, provides
-from MicroDropNG.interfaces.dropbot_interface import IDropbotControllerService
-from MicroDropNG.plugins.backend_plugins.dropbot_controller import DropbotActor
-from MicroDropNG.utils.logger import initialize_logger
+from ..interfaces.dropbot_interface import IDropbotControllerService
+from ..plugins.backend_plugins.dropbot_controller import DropbotActor
+from ..utils.logger import initialize_logger
 
 logger = initialize_logger(__name__)
 
