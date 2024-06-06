@@ -1,8 +1,8 @@
 import os
 from PySide6.QtWidgets import QApplication
 import sys
-from ..plugins.frontend.qt_widgets.device_viewer.device_viewer_qt import DeviceViewerWidget
-from .common import TEST_PATH
+from plugins.frontend.qt_widgets.device_viewer.device_viewer_qt import DeviceViewerWidget
+from tests.common import TEST_PATH
 
 if not QApplication.instance():
     app = QApplication(sys.argv)
