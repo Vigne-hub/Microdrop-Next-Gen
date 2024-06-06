@@ -1,5 +1,3 @@
-import os
-
 from PySide6.QtCore import QSize
 from PySide6.QtGui import QSurfaceFormat
 
@@ -9,6 +7,7 @@ from PySide6.QtWidgets import QWidget, QPushButton, QGraphicsScene, QBoxLayout, 
 
 from .. import initialize_logger
 from .electrodes_view import ElectrodeLayer, AutoFitGraphicsView
+import os
 
 logger = initialize_logger(__name__)
 
@@ -142,13 +141,3 @@ class DeviceViewerWidget(QWidget):
 
     def add_layer(self, layer: 'ElectrodeLayer'):
         self.scene.addItem(layer)
-
-
-if __name__ == '__main__':
-    from PySide6.QtWidgets import QApplication
-    import sys
-
-    app = QApplication(sys.argv)
-    device_viewer = DeviceViewerWidget()
-    device_viewer.show()
-    sys.exit(app.exec())

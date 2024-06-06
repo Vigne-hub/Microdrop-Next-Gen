@@ -13,12 +13,12 @@ def results_file():
 
 @pytest.fixture(scope="module")
 def setup_app():
-    from .frontend_plugins.ui_plugin import UIPlugin
-    from .frontend_plugins.plot_view_plugin import PlotViewPlugin
-    from .frontend_plugins.table_view_plugin import TableViewPlugin
-    from .backend_plugins.logging_plugin import LoggingPlugin
-    from .backend_plugins.analysis_plugin import AnalysisPlugin
-    from .app import MyApp
+    from ..plugins.frontend import UIPlugin
+    from ..plugins.frontend import PlotViewPlugin
+    from ..plugins.frontend import TableViewPlugin
+    from ..plugins.backend import LoggingPlugin
+    from ..plugins.backend import AnalysisPlugin
+    from ..app import MyApp
 
     # Assuming `MyApp` and related plugins are defined elsewhere
     plugins = [UIPlugin(), PlotViewPlugin(), TableViewPlugin(), AnalysisPlugin(), LoggingPlugin()]
@@ -38,7 +38,7 @@ def test_analysis_plugin_import():
     print(f"Declared actors before: {BROKER.get_declared_actors()}\n")
 
     # importing plugin with an actor
-    from .backend_plugins.analysis_plugin import AnalysisPlugin
+    from ..plugins.backend import AnalysisPlugin
 
     # after...
     assert len(BROKER.get_declared_actors()) == 1
@@ -59,7 +59,7 @@ def test_service_registry(setup_app):
 
 def test_service_properties_access_regular(setup_app):
 
-    from .backend_plugins.analysis_plugin import IAnalysisService
+    from ..plugins.backend.toy_service_plugins.analysis.interfaces.i_analysis_service import IAnalysisService
 
     app = setup_app
     regular_task = app.get_service(IAnalysisService, query="type=='regular'")
@@ -69,7 +69,7 @@ def test_service_properties_access_regular(setup_app):
 
 def test_service_properties_access_dramatiq(setup_app):
 
-    from .backend_plugins.analysis_plugin import IAnalysisService
+    from ..plugins.backend.toy_service_plugins.analysis.interfaces.i_analysis_service import IAnalysisService
 
     app = setup_app
     dramatiq_task = app.get_service(IAnalysisService, query="type=='dramatiq'")
@@ -86,7 +86,7 @@ def test_view_access(setup_app):
 
 def test_regular_task_processing(setup_app):
 
-    from .backend_plugins.analysis_plugin import IAnalysisService
+    from ..plugins.backend.toy_service_plugins.analysis.interfaces.i_analysis_service import IAnalysisService
 
     app = setup_app
     regular_task = app.get_service(IAnalysisService, query="type=='regular'")
@@ -101,7 +101,7 @@ def test_regular_task_processing(setup_app):
 @pytest.fixture(scope="module")
 def dramatiq_task_setup(setup_app):
 
-    from .interfaces.i_analysis_service import IAnalysisService
+    from ..plugins.backend.toy_service_plugins.analysis.interfaces.i_analysis_service import IAnalysisService
 
     app = setup_app
     dramatiq_task = app.get_service(IAnalysisService, query="type=='dramatiq'")
