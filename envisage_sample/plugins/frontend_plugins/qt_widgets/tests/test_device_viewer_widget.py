@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from envisage_sample.widgets.device_viewer_widget.electrodes_model import Electrode, Electrodes
+from envisage_sample.plugins.frontend_plugins.qt_widgets import Electrode, Electrodes
 from traits.trait_errors import TraitError
 
 correct_path_array = np.array(

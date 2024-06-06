@@ -14,7 +14,7 @@ class DeviceViewerApplication(TasksApplication):
     #### 'IApplication' interface #############################################
 
     # The application's globally unique identifier.
-    id = "envisage_sample.widgets.device_viewer"
+    id = "qt_widgets.device_viewer"
 
     # The application's user-visible name.
     name = "Device Viewer App"

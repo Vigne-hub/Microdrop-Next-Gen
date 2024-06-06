@@ -9,7 +9,7 @@ import os
 class DeviceViewerPane(TraitsTaskPane):
     #### 'ITaskPane' interface ################################################
 
-    id = "envisage_sample.widgets.device_viewer.pane"
+    id = "qt_widgets.device_viewer.pane"
     name = "Device Viewer Pane"
 
     #### 'DeviceViewerPane' interface #########################################

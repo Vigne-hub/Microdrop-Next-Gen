@@ -3,7 +3,7 @@ import os
 from PySide6.QtWidgets import QApplication
 import sys
 
-from envisage_sample.widgets.device_viewer.device_viewer_qt import DeviceViewerWidget
+from envisage_sample.plugins.frontend_plugins.qt_widgets.device_viewer.device_viewer_qt import DeviceViewerWidget
 
 app = QApplication(sys.argv)
 device_viewer_widget = DeviceViewerWidget()
