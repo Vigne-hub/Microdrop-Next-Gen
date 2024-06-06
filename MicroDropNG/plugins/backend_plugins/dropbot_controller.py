@@ -1,5 +1,6 @@
 from envisage.api import ServiceOffer
 from envisage.core_plugin import CorePlugin
+from envisage.plugin import Plugin
 from traits.api import List
 import dramatiq
 from dramatiq.brokers.rabbitmq import RabbitmqBroker
@@ -20,7 +21,7 @@ for el in dramatiq.get_broker().middleware:
         dramatiq.get_broker().middleware.remove(el)
 
 
-class DropbotControllerPlugin(CorePlugin):
+class DropbotControllerPlugin(Plugin):
     id = 'app.dropbot_controller'
     name = 'Dropbot Plugin'
     service_offers = List(contributes_to='envisage.service_offers')
