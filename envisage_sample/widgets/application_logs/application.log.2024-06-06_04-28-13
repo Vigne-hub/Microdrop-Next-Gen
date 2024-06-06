@@ -1,0 +1,1 @@
+2024-06-06 04:28:13.702 [WARNING:envisage.ui.tasks.tasks_application]: Saved application layout references non-existent task 'example.attractors.task_2d'. Falling back to default application layout. File "C:\Users\vigne\micromamba\envs\Microdrop-Next-Gen\lib\site-packages\envisage\ui\tasks\tasks_application.py", line 346

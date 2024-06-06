@@ -4,11 +4,12 @@ import time
 from dramatiq import Worker
 from envisage.api import Application
 
-from .plugins.frontend import UIPlugin
-from .plugins.frontend import PlotViewPlugin
-from .plugins.frontend import TableViewPlugin
+from .interfaces.i_analysis_service import IAnalysisService
+from .plugins.frontend_plugins.ui_plugin import UIPlugin
+from .plugins.frontend_plugins.plot_view_plugin import PlotViewPlugin
+from .plugins.frontend_plugins.table_view_plugin import TableViewPlugin
 
-from .tests.common import BROKER
+from .common import BROKER
 
 
 class MyApp(Application):
@@ -26,9 +27,9 @@ def demo():
     # Again this is just a simple test just for illustration.
 
 ###################### Running test on dramatiq actor declaration with the broker ######################################
-    # Upon importing the analysis plugin, the dramtic actor should get registerd with the dramatiq broker
+    # Upon importing the abalysius plugin, the dramtic actor should get registerd with the dramatiq broker
 
-    # NOTE: this fails if you import anything that indirectly imports anything containing a dramatic actor. So loggingplugin
+    # NOTE: this fails if you improt anything that indirectly imports anything containing a dramatic actor. So loggingplugin
     # needs to be imported here as well. This is because the module with loggingplugin also has analysisplugin, so
     # analysis service (which has the dramatic actor) gets imported and thus its actor declared with the broker.
 
@@ -39,9 +40,8 @@ def demo():
     print(f"Declared actors before: {BROKER.get_declared_actors()}\n")
 
     # importing plugin with an actor
-    from plugins.backend import AnalysisPlugin
-    from plugins.backend import LoggingPlugin
-    from plugins.backend.toy_service_plugins.analysis.interfaces.i_analysis_service import IAnalysisService
+    from envisage_sample.plugins.backend_plugins import AnalysisPlugin
+    from envisage_sample.plugins.backend_plugins import LoggingPlugin
 
     # after...
     assert len(BROKER.get_declared_actors()) == 1
