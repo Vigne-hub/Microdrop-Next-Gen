@@ -34,16 +34,6 @@ def envisage_app():
     return app
 
 
-def test_qt_application(app):
-    """Test to ensure QApplication starts correctly."""
-    assert app is not None
-
-
-def test_envisage_application(envisage_app):
-    """Test to ensure Envisage application starts correctly."""
-    assert envisage_app is not None
-
-
 def test_plugins_registered(envisage_app):
     """Test if plugins are registered correctly in the Envisage application."""
     assert envisage_app.plugin_manager.get_plugin('app.dropbot_controller') is not None
