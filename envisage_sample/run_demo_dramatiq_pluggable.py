@@ -4,11 +4,11 @@ import time
 from dramatiq import Worker
 from envisage.api import Application
 
-from .plugins.frontend import UIPlugin
-from .plugins.frontend import PlotViewPlugin
-from .plugins.frontend import TableViewPlugin
+from plugins.frontend import UIPlugin
+from plugins.frontend import PlotViewPlugin
+from plugins.frontend import TableViewPlugin
 
-from .tests.common import BROKER
+from tests.common import BROKER
 
 
 class MyApp(Application):
