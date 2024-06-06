@@ -2,9 +2,9 @@ from envisage.core_plugin import CorePlugin
 from envisage.service_offer import ServiceOffer
 from traits.trait_types import List
 
-from envisage_sample.interfaces.i_analysis_service import IAnalysisService
-from envisage_sample.services.analysis_service import AnalysisService
-from envisage_sample.services.dramatiq_analysis_service import DramatiqAnalysisService
+from .interfaces.i_analysis_service import IAnalysisService
+from .services.analysis_service import AnalysisService
+from .services.dramatiq_analysis_service import DramatiqAnalysisService
 
 
 class AnalysisPlugin(CorePlugin):

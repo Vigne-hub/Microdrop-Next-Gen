@@ -1,15 +1,15 @@
+from ..plugins.frontend.qt_widgets.device_viewer.utils.dmf_utils import SvgUtil
+from .common import TEST_PATH
 import tempfile
 import shutil
 import pytest
 from pathlib import Path
 from xml.etree import ElementTree as ET
-from utils.dmf_utils import SvgUtil
-
 
 @pytest.fixture
 def clean_svg():
     with tempfile.TemporaryDirectory() as tmpdir:
-        shutil.copy('device_svg_files/2x3device.svg', tmpdir)
+        shutil.copy(f"{TEST_PATH}/device_svg_files/2x3device.svg", tmpdir)
         yield Path(tmpdir) / '2x3device.svg'
 
 
