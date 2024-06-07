@@ -9,8 +9,8 @@ import os
 import logging
 
 # local imports
-from examples.plugins.frontend.qt_widgets.device_viewer.views.electrodes_view import ElectrodeLayer
-from examples.plugins.frontend.qt_widgets.device_viewer.utils.auto_fit_graphics_view import AutoFitGraphicsView
+from .electrodes_view import ElectrodeLayer
+from ..utils.auto_fit_graphics_view import AutoFitGraphicsView
 
 logger = logging.getLogger(__name__)
 
