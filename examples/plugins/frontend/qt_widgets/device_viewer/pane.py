@@ -1,15 +1,17 @@
-from traits.api import Instance, List, Str, observe, File
-from traitsui.api import View, UItem, HGroup, Item, EnumEditor
-from pyface.tasks.api import TraitsTaskPane
+# enthought imports
+from traits.api import Instance, List, File
+from traitsui.api import View, UItem
+from pyface.tasks.api import TaskPane
 from pyface.qt.QtWidgets import QWidget, QVBoxLayout
 
-from .device_viewer_qt import DeviceViewerWidget  # Import your existing widget
-import os
+# Import your existing widget
+from .qt.device_viewer_qt import DeviceViewerWidget
 
-class DeviceViewerPane(TraitsTaskPane):
+
+class DeviceViewerPane(TaskPane):
     #### 'ITaskPane' interface ################################################
 
-    id = "envisage_sample.plugins.frontend.qt_widgets.device_viewer.pane"
+    id = "qt_widgets.device_viewer.pane"
     name = "Device Viewer Pane"
 
     #### 'DeviceViewerPane' interface #########################################

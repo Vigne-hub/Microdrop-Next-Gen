@@ -3,12 +3,12 @@ from typing import Union
 import numpy as np
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QPainterPath, QPen, QBrush, QFont
-from PySide6.QtWidgets import (QGraphicsItemGroup, QGraphicsView, QGraphicsItem,
+from PySide6.QtWidgets import (QGraphicsItemGroup, QGraphicsItem,
                                QGraphicsPathItem, QGraphicsTextItem)
 
-from .utils.dmf_utils import SvgUtil
-from .models.electrodes import Electrode, Electrodes
-from .. import initialize_logger
+from ..utils.dmf_utils import SvgUtil
+from ..models.electrodes import Electrode, Electrodes
+from ... import initialize_logger
 
 logger = initialize_logger(__name__, level='DEBUG')
 
@@ -195,10 +195,3 @@ class ElectrodeLayer(QGraphicsItemGroup):
             color.setAlphaF(alpha)
             item.setPen(QPen(color, 1))
             item.update()
-
-
-class AutoFitGraphicsView(QGraphicsView):
-    def resizeEvent(self, event):
-        logger.debug(f"Resizing view size: {self.scene().sceneRect()}")
-        self.fitInView(self.scene().sceneRect().adjusted(20, 20, 20, 20), Qt.AspectRatioMode.KeepAspectRatio)
-        super().resizeEvent(event)

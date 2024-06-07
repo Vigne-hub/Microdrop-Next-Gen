@@ -76,25 +76,3 @@ class Electrodes(HasTraits):  # QObject
 
     def items(self):
         return self._electrodes.items()
-
-    def sync_electrode_states(self, states: Array(Str or Int)):
-        for k, v in self.items():
-            try:
-                v.state = states[v.channel]
-            except KeyError:
-                logger.warning(f"Channel {v.channel} not found in states")
-
-    def sync_electrode_metastates(self, metastates: Array(Str or Int)):
-        for k, v in self.items():
-            try:
-                v.metastate = metastates[v.channel]
-            except KeyError:
-                logger.warning(f"Channel {v.channel} not found in metastates")
-
-    def check_electrode_range(self, n_channels: Int) -> List(Str):
-        """
-        Checks that the electrode channel numbers are within n_channels
-        :param n_channels: number of channels present
-        :return: list of electrode names that are out of range
-        """
-        return [k for k, v in self.items() if v.channel >= n_channels]

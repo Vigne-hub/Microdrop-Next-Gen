@@ -20,7 +20,7 @@ class DeviceViewerPlugin(Plugin):
     #### 'IPlugin' interface ##################################################
 
     # The plugin's unique identifier.
-    id = "envisage_sample.plugins.frontend.qt_widgets.device_viewer"
+    id = "qt_widgets.device_viewer"
 
     # The plugin's name (suitable for displaying to the user).
     name = "Device Viewer"

@@ -11,6 +11,7 @@ APP_LEVEl_LOGFILE = f"application_logs{os.sep}application.log.{time.strftime('%Y
 def get_id(name):
     return ".".join(name.split(".")[:-1])
 
+
 def initialize_logger(name, level="DEBUG", log_file_path=APP_LEVEl_LOGFILE):
     levels = {
         "DEBUG": logging.DEBUG,

@@ -29,7 +29,7 @@ class DeviceViewerApplication(TasksApplication):
 
     # above two traits are gotten from the preferences file
 
-    #### 'AttractorsApplication' interface ####################################
+    #### 'Application' interface ####################################
 
     preferences_helper = Instance(DeviceViewerPreferences)
 
