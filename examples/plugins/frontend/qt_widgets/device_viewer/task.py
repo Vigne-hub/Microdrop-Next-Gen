@@ -1,22 +1,35 @@
 # Enthought library imports.
-
-from pyface.tasks.action.api import SMenu, SMenuBar, TaskToggleGroup
+from pyface.tasks.action.api import SMenu, SMenuBar, TaskToggleGroup, TaskAction, TaskActionController
 from pyface.tasks.api import Task, TaskLayout
+from pyface.api import FileDialog, OK
 
 # Local imports.
-from .pane import DeviceViewerPane
+from .views.device_view_pane import DeviceViewerPane
 
 
 class DeviceViewerTask(Task):
     #### 'Task' interface #####################################################
 
-    id = "envisage_sample.plugins.frontend.qt_widgets.device_viewer.task"
+    id = "qt_widgets.device_viewer.task"
     name = "Device Viewer"
 
     menu_bar = SMenuBar(
-        SMenu(id="File", name="&File"),
-        SMenu(id="Edit", name="&Edit"),
-        SMenu(TaskToggleGroup(), id="View", name="&View"),
+
+        # File menu
+        SMenu(
+            TaskAction(
+                id="open_svg_file",
+                name='&Open SVG File',
+                method='open_file_dialog',
+                accelerator='Ctrl+O'),
+            id="File",
+            name="&File"),
+
+        # View Menu
+        SMenu(
+            TaskToggleGroup(),
+            id="View",
+            name="&View")
     )
 
     #### 'DeviceViewerTask' interface ##########################################
@@ -52,3 +65,14 @@ class DeviceViewerTask(Task):
     #### Trait change handlers ################################################
 
     # if any traits change handlers are needed, they go here.
+
+    ###########################################################################
+    # Menu actions.
+    ###########################################################################
+
+    def open_file_dialog(self):
+        """Open a file dialog to select an SVG file and set it in the central pane."""
+        dialog = FileDialog(action='open', wildcard='SVG Files (*.svg)|*.svg|All Files (*.*)|*.*')
+        if dialog.open() == OK:
+            svg_file = dialog.path
+            self.window.central_pane.svg_file = svg_file
