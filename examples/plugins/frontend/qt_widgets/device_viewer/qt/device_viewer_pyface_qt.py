@@ -96,6 +96,8 @@ class DeviceViewerWindow(ApplicationWindow):
 
 
 if __name__ == "__main__":
+
+    # ensure the root directory is in the path
     import sys
 
     if not QApplication.instance():
