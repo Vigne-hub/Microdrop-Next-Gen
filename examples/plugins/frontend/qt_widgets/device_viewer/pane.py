@@ -4,7 +4,7 @@ from pyface.tasks.api import TaskPane
 from pyface.qt.QtWidgets import QWidget, QVBoxLayout
 
 # local imports
-from .qt.device_viewer_pyface_qt import DeviceViewerWidget
+from .views.device_viewer_pyface_qt import DeviceViewerWidget
 
 
 class DeviceViewerPane(TaskPane):
