@@ -1,9 +1,8 @@
 # enthought imports
 from pyface.qt.QtGui import QGraphicsScene
-from pyface.qt.QtWidgets import QVBoxLayout, QPushButton, QApplication, QWidget
-from traits.api import HasTraits, Instance, Str, observe, Property
-from traitsui.api import View, UItem
-from pyface.api import ApplicationWindow, FileDialog, OK
+from pyface.qt.QtWidgets import QPushButton
+from traits.api import HasTraits, Instance, Str
+from pyface.api import FileDialog, OK
 
 # system imports
 import os
@@ -11,8 +10,7 @@ import logging
 
 # local imports
 from examples.plugins.frontend.qt_widgets.device_viewer.qt.electrodes_view import ElectrodeLayer
-from examples.plugins.frontend.qt_widgets.device_viewer.utils.auto_fit_graphics_view import AutoFitGraphicsViewEditor, \
-    AutoFitGraphicsView
+from examples.plugins.frontend.qt_widgets.device_viewer.utils.auto_fit_graphics_view import AutoFitGraphicsView
 
 logger = logging.getLogger(__name__)
 
@@ -28,23 +26,15 @@ class DeviceViewerWidget(HasTraits):
     view = Instance(AutoFitGraphicsView)
     current_electrode_layer = Instance(ElectrodeLayer, allow_none=True)
 
+
+    ##### Traits Interface ########################################################
     def _scene_default(self):
         return QGraphicsScene()
 
     def _svg_path_button_default(self):
         button = QPushButton('Select SVG File')
-        button.clicked.connect(self.open_file_dialog)
+        button.clicked.connect(self._open_file_dialog)
         return button
-
-    def _view_default(self):
-        view = AutoFitGraphicsView(self.scene)
-        view.setObjectName('device_view')
-        return view
-
-    def open_file_dialog(self):
-        dialog = FileDialog(action='open', wildcard='SVG Files (*.svg)|*.svg|All Files (*.*)|*.*')
-        if dialog.open() == OK:
-            self.svg_path = dialog.path
 
     def _svg_path_changed(self, new_path):
         """
@@ -65,7 +55,17 @@ class DeviceViewerWidget(HasTraits):
 
         # trigger a manual resize event to fit the scene rect: this is  a hack to get it to work properly
         self.scene.setSceneRect(self.scene.itemsBoundingRect())
-        self.view.resize(self.view.width() + 1, self.view.height() + 1)
+
+    def _view_default(self):
+        view = AutoFitGraphicsView(self.scene)
+        view.setObjectName('device_view')
+        return view
+
+    #### Widget Interface ########################################################
+    def _open_file_dialog(self):
+        dialog = FileDialog(action='open', wildcard='SVG Files (*.svg)|*.svg|All Files (*.*)|*.*')
+        if dialog.open() == OK:
+            self.svg_path = dialog.path
 
     def remove_current_layer(self):
         if self.current_electrode_layer:
@@ -73,38 +73,3 @@ class DeviceViewerWidget(HasTraits):
             logger.debug("Removed current electrode layer")
             self.scene.clear()
             self.scene.update()
-
-    traits_view = View(
-        UItem('view', editor=AutoFitGraphicsViewEditor(), style='custom'),
-        UItem('svg_path_button', style='custom'),
-        resizable=True
-    )
-
-
-class DeviceViewerWindow(ApplicationWindow):
-    viewer = Instance(DeviceViewerWidget)
-
-    def _viewer_default(self):
-        return DeviceViewerWidget()
-
-    def _create_contents(self, parent):
-        main_widget = QWidget(parent)
-        layout = QVBoxLayout(main_widget)
-        layout.addWidget(self.viewer.view)
-        layout.addWidget(self.viewer.svg_path_button)
-        return main_widget
-
-
-if __name__ == "__main__":
-
-    # ensure the root directory is in the path
-    import sys
-
-    if not QApplication.instance():
-        app = QApplication(sys.argv)
-    else:
-        app = QApplication.instance()
-
-    window = DeviceViewerWindow()
-    window.open()
-    sys.exit(app.exec())

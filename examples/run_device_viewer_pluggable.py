@@ -1,9 +1,11 @@
 # Plugin imports.
+import sys
+
 from envisage.api import CorePlugin
 from envisage.ui.tasks.api import TasksPlugin
 
 
-def main():
+def main(args):
     """Run the application."""
 
     from examples.plugins.frontend import DeviceViewerPlugin
@@ -15,4 +17,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    main(sys.argv)

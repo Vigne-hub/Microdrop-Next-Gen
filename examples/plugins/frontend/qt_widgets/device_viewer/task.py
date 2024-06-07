@@ -1,13 +1,11 @@
 # Enthought library imports.
-import os
 
 from pyface.tasks.action.api import SMenu, SMenuBar, TaskToggleGroup
-from pyface.tasks.api import PaneItem, Tabbed, Task, TaskLayout
-from traits.api import adapt, Any, Instance, List
-from traits.trait_types import File
+from pyface.tasks.api import Task, TaskLayout
 
 # Local imports.
 from .pane import DeviceViewerPane
+
 
 class DeviceViewerTask(Task):
     #### 'Task' interface #####################################################
@@ -23,8 +21,7 @@ class DeviceViewerTask(Task):
 
     #### 'DeviceViewerTask' interface ##########################################
 
-    # The current path for the device viewer svg model.
-    selected_svg_path = File
+    # Any traits for this DeviceViewertask go here.
 
     ###########################################################################
     # 'Task' interface.
@@ -35,11 +32,7 @@ class DeviceViewerTask(Task):
         that dock panes can introspect it.
         """
 
-        pane = DeviceViewerPane(selected_svg_file=f"device_svg_files{os.sep}2x3device.svg")
-
-        self.selected_svg_path = pane.selected_svg_file
-
-        return pane
+        return DeviceViewerPane()
 
     def create_dock_panes(self):
         """Create any dock panes needed for the task."""
@@ -56,4 +49,6 @@ class DeviceViewerTask(Task):
         return TaskLayout(
         )
 
-        #### Trait change handlers ################################################
+    #### Trait change handlers ################################################
+
+    # if any traits change handlers are needed, they go here.

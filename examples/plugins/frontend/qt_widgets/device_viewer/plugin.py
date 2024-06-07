@@ -49,7 +49,7 @@ class DeviceViewerPlugin(Plugin):
 
         return [
             TaskFactory(
-                id="envisage_sample.plugins.frontend.qt_widgets.device_viewer.task",
+                id="qt_widgets.device_viewer.task",
                 name="Device Viewer Widget",
                 factory=DeviceViewerTask,
             )

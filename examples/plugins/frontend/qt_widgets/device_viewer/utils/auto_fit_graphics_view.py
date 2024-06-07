@@ -16,21 +16,3 @@ class AutoFitGraphicsView(QGraphicsView):
         logger.debug(f"Resizing view size: {self.scene().sceneRect()}")
         self.fitInView(self.scene().sceneRect().adjusted(20, 20, 20, 20), Qt.AspectRatioMode.KeepAspectRatio)
         super().resizeEvent(event)
-
-
-class _AutoFitGraphicsViewEditor(Editor):
-    """
-    Editor for AutoFitGraphicsView
-    """
-    def init(self, parent):
-        self.control = AutoFitGraphicsView(parent)
-        self.control.setObjectName('device_view')
-        self.value = self.control  # Set the value of the editor to be the QGraphicsView instance
-        self.set_frame_active(False)
-
-
-class AutoFitGraphicsViewEditor(BasicEditorFactory):
-    """
-    BasicEditorFactory for AutoFitGraphicsView
-    """
-    klass = _AutoFitGraphicsViewEditor
