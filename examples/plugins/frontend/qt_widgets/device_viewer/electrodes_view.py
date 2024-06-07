@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (QGraphicsItemGroup, QGraphicsView, QGraphicsItem,
                                QGraphicsPathItem, QGraphicsTextItem)
 
 from .utils.dmf_utils import SvgUtil
-from .electrodes_model import Electrode, Electrodes
+from .models.electrodes import Electrode, Electrodes
 from .. import initialize_logger
 
 logger = initialize_logger(__name__, level='DEBUG')

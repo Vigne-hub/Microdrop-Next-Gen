@@ -1,4 +1,4 @@
-from .. import initialize_logger
+from examples.plugins.frontend.qt_widgets import initialize_logger
 
 from traits.api import HasTraits, Int, Bool, Array, Float, Any, Dict, Str, List, Property
 

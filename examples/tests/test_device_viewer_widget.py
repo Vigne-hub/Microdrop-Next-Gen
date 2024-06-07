@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from ..plugins.frontend.qt_widgets.device_viewer.electrodes_model import Electrode, Electrodes
+from examples.plugins.frontend.qt_widgets.device_viewer.models.electrodes_model import Electrode, Electrodes
 from traits.trait_errors import TraitError
 
 correct_path_array = np.array(

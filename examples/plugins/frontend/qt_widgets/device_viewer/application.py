@@ -1,11 +1,10 @@
 # Local imports.
 from .preferences import DeviceViewerPreferences
 
-from pyface.tasks.api import TaskWindowLayout
-from traits.api import Bool, Instance, List, Property
-
 # Enthought library imports.
 from envisage.ui.tasks.api import TasksApplication
+from pyface.tasks.api import TaskWindowLayout
+from traits.api import Bool, Instance, List, Property
 
 
 class DeviceViewerApplication(TasksApplication):
@@ -14,7 +13,7 @@ class DeviceViewerApplication(TasksApplication):
     #### 'IApplication' interface #############################################
 
     # The application's globally unique identifier.
-    id = "envisage_sample.plugins.frontend.qt_widgets.device_viewer"
+    id = "qt_widgets.device_viewer"
 
     # The application's user-visible name.
     name = "Device Viewer App"
@@ -28,6 +27,8 @@ class DeviceViewerApplication(TasksApplication):
     # applicaton is started.
     always_use_default_layout = Property(Bool)
 
+    # above two traits are gotten from the preferences file
+
     #### 'AttractorsApplication' interface ####################################
 
     preferences_helper = Instance(DeviceViewerPreferences)
@@ -38,7 +39,15 @@ class DeviceViewerApplication(TasksApplication):
 
     #### Trait initializers ###################################################
 
+    # note: The _default after a trait name to define a method is a convention to indicate that the trait is a
+    # default value for another trait.
+
     def _default_layout_default(self):
+        """
+        Trait initializer for the default_layout task, which is the active task to be displayed. It is gotten from the
+        preferences.
+
+        """
         active_task = self.preferences_helper.default_task
         tasks = [factory.id for factory in self.task_factories]
         return [
@@ -46,9 +55,14 @@ class DeviceViewerApplication(TasksApplication):
         ]
 
     def _preferences_helper_default(self):
+        """
+        Retireve the preferences from the preferences file using the DeviceViewerPreferences class.
+        """
         return DeviceViewerPreferences(preferences=self.preferences)
 
     #### Trait property getter/setters ########################################
+
+    # the _get and _set tags in the methods are used to define a getter and setter for a trait property.
 
     def _get_always_use_default_layout(self):
         return self.preferences_helper.always_use_default_layout
