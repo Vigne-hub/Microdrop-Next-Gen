@@ -1,32 +1,33 @@
-from pathlib import Path
-from typing import Union
+# library imports
 import numpy as np
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor, QPainterPath, QPen, QBrush, QFont
-from PySide6.QtWidgets import (QGraphicsItemGroup, QGraphicsItem,
-                               QGraphicsPathItem, QGraphicsTextItem)
 
-from ..utils.dmf_utils import SvgUtil
-from ..models.electrodes import Electrode, Electrodes
+# local imports
 from ... import initialize_logger
+
+# enthought imports
+from pyface.qt.QtCore import Qt
+from pyface.qt.QtGui import (QColor, QPen, QBrush, QFont, QPainterPath, QGraphicsPathItem, QGraphicsTextItem,
+                             QGraphicsItem, QGraphicsItemGroup)
 
 logger = initialize_logger(__name__, level='DEBUG')
 
 default_colors = {True: '#8d99ae', False: '#0a2463', 'no-channel': '#fc8eac',
                   'droplet': '#06d6a0', 'line': '#3e92cc', 'connection': '#ffffff'}
 
+default_alphas = {'line': 1.0, 'fill': 1.0, 'text': 1.0}
 
-class ElectrodeGraphicsItem(QGraphicsPathItem):
+
+class ElectrodeView(QGraphicsPathItem):
 
     def __init__(self, id_, electrode, path_data, parent=None):
-        QGraphicsPathItem.__init__(self, parent)
+        super().__init__(parent)
 
         self.state_map = {k: v for k, v in default_colors.items()}
         self.state_map[None] = self.state_map[False]
 
         self.electrode = electrode
         self.id = id_
-        self.alphas = {'line': 1.0, 'fill': 1.0, 'text': 1.0}
+        self.alphas = default_alphas
 
         if str(self.electrode.channel) == 'None':
             self.state_map[False] = default_colors['no-channel']
@@ -72,13 +73,14 @@ class ElectrodeGraphicsItem(QGraphicsPathItem):
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsFocusable, True)
 
     def mousePressEvent(self, event):
-
-        # FIXME: affects model. Needs to be logic in controller handler via clicked signal outside this class?
-        self.electrode.state = not self.electrode.state
-
-        # update color based on state
-        self.update_color(self.electrode.state)
+        self.on_clicked()
         super().mousePressEvent(event)  # Call the superclass method to ensure proper event handling
+
+    def on_clicked(self):
+        """
+        Method to be implemented by Controller
+        """
+        pass
 
     def fit_text_in_path(self, text: str, path_extremes, default_font_size: int = 8):
         if text == 'None':
@@ -136,24 +138,26 @@ class ElectrodeGraphicsItem(QGraphicsPathItem):
 
 class ElectrodeLayer(QGraphicsItemGroup):
 
-    def __init__(self, id_: str, svg_file: Union[str, Path], parent=None):
+    def __init__(self, id_: str, electrodes, parent=None):
         super().__init__(parent=parent)
 
         self.id = id_
         self.setHandlesChildEvents(False)  # Pass events to children
 
-        svg = SvgUtil(svg_file)
+        self.electrode_views = {}
 
-        electrodes = Electrodes()
-        self.electrode_graphic_items = {}
-        # Scale to approx 360p resolution for display
+        svg = electrodes.svg_model
+
+        # # Scale to approx 360p resolution for display
         modifier = max(640 / (svg.max_x - svg.min_x), 360 / (svg.max_y - svg.min_y))
 
-        for k, v in svg.electrodes.items():
-            electrodes[k] = Electrode(channel=v['channel'], path=v['path'])
-            self.electrode_graphic_items[k] = ElectrodeGraphicsItem(k, electrodes[k],
-                                                                    modifier * v['path'][:, 0, :])
-            self.addToGroup(self.electrode_graphic_items[k])
+        logger.debug(f"Creating Electrode Layer {id_} with {len(electrodes.electrodes)} electrodes.")
+
+        for electrode_id, electrode in electrodes.electrodes.items():
+            self.electrode_views[electrode_id] = ElectrodeView(electrode_id, electrodes[electrode_id],
+                                                               modifier * electrode.path[:, 0, :])
+
+            self.addToGroup(self.electrode_views[electrode_id])
 
         self._electrodes = electrodes
 
@@ -168,13 +172,13 @@ class ElectrodeLayer(QGraphicsItemGroup):
         for name, e in self._electrodes.items():
             for k in kwargs.keys():
                 if k in ['line', 'fill', 'text']:
-                    self.electrode_graphic_items[name].alphas[k] = alpha
+                    self.electrode_views[name].alphas[k] = alpha
                 if k == 'global_alpha':
-                    self.electrode_graphic_items[name].alphas['line'] = alpha
-                    self.electrode_graphic_items[name].alphas['fill'] = alpha
-                    self.electrode_graphic_items[name].alphas['text'] = alpha
+                    self.electrode_views[name].alphas['line'] = alpha
+                    self.electrode_views[name].alphas['fill'] = alpha
+                    self.electrode_views[name].alphas['text'] = alpha
 
-            self.electrode_graphic_items[name].update_alpha(**kwargs)
+            self.electrode_views[name].update_alpha(**kwargs)
 
     def draw_connections(self):
         for connection in self.connections:

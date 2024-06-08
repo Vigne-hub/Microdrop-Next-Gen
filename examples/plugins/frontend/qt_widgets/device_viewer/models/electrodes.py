@@ -1,6 +1,11 @@
-from examples.plugins.frontend.qt_widgets import initialize_logger
+# Imports:
 
-from traits.api import HasTraits, Int, Bool, Array, Float, Any, Dict, Str, List, Property
+# local
+from ..utils.dmf_utils import SvgUtil
+from ... import initialize_logger
+
+# enthought
+from traits.api import HasTraits, Int, Bool, Array, Float, Any, Dict, Str, Instance, Property, File
 
 logger = initialize_logger(__name__)
 
@@ -44,7 +49,7 @@ class Electrode(HasTraits):
             self._metastate = metastate
 
 
-class Electrodes(HasTraits):  # QObject
+class Electrodes(HasTraits):
 
     """
     Electrodes class for managing multiple electrodes
@@ -56,23 +61,36 @@ class Electrodes(HasTraits):  # QObject
 
     electrodes = Property(Dict(Str, Electrode), depends_on='_electrodes')
 
-    def _get_electrodes(self) -> Dict(Str, Electrode):
-        return self._electrodes
+    svg_model = Instance(SvgUtil, allow_none=True, desc="Model for the SVG file if given")
 
-    def _set_electrodes(self, electrodes: Dict(Str, Electrode)):
-        self._electrodes = electrodes
-
+    # -------------------Magic methods ----------------------------------------------------------------------
     def __getitem__(self, item: Str) -> Electrode:
         return self._electrodes[item]
 
     def __setitem__(self, key, value):
         self._electrodes[key] = value
 
-    def values(self):
-        return self._electrodes.values()
+    # -------------------Trait Property getters and setters --------------------------------------------------
+    def _get_electrodes(self) -> Dict(Str, Electrode):
+        return self._electrodes
 
-    def keys(self):
-        return self._electrodes.keys()
+    def _set_electrodes(self, electrodes: Dict(Str, Electrode)):
+        self._electrodes = electrodes
 
-    def items(self):
-        return self._electrodes.items()
+    # -------------------Trait change handlers --------------------------------------------------
+    def _svg_model_changed(self, new_model: SvgUtil):
+        for k, v in new_model.electrodes.items():
+            self.electrodes[k] = Electrode(channel=v['channel'], path=v['path'])
+
+        logger.debug(f"Created electrodes from SVG file: {new_model.filename}")
+
+    # -------------------Public methods --------------------------------------------------
+    def set_electrodes_from_svg_file(self, svg_file: File):
+        """
+        Get electrodes from SVG file
+        :param svg_file: Path to SVG file
+        :return: Dictionary of electrodes
+        """
+
+        self.svg_model = SvgUtil(svg_file)
+        logger.debug(f"Setting electrodes from SVG file: {svg_file}")

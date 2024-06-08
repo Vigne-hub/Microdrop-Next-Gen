@@ -1,5 +1,5 @@
 # enthought imports
-from traits.api import Str, Instance
+from traits.api import Instance
 from pyface.tasks.api import TaskPane
 from pyface.qt.QtGui import QGraphicsScene
 from pyface.qt.QtOpenGLWidgets import QOpenGLWidget
@@ -7,13 +7,11 @@ from pyface.qt.QtCore import Qt
 
 # local imports
 from .electrodes_view import ElectrodeLayer
+from ..models.electrodes import Electrodes
 from ..utils.auto_fit_graphics_view import AutoFitGraphicsView
 from ... import initialize_logger
 
 logger = initialize_logger(__name__)
-
-# system imports
-import os
 
 
 class DeviceViewerPane(TaskPane):
@@ -26,11 +24,11 @@ class DeviceViewerPane(TaskPane):
     scene = Instance(QGraphicsScene)
     view = Instance(AutoFitGraphicsView)
     current_electrode_layer = Instance(ElectrodeLayer, allow_none=True)
-    svg_file = Str()
 
     # --------- Device View trait initializers -------------
     def _scene_default(self):
         return QGraphicsScene()
+
 
     def _view_default(self):
         view = AutoFitGraphicsView(self.scene)
@@ -38,18 +36,6 @@ class DeviceViewerPane(TaskPane):
         view.setViewport(QOpenGLWidget())
 
         return view
-
-    # ------- Device Veiw trait change handlers -----------------
-    def _svg_file_changed(self, new_path):
-        """
-        Trigger an update to redraw and re-initialize the svg widget once a new svg file is selected.
-        """
-        self.current_electrode_layer = ElectrodeLayer("layer1", new_path)
-        self.remove_current_layer()
-        self.scene.addItem(self.current_electrode_layer)
-        logger.debug(f"Layer {self.current_electrode_layer.id} added -> {new_path}")
-        self.scene.setSceneRect(self.scene.itemsBoundingRect())
-        self.view.fitInView(self.scene.sceneRect(), Qt.AspectRatioMode.KeepAspectRatio)
 
     # ------- Device View class methods -------------------------
     def remove_current_layer(self):
@@ -65,3 +51,12 @@ class DeviceViewerPane(TaskPane):
     def create(self, parent):
         self.control = self.view
         self.control.setParent(parent)
+
+    def set_new_layer_from_model(self, new_model):
+        self.remove_current_layer()
+        self.current_electrode_layer = ElectrodeLayer("layer1", new_model)
+        self.scene.addItem(self.current_electrode_layer)
+
+    def fit_scene_to_view(self):
+        self.scene.setSceneRect(self.scene.itemsBoundingRect())
+        self.view.fitInView(self.scene.sceneRect(), Qt.AspectRatioMode.KeepAspectRatio)
