@@ -7,7 +7,6 @@ from pyface.qt.QtCore import Qt
 
 # local imports
 from .electrodes_view import ElectrodeLayer
-from ..models.electrodes import Electrodes
 from ..utils.auto_fit_graphics_view import AutoFitGraphicsView
 from ... import initialize_logger
 
@@ -28,7 +27,6 @@ class DeviceViewerPane(TaskPane):
     # --------- Device View trait initializers -------------
     def _scene_default(self):
         return QGraphicsScene()
-
 
     def _view_default(self):
         view = AutoFitGraphicsView(self.scene)
