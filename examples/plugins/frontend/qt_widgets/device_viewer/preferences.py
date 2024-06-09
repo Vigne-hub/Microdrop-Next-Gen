@@ -12,7 +12,7 @@ class DeviceViewerPreferences(PreferencesHelper):
     #### 'PreferencesHelper' interface ########################################
 
     # The path to the preference node that contains the preferences.
-    preferences_path = "envisage_sample.plugins.frontend.qt_widgets.device_viewer"
+    preferences_path = "device_viewer"
 
     #### Preferences ##########################################################
 

@@ -20,7 +20,7 @@ class DeviceViewerPlugin(Plugin):
     #### 'IPlugin' interface ##################################################
 
     # The plugin's unique identifier.
-    id = "qt_widgets.device_viewer"
+    id = "device_viewer"
 
     # The plugin's name (suitable for displaying to the user).
     name = "Device Viewer"
@@ -49,7 +49,7 @@ class DeviceViewerPlugin(Plugin):
 
         return [
             TaskFactory(
-                id="qt_widgets.device_viewer.task",
+                id="device_viewer.task",
                 name="Device Viewer Widget",
                 factory=DeviceViewerTask,
             )

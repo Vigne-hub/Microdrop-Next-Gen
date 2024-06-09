@@ -20,7 +20,7 @@ DEFAULT_SVG_FILE = "2x3device.svg"
 class DeviceViewerTask(Task):
     #### 'Task' interface #####################################################
 
-    id = "qt_widgets.device_viewer.task"
+    id = "device_viewer.task"
     name = "Device Viewer"
 
     menu_bar = SMenuBar(
