@@ -10,8 +10,10 @@ device_viewer_widget = DeviceViewerWidget()
 
 # from the file dialog button
 default_paths = [
-    f"envisage_sample{os.sep}widgets{os.sep}tests{os.sep}2x3device.svg",
-    f"envisage_sample{os.sep}widgets{os.sep}tests{os.sep}device_drc.svg"
+
+    f"tests{os.sep}2x3device.svg",
+    f"tests{os.sep}device_drc.svg"
+
 ]
 
 selected_svg_path = default_paths[0]

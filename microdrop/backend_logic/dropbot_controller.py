@@ -2,7 +2,9 @@ from time import sleep
 
 from PySide6.QtCore import QTimer
 import logging
-from ..services.pub_sub_manager_services import PubSubManager
+
+from ..interfaces.i_pub_sub_manager_service import IPubSubManagerService
+
 from ..pydantic_models.dropbot_controller_output_state_model import DBOutputStateModel, \
     DBChannelsChangedModel, DBVoltageChangedModel, DBChannelsMetastateChanged
 
@@ -30,7 +32,9 @@ class DropbotController:
     output_state_true = DBOutputStateModel(Signal='output_state_changed', OutputState=True)
     output_state_false = DBOutputStateModel(Signal='output_state_changed', OutputState=False)
 
-    def __init__(self, parent=None):
+
+    def __init__(self, app, parent=None):
+
         """
         Initializes the DropbotController instance and sets up timers for
         Dropbot initialization and voltage polling.
@@ -41,7 +45,8 @@ class DropbotController:
         self.proxy: Union[None, dropbot.SerialProxy] = None
         self.last_state: NDArray[Shape['*, 1'], UInt8] = np.zeros(128, dtype='uint8')
 
-        self.pub_sub_manager = PubSubManager()
+        self.pub_sub_manager = app.get_service(IPubSubManagerService)
+
         self.pub_sub_manager.create_publisher(publisher_name=f'dropbot_publisher', exchange_name='output_state_changed')
         self.pub_sub_manager.create_publisher(publisher_name=f'dropbot_publisher', exchange_name='channels_changed')
         self.pub_sub_manager.create_publisher(publisher_name=f'dropbot_publisher', exchange_name='voltage_changed')
