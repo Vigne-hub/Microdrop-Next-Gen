@@ -2,14 +2,14 @@
 import numpy as np
 
 # local imports
-from examples.plugins.frontend.qt_widgets import initialize_logger
+from logger import get_logger
 
 # enthought imports
 from pyface.qt.QtCore import Qt
 from pyface.qt.QtGui import (QColor, QPen, QBrush, QFont, QPainterPath, QGraphicsPathItem, QGraphicsTextItem,
                              QGraphicsItem, QGraphicsItemGroup)
 
-logger = initialize_logger(__name__, level='DEBUG')
+logger = get_logger(__name__, level='DEBUG')
 
 default_colors = {True: '#8d99ae', False: '#0a2463', 'no-channel': '#fc8eac',
                   'droplet': '#06d6a0', 'line': '#3e92cc', 'connection': '#ffffff'}

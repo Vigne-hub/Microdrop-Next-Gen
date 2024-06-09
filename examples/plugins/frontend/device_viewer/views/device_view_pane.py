@@ -8,9 +8,9 @@ from pyface.qt.QtCore import Qt
 # local imports
 from .electrodes_view import ElectrodeLayer
 from ..utils.auto_fit_graphics_view import AutoFitGraphicsView
-from examples.plugins.frontend.qt_widgets import initialize_logger
+from logger import get_logger
 
-logger = initialize_logger(__name__)
+logger = get_logger(__name__)
 
 
 class DeviceViewerPane(TaskPane):

@@ -1,9 +1,9 @@
 from pyface.qt.QtWidgets import QGraphicsView
 from pyface.qt.QtCore import Qt
 
-from examples.plugins.frontend.qt_widgets import initialize_logger
+from logger import get_logger
 
-logger = initialize_logger(__name__)
+logger = get_logger(__name__)
 
 
 class AutoFitGraphicsView(QGraphicsView):

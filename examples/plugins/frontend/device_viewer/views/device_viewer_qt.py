@@ -6,12 +6,12 @@ from PySide6.QtWidgets import QWidget, QPushButton, QGraphicsScene, QBoxLayout, 
     QSpinBox, QFileDialog
 
 from ..utils.auto_fit_graphics_view import AutoFitGraphicsView
-from examples.plugins.frontend.qt_widgets import initialize_logger
 from .electrodes_view import ElectrodeLayer
+from logger import get_logger
 
 import os
 
-logger = initialize_logger(__name__)
+logger = get_logger(__name__)
 
 
 class DeviceViewerWidget(QWidget):

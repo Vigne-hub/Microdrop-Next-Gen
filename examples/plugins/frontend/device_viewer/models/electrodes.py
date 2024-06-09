@@ -2,12 +2,12 @@
 
 # local
 from ..utils.dmf_utils import SvgUtil
-from examples.plugins.frontend.qt_widgets import initialize_logger
+from logger import get_logger
 
 # enthought
 from traits.api import HasTraits, Int, Bool, Array, Float, Any, Dict, Str, Instance, Property, File
 
-logger = initialize_logger(__name__)
+logger = get_logger(__name__)
 
 
 class Electrode(HasTraits):
