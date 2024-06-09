@@ -4,8 +4,8 @@ from envisage.api import ServiceOffer
 from envisage.core_plugin import CorePlugin
 from traits.api import List
 
-from MicroDropNG.interfaces.i_pub_sub_manager_service import IPubSubManagerService
-from MicroDropNG.services.pub_sub_manager_services import PubSubManager
+from microdrop.interfaces.i_pub_sub_manager_service import IPubSubManagerService
+from microdrop.services.pub_sub_manager_services import PubSubManager
 
 # Initialize logger
 logger = logging.getLogger(__name__)
