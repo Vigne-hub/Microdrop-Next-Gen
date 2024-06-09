@@ -7,6 +7,7 @@ LOGFILE = f"application_logs{os.sep}application.log.{time.strftime('%Y-%m-%d_%H-
 
 
 def get_logger(name, level="DEBUG", log_file_path=LOGFILE):
+  
     levels = {
         "DEBUG": logging.DEBUG,
         "INFO": logging.INFO,
