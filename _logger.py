@@ -1,14 +1,13 @@
 import os
 import time
 import logging
-
 from pathlib import Path
 
-APP_LEVEl_LOGFILE = f"application_logs{os.sep}application.log.{time.strftime('%Y-%m-%d_%H-%M-%S')}"
+LOGFILE = f"application_logs{os.sep}application.log.{time.strftime('%Y-%m-%d_%H-%M-%S')}"
 
 
-def get_logger(name, level="INFO", log_file_path=APP_LEVEl_LOGFILE):
-
+def get_logger(name, level="DEBUG", log_file_path=LOGFILE):
+  
     levels = {
         "DEBUG": logging.DEBUG,
         "INFO": logging.INFO,
