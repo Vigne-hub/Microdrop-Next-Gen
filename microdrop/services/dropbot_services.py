@@ -1,5 +1,5 @@
 from traits.api import HasTraits, provides
-from ..interfaces.dropbot_interface import IDropbotControllerService
+from ..interfaces.i_dropbot_controller_service import IDropbotControllerService
 from ..plugins.backend_plugins.dropbot_controller import DropbotActor
 from ..utils.logger import initialize_logger
 

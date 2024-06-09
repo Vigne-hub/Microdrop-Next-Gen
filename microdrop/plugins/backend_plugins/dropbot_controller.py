@@ -1,13 +1,12 @@
 from envisage.api import ServiceOffer
-from envisage.core_plugin import CorePlugin
 from envisage.plugin import Plugin
 from traits.api import List
 import dramatiq
 from dramatiq.brokers.rabbitmq import RabbitmqBroker
 import logging
 
-from microdrop.backend_logic.dropbot_controller import DropbotController
-from microdrop.interfaces.dropbot_interface import IDropbotControllerService
+from ...backend_logic.dropbot_controller import DropbotController
+from ...interfaces.i_dropbot_controller_service import IDropbotControllerService
 
 # Initialize logger
 logger = logging.getLogger(__name__)

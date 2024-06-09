@@ -1,7 +1,5 @@
 import pytest
 from PySide6.QtWidgets import QApplication
-from envisage.api import Application
-from microdrop.plugins.backend_plugins.dropbot_controller import DropbotControllerPlugin
 from unittest.mock import MagicMock
 
 """
@@ -41,13 +39,15 @@ def test_plugins_registered(envisage_app):
 
 def test_dropbot_service_registered(envisage_app):
     """Test if DropbotControllerService is registered in the application."""
-    dropbot_service = envisage_app.get_service("MicroDropNG.interfaces.dropbot_interface.IDropbotControllerService")
+    from microdrop.interfaces.i_dropbot_controller_service import IDropbotControllerService
+    dropbot_service = envisage_app.get_service(IDropbotControllerService)
     assert dropbot_service is not None
 
 
 def test_dropbot_service_methods(envisage_app):
     """Test if DropbotControllerService methods are callable and work as expected."""
-    dropbot_service = envisage_app.get_service("MicroDropNG.interfaces.dropbot_interface.IDropbotControllerService")
+    from microdrop.interfaces.i_dropbot_controller_service import IDropbotControllerService
+    dropbot_service = envisage_app.get_service(IDropbotControllerService)
     assert dropbot_service is not None
 
     # Mock the dropbot_actor to avoid actual message sending during tests
