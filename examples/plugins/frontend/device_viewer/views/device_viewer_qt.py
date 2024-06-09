@@ -6,7 +6,7 @@ from PySide6.QtWidgets import QWidget, QPushButton, QGraphicsScene, QBoxLayout, 
     QSpinBox, QFileDialog
 
 from ..utils.auto_fit_graphics_view import AutoFitGraphicsView
-from ... import initialize_logger
+from examples.plugins.frontend.qt_widgets import initialize_logger
 from .electrodes_view import ElectrodeLayer
 
 import os

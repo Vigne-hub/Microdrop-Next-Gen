@@ -11,7 +11,7 @@ from traits.has_traits import observe
 # Local imports.
 from .models.electrodes import Electrodes
 from .views.device_view_pane import DeviceViewerPane
-from .. import initialize_logger
+from examples.plugins.frontend.qt_widgets import initialize_logger
 
 logger = initialize_logger(__name__)
 DEFAULT_SVG_FILE = "2x3device.svg"

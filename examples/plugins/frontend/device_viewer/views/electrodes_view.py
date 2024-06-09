@@ -2,7 +2,7 @@
 import numpy as np
 
 # local imports
-from ... import initialize_logger
+from examples.plugins.frontend.qt_widgets import initialize_logger
 
 # enthought imports
 from pyface.qt.QtCore import Qt

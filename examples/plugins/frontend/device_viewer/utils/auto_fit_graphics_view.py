@@ -1,7 +1,7 @@
 from pyface.qt.QtWidgets import QGraphicsView
 from pyface.qt.QtCore import Qt
 
-from ... import initialize_logger
+from examples.plugins.frontend.qt_widgets import initialize_logger
 
 logger = initialize_logger(__name__)
 

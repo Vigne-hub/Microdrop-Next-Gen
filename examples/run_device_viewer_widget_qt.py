@@ -1,7 +1,7 @@
 import os
 from PySide6.QtWidgets import QApplication
 import sys
-from examples.plugins.frontend.qt_widgets.device_viewer.views.device_viewer_qt import DeviceViewerWidget
+from examples.plugins.frontend.device_viewer.views.device_viewer_qt import DeviceViewerWidget
 from tests.common import TEST_PATH
 
 if not QApplication.instance():

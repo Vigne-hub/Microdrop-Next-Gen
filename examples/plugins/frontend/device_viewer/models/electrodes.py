@@ -2,7 +2,7 @@
 
 # local
 from ..utils.dmf_utils import SvgUtil
-from ... import initialize_logger
+from examples.plugins.frontend.qt_widgets import initialize_logger
 
 # enthought
 from traits.api import HasTraits, Int, Bool, Array, Float, Any, Dict, Str, Instance, Property, File

@@ -9,7 +9,7 @@ def main(args):
     """Run the application."""
 
     from examples.plugins.frontend import DeviceViewerPlugin
-    from examples.plugins.frontend.qt_widgets.device_viewer.application import DeviceViewerApplication
+    from examples.plugins.frontend import DeviceViewerApplication
 
     plugins = [CorePlugin(), TasksPlugin(), DeviceViewerPlugin()]
     app = DeviceViewerApplication(plugins=plugins)
