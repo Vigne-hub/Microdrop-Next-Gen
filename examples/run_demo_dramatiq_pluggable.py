@@ -8,7 +8,7 @@ from plugins.frontend import UIPlugin
 from plugins.frontend import PlotViewPlugin
 from plugins.frontend import TableViewPlugin
 
-from tests.common import BROKER
+from _tests.common import BROKER
 
 
 class MyApp(Application):

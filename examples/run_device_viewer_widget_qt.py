@@ -2,7 +2,8 @@ import os
 from PySide6.QtWidgets import QApplication
 import sys
 from examples.plugins.frontend.device_viewer.views.device_viewer_qt import DeviceViewerWidget
-from tests.common import TEST_PATH
+from examples.plugins.frontend.device_viewer.models.electrodes import Electrodes
+from _tests.common import TEST_PATH
 
 if not QApplication.instance():
     app = QApplication(sys.argv)
@@ -19,7 +20,10 @@ default_paths = [
 
 selected_svg_path = default_paths[0]
 
-device_viewer_widget.change_active_layer(selected_svg_path)
+electrodes_model = Electrodes()
+electrodes_model.set_electrodes_from_svg_file(selected_svg_path)
+
+device_viewer_widget.change_active_layer(electrodes_model)
 
 device_viewer_widget.show()
 sys.exit(app.exec())

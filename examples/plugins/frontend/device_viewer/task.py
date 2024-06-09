@@ -6,12 +6,11 @@ from pyface.tasks.action.api import SMenu, SMenuBar, TaskToggleGroup, TaskAction
 from pyface.tasks.api import Task, TaskLayout
 from pyface.api import FileDialog, OK
 from traits.api import Instance
-from traits.has_traits import observe
 
 # Local imports.
 from .models.electrodes import Electrodes
 from .views.device_view_pane import DeviceViewerPane
-from logger import get_logger
+from _logger import get_logger
 
 logger = get_logger(__name__)
 DEFAULT_SVG_FILE = "2x3device.svg"

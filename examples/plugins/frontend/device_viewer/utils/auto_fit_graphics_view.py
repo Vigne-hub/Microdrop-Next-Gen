@@ -1,7 +1,7 @@
 from pyface.qt.QtWidgets import QGraphicsView
 from pyface.qt.QtCore import Qt
 
-from logger import get_logger
+from _logger import get_logger
 
 logger = get_logger(__name__)
 

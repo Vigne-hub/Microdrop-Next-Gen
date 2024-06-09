@@ -8,7 +8,7 @@ from pyface.qt.QtCore import Qt
 # local imports
 from .electrodes_view import ElectrodeLayer
 from ..utils.auto_fit_graphics_view import AutoFitGraphicsView
-from logger import get_logger
+from _logger import get_logger
 
 logger = get_logger(__name__)
 

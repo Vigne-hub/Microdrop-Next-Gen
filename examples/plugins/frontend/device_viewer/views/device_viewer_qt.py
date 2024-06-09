@@ -5,9 +5,10 @@ from PySide6.QtOpenGLWidgets import QOpenGLWidget
 from PySide6.QtWidgets import QWidget, QPushButton, QGraphicsScene, QBoxLayout, QLabel, QGroupBox, QGridLayout, \
     QSpinBox, QFileDialog
 
+from ..models.electrodes import Electrodes
 from ..utils.auto_fit_graphics_view import AutoFitGraphicsView
 from .electrodes_view import ElectrodeLayer
-from logger import get_logger
+from _logger import get_logger
 
 import os
 
@@ -85,7 +86,9 @@ class DeviceViewerWidget(QWidget):
         options = QFileDialog.Options()
         file_name, _ = QFileDialog.getOpenFileName(self, "Select SVG File", "", "SVG Files (*.svg);;All Files (*)", options=options)
         if file_name:
-            self.change_active_layer(file_name)
+            new_electrodes_model = Electrodes()
+            new_electrodes_model.set_electrodes_from_svg_file(new_electrodes_model)
+            self.change_active_layer(new_electrodes_model)
             self.svg_path_button.setText(os.path.basename(file_name))
 
     def collapse_manual_controls(self, checked):
@@ -108,19 +111,19 @@ class DeviceViewerWidget(QWidget):
     def set_frame_colour(self, colour: str):
         self.view.setStyleSheet(f'#device_view {{ border: 5px solid {colour}; }}')
 
-    def change_active_layer(self, device_path):
+    def change_active_layer(self, electrodes_model: 'Electrodes'):
 
         # create a new layer
         # obtain proper path using the index for the path in svg combo box that should correspond to the same index
         # in the device svg manager
-        new_electrode_layer = ElectrodeLayer("layer1", device_path)
+        new_electrode_layer = ElectrodeLayer("layer1", electrodes_model)
 
         # remove the current layer
         self.remove_current_layer()
 
         # add the new electrode layer
         self.add_layer(new_electrode_layer)
-        logger.debug(f"Layer {new_electrode_layer.id} added -> {device_path}")
+        logger.debug(f"Layer {new_electrode_layer.id} added -> {electrodes_model.svg_model.filename}")
 
         # set the current electrode layer to this new electrode layer
         self.current_electrode_layer = new_electrode_layer
