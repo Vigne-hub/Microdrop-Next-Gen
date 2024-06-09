@@ -1,9 +1,14 @@
 import os
+from functools import partial
+
 from PySide6.QtWidgets import QApplication
 import sys
 from examples.plugins.frontend.device_viewer.views.device_viewer_qt import DeviceViewerWidget
 from examples.plugins.frontend.device_viewer.models.electrodes import Electrodes
 from _tests.common import TEST_PATH
+from _logger import get_logger
+
+logger = get_logger(__name__)
 
 if not QApplication.instance():
     app = QApplication(sys.argv)
@@ -24,6 +29,27 @@ electrodes_model = Electrodes()
 electrodes_model.set_electrodes_from_svg_file(selected_svg_path)
 
 device_viewer_widget.change_active_layer(electrodes_model)
+
+
+# Connect the electrode layer events
+
+def __on_electrode_clicked(_electrode_view):
+    """Handle the event when an electrode is clicked."""
+    logger.debug(f"Electrode {_electrode_view.electrode} clicked")
+
+    # update the model
+    _electrode_view.electrode.state = not _electrode_view.electrode.state
+
+    # update the view
+    _electrode_view.update_color(_electrode_view.electrode.state)
+
+    # Do some other notification or updates or action here...
+
+
+################### Handler Method Connections ####################################
+
+for electrode_view in device_viewer_widget.current_electrode_layer.electrode_views.values():
+    electrode_view.on_clicked = partial(__on_electrode_clicked, electrode_view)
 
 device_viewer_widget.show()
 sys.exit(app.exec())
