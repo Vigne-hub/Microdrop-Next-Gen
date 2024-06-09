@@ -7,7 +7,7 @@ from pathlib import Path
 APP_LEVEl_LOGFILE = f"application_logs{os.sep}application.log.{time.strftime('%Y-%m-%d_%H-%M-%S')}"
 
 
-def initialize_logger(name, level="INFO", log_file_path=APP_LEVEl_LOGFILE):
+def get_logger(name, level="INFO", log_file_path=APP_LEVEl_LOGFILE):
 
     levels = {
         "DEBUG": logging.DEBUG,

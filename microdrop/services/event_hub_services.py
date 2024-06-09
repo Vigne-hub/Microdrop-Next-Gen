@@ -3,9 +3,9 @@ from traits.api import HasTraits, provides
 
 from ..plugins.control_plugins.event_hub import EventHubActor
 from ..interfaces.i_event_hub_service import IEventHubService
-from ..utils.logger import initialize_logger
+from _logger import get_logger
 
-logger = initialize_logger(__name__)
+logger = get_logger(__name__)
 
 
 @provides(IEventHubService)

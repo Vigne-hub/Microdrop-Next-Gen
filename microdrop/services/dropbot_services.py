@@ -1,9 +1,9 @@
 from traits.api import HasTraits, provides
 from ..interfaces.i_dropbot_controller_service import IDropbotControllerService
 from ..plugins.backend_plugins.dropbot_controller import DropbotActor
-from ..utils.logger import initialize_logger
+from _logger import get_logger
 
-logger = initialize_logger(__name__)
+logger = get_logger(__name__)
 
 
 @provides(IDropbotControllerService)
