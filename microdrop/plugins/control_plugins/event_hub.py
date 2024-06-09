@@ -8,7 +8,7 @@ from envisage.core_plugin import CorePlugin
 from envisage.service_offer import ServiceOffer
 from traits.api import List
 
-from MicroDropNG.interfaces.event_hub_interface import IEventHubService
+from microdrop.interfaces.event_hub_interface import IEventHubService
 
 logger = logging.getLogger(__name__)
 # Setup RabbitMQ broker for Dramatiq
@@ -43,7 +43,7 @@ class EventHubPlugin(CorePlugin):
         ]
 
     def _create_service(self, *args, **kwargs):
-        from MicroDropNG.services.event_hub_services import EventHubService
+        from microdrop.services.event_hub_services import EventHubService
         return EventHubService()
 
     def _start_worker(self):

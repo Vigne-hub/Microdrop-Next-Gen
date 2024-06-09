@@ -1,9 +1,9 @@
 # eventhub_services.py
 from traits.api import HasTraits, provides
 
-from MicroDropNG.plugins.control_plugins.event_hub import EventHubActor
-from MicroDropNG.interfaces.event_hub_interface import IEventHubService
-from MicroDropNG.utils.logger import initialize_logger
+from microdrop.plugins.control_plugins.event_hub import EventHubActor
+from microdrop.interfaces.event_hub_interface import IEventHubService
+from microdrop.utils.logger import initialize_logger
 
 logger = initialize_logger(__name__)
 
