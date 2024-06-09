@@ -8,7 +8,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 from .common import TestMessage
 
-
 @pytest.fixture(scope="module")
 def setup_app():
     from ..app import MyApp

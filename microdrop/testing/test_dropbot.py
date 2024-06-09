@@ -5,6 +5,7 @@ import numpy as np
 from ..backend_logic.dropbot_controller import DropbotController
 from ..interfaces.i_pub_sub_manager_service import IPubSubManagerService
 
+
 """
 This testing module is used to test the DropbotController class (refractored mike+vig/mig updated version).
 The DropbotController class is used to manage the Dropbot system via a serial proxy.
@@ -16,6 +17,7 @@ so that I can test without using exact code and just call methods
 
 
 @pytest.fixture
+
 def app():
     from ..app import MyApp
     from ..plugins.utility_plugins.pub_sub_manager_plugin import PubSubManagerPlugin
@@ -140,8 +142,8 @@ def test_set_channel_single_no_proxy(dropbot_controller):
     dropbot_controller.set_channel_single(5, True)
     assert dropbot_controller.proxy is None
 
-
 def test_droplet_search(dropbot_controller):
+
     dropbot_controller.proxy = MagicMock()
     dropbot_controller.proxy.get_drops.return_value = [[1, 2, 3]]
     dropbot_controller.droplet_search(0.5)
