@@ -126,7 +126,7 @@ class DeviceViewerTask(Task):
         ################### Handler Method Connections ####################################
 
         for electrode_view in self.window.central_pane.current_electrode_layer.electrode_views.values():
-            electrode_view.on_clicked = partial(__on_electrode_clicked, electrode_view)
+            electrode_view.on_electrode_left_clicked = partial(__on_electrode_clicked, electrode_view)
 
     def activated(self):
         """Called when the task is activated."""

@@ -49,7 +49,7 @@ def __on_electrode_clicked(_electrode_view):
 ################### Handler Method Connections ####################################
 
 for electrode_view in device_viewer_widget.current_electrode_layer.electrode_views.values():
-    electrode_view.on_clicked = partial(__on_electrode_clicked, electrode_view)
+    electrode_view.on_electrode_left_clicked = partial(__on_electrode_clicked, electrode_view)
 
 device_viewer_widget.show()
 sys.exit(app.exec())
