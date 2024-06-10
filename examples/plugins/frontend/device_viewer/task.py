@@ -3,7 +3,7 @@ from functools import partial
 
 # Enthought library imports.
 from pyface.tasks.action.api import SMenu, SMenuBar, TaskToggleGroup, TaskAction, TaskActionController
-from pyface.tasks.api import Task, TaskLayout
+from pyface.tasks.api import Task, TaskLayout, Tabbed
 from pyface.api import FileDialog, OK
 from traits.api import Instance
 
@@ -68,6 +68,8 @@ class DeviceViewerTask(Task):
 
     def _default_layout_default(self):
         return TaskLayout(
+            left=Tabbed(
+            )
         )
 
     # --------------- Trait change handlers ----------------------------------------------

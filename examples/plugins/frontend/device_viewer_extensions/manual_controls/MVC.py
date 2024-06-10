@@ -38,6 +38,8 @@ class ManualControlControl(Controller):
 if __name__ == "__main__":
     model = ManualControlModel()
     view = ManualControlView
-    controller = ManualControlControl(model=model)
+    controller = ManualControlControl()
 
-    model.configure_traits(view=view, handler=controller)
+    view.handler = controller
+
+    model.configure_traits(view=view)
