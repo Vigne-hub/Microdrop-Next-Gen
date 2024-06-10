@@ -5,7 +5,7 @@ import numpy as np
 from _logger import get_logger
 
 # enthought imports
-from traits.api import Instance, Array, Str
+from traits.api import Instance, Array, Str, Callable
 from pyface.qt.QtCore import Qt
 from pyface.qt.QtGui import (QColor, QPen, QBrush, QFont, QPainterPath, QGraphicsPathItem, QGraphicsTextItem,
                              QGraphicsItem, QGraphicsItemGroup)
@@ -168,6 +168,12 @@ class ElectrodeView(QGraphicsPathItem):
 
 
 class ElectrodeLayer(QGraphicsItemGroup):
+    """
+    Class defining the view for an electrode layer in the device viewer.
+
+    - This view is a QGraphicsItemGroup that contains a group of electrode view objects
+    - The view is responsible for updating the properties of all the electrode views contained in bulk.
+    """
 
     def __init__(self, id_: str, electrodes, parent=None):
         super().__init__(parent=parent)
@@ -184,6 +190,7 @@ class ElectrodeLayer(QGraphicsItemGroup):
 
         logger.debug(f"Creating Electrode Layer {id_} with {len(electrodes.electrodes)} electrodes.")
 
+        # Create the electrode views for each electrode from the electrodes model and add them to the group
         for electrode_id, electrode in electrodes.electrodes.items():
             self.electrode_views[electrode_id] = ElectrodeView(electrode_id, electrodes[electrode_id],
                                                                modifier * electrode.path[:, 0, :])
@@ -192,11 +199,32 @@ class ElectrodeLayer(QGraphicsItemGroup):
 
         self._electrodes = electrodes
 
+        # Create the connections between the electrodes
         self.connections = [con * modifier for con in svg.connections]
+        # Create the connection items
         self.connection_items = []
+        # Draw the connections
         self.draw_connections()
 
+    ##################################################################
+    # callback methods for the electrodes in the layer
+    ##################################################################
+
+    def on_electrode_left_clicked(self, callback: Callable) -> None:
+        """
+        Method to handle the event when an electrode is clicked
+        """
+        for electrode_view in self.electrode_views.values():
+            electrode_view.on_electrode_left_clicked = callback
+
+    ############################################################################################
+    #    Public methods for the electrode layer view
+    ############################################################################################
+
     def change_alphas(self, alpha: float, **kwargs):
+        """
+        Method to change the alpha of the electrode views in the layer
+        """
         if kwargs.get('path'):
             self.update_connection_alpha(alpha)
             kwargs.pop('path')
@@ -212,6 +240,9 @@ class ElectrodeLayer(QGraphicsItemGroup):
             self.electrode_views[name].update_alpha(**kwargs)
 
     def draw_connections(self):
+        """
+        Method to draw the connections between the electrodes in the layer
+        """
         for connection in self.connections:
             path = QPainterPath()
             coords = connection.flatten()
@@ -225,6 +256,9 @@ class ElectrodeLayer(QGraphicsItemGroup):
             self.connection_items.append(connection_item)
 
     def update_connection_alpha(self, alpha: float):
+        """
+        Method to update the alpha of the connections in the layer
+        """
         for item in self.connection_items:
             color = item.pen().color()
             color.setAlphaF(alpha)
