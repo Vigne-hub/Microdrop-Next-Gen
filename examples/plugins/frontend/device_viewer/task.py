@@ -126,7 +126,7 @@ class DeviceViewerTask(Task):
         self.window.central_pane.current_electrode_layer.on_electrode_right_clicked = self.on_electrode_right_clicked
 
     ###########################################################################
-    # Protected interface.
+    # ITask interface.
     ###########################################################################
 
     def activated(self):
