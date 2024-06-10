@@ -81,8 +81,8 @@ class DeviceViewerTask(Task):
         self.window.central_pane.set_view_from_model(new_model)
         logger.debug(f"New Electrode Layer added --> {new_model.svg_model.filename}")
 
-        # setup event handler callbacks for the new electrode layer: will apply to each electrode in the new layer
-        self.handle_electrode_view_events()
+        # setup event handlers for the new electrode layer
+        self.handle_electrode_layer_events()
         logger.debug(f"setting up handlers for new layer for new electrodes model {new_model}")
 
     ###########################################################################
@@ -104,32 +104,30 @@ class DeviceViewerTask(Task):
             logger.info(f"Electrodes model set to {new_model}")
 
     ###########################################################################
-    # Controller interface
+    # Controller interface.
     ###########################################################################
 
-    # --------- View Event Callback handlers ------------------------------------------
-    @staticmethod
-    def on_electrode_right_clicked(_electrode_view):
-        """Handle the event when an electrode is clicked."""
-        logger.debug(f"Electrode {_electrode_view.electrode} clicked")
+    def handle_electrode_layer_events(self):
+        """Handle events from the panes. Any Notifications, Updates, etc. should be done here."""
 
-        # update the model
-        _electrode_view.electrode.state = not _electrode_view.electrode.state
+        ################# Handler Methods ################################################
 
-        # update the view
-        _electrode_view.update_color(_electrode_view.electrode.state)
+        def __on_electrode_clicked(_electrode_view):
+            """Handle the event when an electrode is clicked."""
+            logger.debug(f"Electrode {_electrode_view.electrode} clicked")
 
-        # Do some other notification or updates or action here...
+            # update the model
+            _electrode_view.electrode.state = not _electrode_view.electrode.state
 
-    def handle_electrode_view_events(self):
-        """
-        Setup event handler callbacks for the current electrode layer.
-        """
-        self.window.central_pane.current_electrode_layer.on_electrode_right_clicked = self.on_electrode_right_clicked
+            # update the view
+            _electrode_view.update_color(_electrode_view.electrode.state)
 
-    ###########################################################################
-    # ITask interface.
-    ###########################################################################
+            # Do some other notification or updates or action here...
+
+        ################### Handler Method Connections ####################################
+
+        for electrode_view in self.window.central_pane.current_electrode_layer.electrode_views.values():
+            electrode_view.on_clicked = partial(__on_electrode_clicked, electrode_view)
 
     def activated(self):
         """Called when the task is activated."""

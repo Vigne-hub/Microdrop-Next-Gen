@@ -80,20 +80,13 @@ class ElectrodeView(QGraphicsPathItem):
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsFocusable, True)
 
-    ##################################################################################
-    # Mouse event handling
-    ##################################################################################
     def mousePressEvent(self, event):
-
-        if event.button() == Qt.LeftButton:
-            logger.debug(f"Electrode {self.electrode} left clicked")
-            self.on_electrode_left_clicked()
+        self.on_clicked()
         super().mousePressEvent(event)  # Call the superclass method to ensure proper event handling
 
-    # ----------------- Callbacks to be implemented by Controller ---------------------#
-    def on_electrode_left_clicked(self):
+    def on_clicked(self):
         """
-        Method specifying callback in case the electrode is left clicked by user to be implemented by Controller
+        Method to be implemented by Controller
         """
         pass
 
@@ -205,21 +198,6 @@ class ElectrodeLayer(QGraphicsItemGroup):
         self.connection_items = []
         # Draw the connections
         self.draw_connections()
-
-    ##################################################################
-    # callback methods for the electrodes in the layer
-    ##################################################################
-
-    def on_electrode_left_clicked(self, callback: Callable) -> None:
-        """
-        Method to handle the event when an electrode is clicked
-        """
-        for electrode_view in self.electrode_views.values():
-            electrode_view.on_electrode_left_clicked = callback
-
-    ############################################################################################
-    #    Public methods for the electrode layer view
-    ############################################################################################
 
     def change_alphas(self, alpha: float, **kwargs):
         """
