@@ -14,7 +14,7 @@ from .plugins.utility_plugins.pub_sub_manager_plugin import PubSubManagerPlugin
 def main():
     app = QApplication(sys.argv)
 
-    plugins = [CorePlugin(), PubSubManagerPlugin(), EventHubPlugin(), PGCGUIPlugin()]
+    plugins = [CorePlugin(), PubSubManagerPlugin(), EventHubPlugin(), DropbotControllerPlugin(), DropbotGUIPlugin()]
     envisage_app = Application(plugins=plugins)
     envisage_app.start()
 

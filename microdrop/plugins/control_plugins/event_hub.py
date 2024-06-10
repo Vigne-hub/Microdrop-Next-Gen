@@ -48,7 +48,7 @@ class EventHubPlugin(CorePlugin):
             logger.info(f"Processing task: {task}")
 
             try:
-                service = self.application.get_service(f"MicroDropNG.interfaces.{interface_name}.{service_name}")
+                service = self.application.get_service(f"microdrop.interfaces.{interface_name}.{service_name}")
             except AttributeError as e:
                 logger.error(f"Error while getting service: {e}")
                 return

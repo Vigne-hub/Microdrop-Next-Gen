@@ -4,7 +4,7 @@ from traits.api import List
 import dramatiq
 from dramatiq.brokers.rabbitmq import RabbitmqBroker
 
-from ...interfaces.dropbot_interface import IDropbotControllerService
+from ...interfaces.i_dropbot_controller_service import IDropbotControllerService
 from ...utils.logger import initialize_logger
 
 # Initialize logger
@@ -56,7 +56,7 @@ class DropbotControllerPlugin(Plugin):
         @staticmethod
         @dramatiq.actor(queue_name='dropbot_actions')
         def process_task(task):
-            method_name = task.get("method_name")
+            method_name = task.get("task_name")
             task_args = task.get("args")
             task_kwargs = task.get("kwargs")
             logger.info(f"Processing task: {task}")
