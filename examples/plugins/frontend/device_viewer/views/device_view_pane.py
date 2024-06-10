@@ -50,11 +50,9 @@ class DeviceViewerPane(TaskPane):
         self.control = self.view
         self.control.setParent(parent)
 
-    def set_new_layer_from_model(self, new_model):
+    def set_view_from_model(self, new_model):
         self.remove_current_layer()
         self.current_electrode_layer = ElectrodeLayer("layer1", new_model)
         self.scene.addItem(self.current_electrode_layer)
-
-    def fit_scene_to_view(self):
         self.scene.setSceneRect(self.scene.itemsBoundingRect())
         self.view.fitInView(self.scene.sceneRect(), Qt.AspectRatioMode.KeepAspectRatio)

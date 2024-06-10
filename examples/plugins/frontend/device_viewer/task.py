@@ -77,9 +77,8 @@ class DeviceViewerTask(Task):
 
         # Trigger an update to redraw and re-initialize the svg widget once a new svg file is selected.
 
-        self.window.central_pane.set_new_layer_from_model(new_model)
+        self.window.central_pane.set_view_from_model(new_model)
         logger.debug(f"New Electrode Layer added --> {new_model.svg_model.filename}")
-        self.window.central_pane.fit_scene_to_view()
 
         # setup event handlers for the new electrode layer
         self.handle_electrode_layer_events()
