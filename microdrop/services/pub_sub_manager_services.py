@@ -1,4 +1,3 @@
-import logging
 import threading
 import pika
 from pydantic import BaseModel
@@ -6,8 +5,9 @@ from traits.api import Dict, Callable, Any, HasTraits, provides
 from traits.trait_types import Str
 
 from ..interfaces.i_pub_sub_manager_service import IPubSubManagerService
+from ..utils.logger import initialize_logger
 
-logger = logging.getLogger(__name__)
+logger = initialize_logger(__name__)
 
 
 @provides(IPubSubManagerService)
@@ -33,7 +33,7 @@ class PubSubManager(HasTraits):
         channel = connection.channel()
         channel.exchange_declare(exchange=exchange_name, exchange_type='fanout')
         self.publishers[publisher_name] = (connection, channel, exchange_name)
-        print(f"created {publisher_name} for {exchange_name}")
+
         logger.info(f"Publisher {publisher_name} created for exchange {exchange_name}")
 
     def publish(self, message: BaseModel, publisher: str):
@@ -51,8 +51,9 @@ class PubSubManager(HasTraits):
                 routing_key='',
                 body=message.model_dump_json()
             )
-            print(f"Published message: {message.model_dump_json()} to {exchange_name}")
+
             logger.info(f"Published message: {message.model_dump_json()} to {exchange_name}")
+
         else:
             logger.error(f"Publisher {publisher} not found")
             raise KeyError(f"Publisher {publisher} not found")
@@ -66,7 +67,7 @@ class PubSubManager(HasTraits):
         connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
         channel = connection.channel()
         self.subscribers[subscriber_name] = (connection, channel)
-        print(f"Subscriber {subscriber_name} created")
+
         logger.info(f"Subscriber {subscriber_name} created")
 
     def bind_sub_to_pub(self, subscriber: str, exchange_name: str):
@@ -81,8 +82,9 @@ class PubSubManager(HasTraits):
             result = sub_channel.queue_declare(queue='', exclusive=True)
             queue_name = result.method.queue
             sub_channel.queue_bind(exchange=exchange_name, queue=queue_name)
+
             logger.info(f"Subscriber {subscriber} bound to exchange {exchange_name} on queue {queue_name}")
-            print(f"Subscriber {subscriber} bound to exchange {exchange_name} on queue {queue_name}")
+
             self.info_to_start_consumer[subscriber] = (sub_channel, queue_name)
         else:
             logger.error(f"Subscriber {subscriber} not found")
@@ -90,15 +92,11 @@ class PubSubManager(HasTraits):
 
     def start_consumer(self, subscriber: str, func: Callable(Any)):
         """ Method to Start the consumer"""
-
-        print("Attempting to start consumer")
         if subscriber not in self.info_to_start_consumer:
             logger.error(f"Subscriber {subscriber} not found")
-            raise ValueError(f"Subscriber {subscriber} not found")
 
         sub_channel, queue_name = self.info_to_start_consumer[subscriber]
-        print(f"Starting consumer for {subscriber} on {queue_name} via {sub_channel}")
-        print(f"Attempting to consume message on {queue_name} with {func}")
+        logger.info(f"Starting consumer for {subscriber} on {queue_name} via {sub_channel}")
 
         def consumer_thread():
             """
@@ -108,7 +106,6 @@ class PubSubManager(HasTraits):
             sub_channel.basic_consume(queue=queue_name, on_message_callback=func, auto_ack=False)
             logger.info(f"Starting consumer for subscriber {subscriber}")
             sub_channel.start_consuming()
-            print("Started consuming")
 
         thread = threading.Thread(target=consumer_thread)
         thread.start()

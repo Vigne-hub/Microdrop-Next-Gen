@@ -1,16 +1,12 @@
-# plugins/event_hub_plugin.py
-import importlib
-import logging
-
 import dramatiq
 from dramatiq.brokers.rabbitmq import RabbitmqBroker
 from envisage.core_plugin import CorePlugin
-from envisage.service_offer import ServiceOffer
 from traits.api import List
 
-from ...interfaces.i_event_hub_service import IEventHubService
+from ...utils.logger import initialize_logger
 
-logger = logging.getLogger(__name__)
+logger = initialize_logger(__name__)
+
 # Setup RabbitMQ broker for Dramatiq
 rabbitmq_broker = RabbitmqBroker(url="amqp://guest:guest@localhost/")
 dramatiq.set_broker(rabbitmq_broker)
@@ -24,27 +20,13 @@ class EventHubPlugin(CorePlugin):
     id = 'app.event_hub'
     name = 'Event Hub Plugin'
     service_offers = List(contributes_to='envisage.service_offers')
+    process_task_actor = None
 
     def start(self):
         super().start()
-        self._register_services()
         logger.info("Event Hub Plugin started")
         self._start_worker()
-        global application
-        application = self.application
-
-    def _register_services(self):
-        event_hub_services = self._create_service()
-        self.application.register_service(IEventHubService, event_hub_services)
-
-    def _service_offers_default(self):
-        return [
-            ServiceOffer(protocol=IEventHubService, factory=self._create_service)
-        ]
-
-    def _create_service(self, *args, **kwargs):
-        from microdrop.services.event_hub_services import EventHubService
-        return EventHubService()
+        self._start_actor()
 
     def _start_worker(self):
         import threading
@@ -55,42 +37,29 @@ class EventHubPlugin(CorePlugin):
         worker_thread.daemon = True
         worker_thread.start()
 
+    def _start_actor(self):
+        @dramatiq.actor(queue_name='eventhub_actions')
+        def process_task(task):
+            interface_name = task.get("interface")
+            service_name = task.get("service")
+            task_name = task.get("task_name")
+            args = task.get("args", [])
+            kwargs = task.get("kwargs", {})
+            logger.info(f"Processing task: {task}")
 
-class EventHubActor:
+            try:
+                service = self.application.get_service(f"MicroDropNG.interfaces.{interface_name}.{service_name}")
+            except AttributeError as e:
+                logger.error(f"Error while getting service: {e}")
+                return
 
-    list_of_protocols = {}
-    imported_modules = []
+            method = getattr(service, task_name)
+            if callable(method):
+                result = method(*args, **kwargs)
+                print(f"Task {task_name} completed with result: {result}")
+                logger.info(f"Task {task_name} completed with result: {result}")
+                return result
+            else:
+                logger.error(f"Task '{task_name}' on service '{service_name}' is not callable.")
 
-    @staticmethod
-    @dramatiq.actor(queue_name='eventhub_actions')
-    def process_task(task):
-        print(f"Processing task: {task}")
-        interface_name = task.get("interface_name")
-        service_name = task.get("service_name")
-        task_name = task.get("task_name")
-        args = task.get("args", [])
-        kwargs = task.get("kwargs", {})
-        logger.info(f"Processing task: {task}")
-
-        if not application:
-            logger.error("No Envisage application instance found.")
-            return
-
-        try:
-            service = application.get_service(f"MicroDropNG.interfaces.{interface_name}.{service_name}")
-        except AttributeError as e:
-            logger.error(f"Error while getting service: {e}")
-            return
-
-        if not hasattr(service, task_name):
-            logger.error(f"Service '{service_name}' does not have task '{task_name}'.")
-            return
-
-        method = getattr(service, task_name)
-        if callable(method):
-            result = method(*args, **kwargs)
-            print(f"Task {task_name} completed with result: {result}")
-            logger.info(f"Task {task_name} completed with result: {result}")
-            return result
-        else:
-            logger.error(f"Task '{task_name}' on service '{service_name}' is not callable.")
+        self.process_task_actor = process_task
