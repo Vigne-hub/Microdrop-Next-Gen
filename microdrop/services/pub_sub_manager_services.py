@@ -36,7 +36,7 @@ class PubSubManager(HasTraits):
 
         logger.info(f"Publisher {publisher_name} created for exchange {exchange_name}")
 
-    def publish(self, message: BaseModel, publisher: str):
+    def publish(self, message, publisher: str):
         """
         Publish a message to a given exchange
         :param message:
