@@ -4,7 +4,7 @@ from traits.api import List
 import dramatiq
 from dramatiq.brokers.rabbitmq import RabbitmqBroker
 
-from ...interfaces.dropbot_interface import IDropbotControllerService
+from ...interfaces.i_dropbot_controller_service import IDropbotControllerService
 from ...utils.logger import initialize_logger
 
 # Initialize logger

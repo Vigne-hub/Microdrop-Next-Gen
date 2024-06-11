@@ -1,7 +1,7 @@
 from traits.api import HasTraits, provides
 from PySide6.QtCore import QTimer
 
-from ..interfaces.dropbot_interface import IDropbotControllerService
+from ..interfaces.i_dropbot_controller_service import IDropbotControllerService
 from ..interfaces.i_pub_sub_manager_service import IPubSubManagerService
 from ..pydantic_models.dropbot_controller_output_state_model import DBOutputStateModel, \
         DBChannelsChangedModel, DBVoltageChangedModel, DBChannelsMetastateChanged
