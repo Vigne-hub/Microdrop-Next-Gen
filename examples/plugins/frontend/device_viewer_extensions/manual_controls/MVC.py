@@ -12,11 +12,13 @@ ManualControlView = View(
         Item(
             name='voltage',
             label='Voltage (V)',
+            resizable=True,
         ),
 
         Item(
             name='frequency',
             label='Frequency (Hz)',
+            resizable=True,
         ),
     ),
     title='Manual Controls',
