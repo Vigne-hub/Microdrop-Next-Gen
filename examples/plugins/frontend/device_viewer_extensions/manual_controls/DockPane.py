@@ -28,24 +28,11 @@ class ManualControlsDockPane(TraitsDockPane):
 
     #### 'ManualControlsPane' interface ##########################################
 
-    model = Instance(ManualControlModel)
+    model = ManualControlModel()
     view = ManualControlView
-    controller = Instance(ManualControlControl)
+    controller = ManualControlControl()
 
-    # ---------------------- trait initializers ----------------
-
-    def _model_default(self):
-        return ManualControlModel()
-
-    def _controller_default(self):
-        return ManualControlControl()
-
-    # ------------------------ trait change handlers ------------------------------------------
-    def _controller_changed(self, new_controller):
-        self.view.handler = new_controller
-
-    def _view_changed(self, new_view):
-        new_view.handler = self.controller
+    view.handler = controller
 
     def show_help(self):
         # Sample text to display as HTML: header, plus module docstring, plus
