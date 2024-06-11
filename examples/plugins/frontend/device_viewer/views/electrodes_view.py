@@ -5,7 +5,7 @@ import numpy as np
 from _logger import get_logger
 
 # enthought imports
-from traits.api import Instance, Array, Str, Callable
+from traits.api import Instance, Array, Str
 from pyface.qt.QtCore import Qt
 from pyface.qt.QtGui import (QColor, QPen, QBrush, QFont, QPainterPath, QGraphicsPathItem, QGraphicsTextItem,
                              QGraphicsItem, QGraphicsItemGroup)

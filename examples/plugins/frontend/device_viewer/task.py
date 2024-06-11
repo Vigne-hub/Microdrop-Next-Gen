@@ -8,9 +8,10 @@ from pyface.api import FileDialog, OK
 from traits.api import Instance
 
 # Local imports.
-from .models.electrodes import Electrodes
+from .models.electrodes import Electrodes, Electrode
 from .views.device_view_pane import DeviceViewerPane
 from _logger import get_logger
+from .views.electrodes_view import ElectrodeView
 
 logger = get_logger(__name__)
 DEFAULT_SVG_FILE = "2x3device.svg"
@@ -68,8 +69,7 @@ class DeviceViewerTask(Task):
 
     def _default_layout_default(self):
         return TaskLayout(
-            left=Tabbed(
-            )
+
         )
 
     # --------------- Trait change handlers ----------------------------------------------
@@ -82,7 +82,7 @@ class DeviceViewerTask(Task):
         logger.debug(f"New Electrode Layer added --> {new_model.svg_model.filename}")
 
         # setup event handlers for the new electrode layer
-        self.handle_electrode_layer_events()
+        self.__handle_electrode_layer_events()
         logger.debug(f"setting up handlers for new layer for new electrodes model {new_model}")
 
     ###########################################################################
@@ -107,27 +107,35 @@ class DeviceViewerTask(Task):
     # Controller interface.
     ###########################################################################
 
-    def handle_electrode_layer_events(self):
+    def __handle_electrode_layer_events(self):
         """Handle events from the panes. Any Notifications, Updates, etc. should be done here."""
-
-        ################# Handler Methods ################################################
-
-        def __on_electrode_clicked(_electrode_view):
-            """Handle the event when an electrode is clicked."""
-            logger.debug(f"Electrode {_electrode_view.electrode} clicked")
-
-            # update the model
-            _electrode_view.electrode.state = not _electrode_view.electrode.state
-
-            # update the view
-            _electrode_view.update_color(_electrode_view.electrode.state)
-
-            # Do some other notification or updates or action here...
 
         ################### Handler Method Connections ####################################
 
-        for electrode_view in self.window.central_pane.current_electrode_layer.electrode_views.values():
-            electrode_view.on_clicked = partial(__on_electrode_clicked, electrode_view)
+        for electrode_id, electrode_view in self.window.central_pane.current_electrode_layer.electrode_views.items():
+
+            electrode_view.on_clicked = partial(
+                self.on_electrode_clicked, # handler method
+                self.electrodes_model[electrode_id], electrode_view # args
+            )
+
+    ################# Handler Methods ################################################
+
+    # TODO: need to make these methods set from services or a task extension if granular control needed.
+
+    @staticmethod
+    def on_electrode_clicked(_model: Electrode, _electrode_view: ElectrodeView):
+        """Handle the event when an electrode is clicked."""
+
+        logger.debug(f"Electrode {_model} clicked")
+
+        # update the model
+        _model.state = not _model.state
+
+        # update the view
+        _electrode_view.update_color(_electrode_view.electrode.state)
+
+        # Do some other notification or updates or action here...
 
     def activated(self):
         """Called when the task is activated."""

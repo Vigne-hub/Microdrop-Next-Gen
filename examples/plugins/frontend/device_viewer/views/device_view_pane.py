@@ -6,6 +6,7 @@ from pyface.qt.QtOpenGLWidgets import QOpenGLWidget
 from pyface.qt.QtCore import Qt
 
 # local imports
+# TODO: maybe get these from an extension point for very granular control
 from .electrodes_view import ElectrodeLayer
 from ..utils.auto_fit_graphics_view import AutoFitGraphicsView
 from _logger import get_logger
