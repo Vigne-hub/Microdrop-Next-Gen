@@ -1,4 +1,4 @@
-from envisage.core_plugin import CorePlugin
+from envisage.api import Plugin, SERVICE_OFFERS
 from envisage.service_offer import ServiceOffer
 from traits.trait_types import List
 
@@ -7,9 +7,9 @@ from .services.analysis_service import AnalysisService
 from .services.dramatiq_analysis_service import DramatiqAnalysisService
 
 
-class AnalysisPlugin(CorePlugin):
+class AnalysisPlugin(Plugin):
     id = 'app.analysis.plugin'
-    service_offers = List(contributes_to='envisage.service_offers')
+    service_offers = List(contributes_to=SERVICE_OFFERS)
 
     def _service_offers_default(self):
         """Return the service offers."""

@@ -1,9 +1,7 @@
 # enthought imports
 from traits.api import List
-from envisage.api import Plugin
+from envisage.api import Plugin, TASK_EXTENSIONS
 from envisage.ui.tasks.api import TaskExtension
-
-TASK_EXTENSIONS = "envisage.ui.tasks.task_extensions"
 
 
 class ManualControlsPlugin(Plugin):

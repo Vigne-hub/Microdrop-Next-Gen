@@ -2,7 +2,7 @@
 
 import time
 from dramatiq import Worker
-from envisage.api import Application
+from envisage.api import CorePlugin, Application
 
 from plugins.frontend import UIPlugin
 from plugins.frontend import PlotViewPlugin
@@ -50,7 +50,7 @@ def demo():
 ######### Running some tests on the application ############################################################################
 
     # Loading plugins
-    plugins = [UIPlugin(), PlotViewPlugin(), TableViewPlugin(), AnalysisPlugin(), LoggingPlugin()]
+    plugins = [CorePlugin(), UIPlugin(), PlotViewPlugin(), TableViewPlugin(), AnalysisPlugin(), LoggingPlugin()]
     app = MyApp(plugins=plugins)
     app.start()
 
