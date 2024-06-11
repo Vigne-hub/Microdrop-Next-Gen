@@ -1,6 +1,9 @@
 from traits.api import HasTraits, Range
 from traitsui.api import View, Group, Item, Controller
 
+from _logger import get_logger
+logger = get_logger(__name__)
+
 
 class ManualControlModel(HasTraits):
     voltage = Range(0, 1000, desc="the voltage to set on the dropbot device")
@@ -29,11 +32,11 @@ ManualControlView = View(
 class ManualControlControl(Controller):
 
     def voltage_setattr(self, info, object, traitname, value):
-        print(f"Voltage changed to {value}")
+        logger.info(f"Voltage changed to {value}")
         return super().setattr(info, object, traitname, value)
 
     def frequency_setattr(self, info, object, traitname, value):
-        print(f"Frequency changed to {value}")
+        logger.info(f"Frequency changed to {value}")
         return super().setattr(info, object, traitname, value)
 
 
