@@ -4,19 +4,15 @@ import time
 from dramatiq import Worker
 from envisage.api import CorePlugin, Application
 
-from plugins.frontend import UIPlugin
-from plugins.frontend import PlotViewPlugin
-from plugins.frontend import TableViewPlugin
 
-from _tests.common import BROKER
-
-
-class MyApp(Application):
+class ExampleApp(Application):
     def __init__(self, plugins, broker=None):
-        super(MyApp, self).__init__(plugins=plugins)
+        super().__init__(plugins=plugins)
 
 
 def demo():
+    from examples.plugins.frontend import UIPlugin, PlotViewPlugin, TableViewPlugin
+    from examples.tests.common import BROKER
 
     # Note that fully fledged unittests for enthought services is available via
     # https://github.com/enthought/envisage/blob/main/envisage/tests
@@ -39,9 +35,9 @@ def demo():
     print(f"Declared actors before: {BROKER.get_declared_actors()}\n")
 
     # importing plugin with an actor
-    from plugins.backend import AnalysisPlugin
-    from plugins.backend import LoggingPlugin
-    from plugins.backend.toy_service_plugins.analysis.interfaces.i_analysis_service import IAnalysisService
+    from examples.plugins.backend import AnalysisPlugin
+    from examples.plugins.backend import LoggingPlugin
+    from examples.plugins.backend.toy_service_plugins.analysis.interfaces.i_analysis_service import IAnalysisService
 
     # after...
     assert len(BROKER.get_declared_actors()) == 1
@@ -51,7 +47,7 @@ def demo():
 
     # Loading plugins
     plugins = [CorePlugin(), UIPlugin(), PlotViewPlugin(), TableViewPlugin(), AnalysisPlugin(), LoggingPlugin()]
-    app = MyApp(plugins=plugins)
+    app = ExampleApp(plugins=plugins)
     app.start()
 
 #########TEST PLUGIN MANAGER AND SERVICE REGISTRY############################################################################
@@ -207,4 +203,8 @@ def demo():
 
 
 if __name__ == '__main__':
+    # insert source and content root to pythonpath
+    import sys
+    import os
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
     demo()

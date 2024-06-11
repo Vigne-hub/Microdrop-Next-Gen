@@ -8,8 +8,8 @@ from envisage.ui.tasks.api import TasksPlugin
 def main(args):
     """Run the application."""
 
-    from examples.plugins.frontend import DeviceViewerPlugin
-    from examples.plugins.frontend import DeviceViewerApplication
+    from plugins.frontend import DeviceViewerPlugin
+    from plugins.frontend import DeviceViewerApplication
 
     plugins = [CorePlugin(), TasksPlugin(), DeviceViewerPlugin()]
     app = DeviceViewerApplication(plugins=plugins)
@@ -18,4 +18,8 @@ def main(args):
 
 if __name__ == "__main__":
     import sys
+
+    import os
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
     main(sys.argv)

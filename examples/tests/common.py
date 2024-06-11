@@ -5,6 +5,7 @@ import pika
 import pytest
 from dramatiq.threading import is_gevent_active
 from dramatiq import get_broker, Worker
+from pyface.api import Application
 
 BROKER = get_broker()
 

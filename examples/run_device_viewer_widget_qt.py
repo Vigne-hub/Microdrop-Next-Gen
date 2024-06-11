@@ -1,11 +1,13 @@
 import os
-from functools import partial
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from functools import partial
 from PySide6.QtWidgets import QApplication
 import sys
 from examples.plugins.frontend.device_viewer.views.device_viewer_qt import DeviceViewerWidget
 from examples.plugins.frontend.device_viewer.models.electrodes import Electrodes
-from _tests.common import TEST_PATH
+from examples.tests.common import TEST_PATH
 from _logger import get_logger
 
 logger = get_logger(__name__)
@@ -50,6 +52,7 @@ def __on_electrode_clicked(_electrode_view):
 
 for electrode_view in device_viewer_widget.current_electrode_layer.electrode_views.values():
     electrode_view.on_electrode_left_clicked = partial(__on_electrode_clicked, electrode_view)
+
 
 device_viewer_widget.show()
 sys.exit(app.exec())
