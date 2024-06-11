@@ -147,3 +147,10 @@ class DeviceViewerTask(Task):
 
         self.electrodes_model = _electrodes
 
+    ##########################################################
+    # Public interface.
+    ##########################################################
+    def show_help(self):
+        """Show the help dialog."""
+        logger.info("Showing help dialog.")
+

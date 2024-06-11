@@ -1,4 +1,5 @@
 # enthought imports
+from pyface.action.schema.schema_addition import SchemaAddition
 from traits.api import List
 from envisage.api import Plugin, TASK_EXTENSIONS
 from envisage.ui.tasks.api import TaskExtension
@@ -26,10 +27,19 @@ class ManualControlsPlugin(Plugin):
     def _contributed_task_extensions_default(self):
 
         from .DockPane import ManualControlsDockPane
+        from .menus import menu_factory
 
         return [
             TaskExtension(
                 task_id="device_viewer.task",
-                dock_pane_factories=[ManualControlsDockPane]
+                dock_pane_factories=[ManualControlsDockPane],
+                actions=[
+                    SchemaAddition(
+                        factory=menu_factory,
+                        before="TaskToggleGroup",
+                        path='MenuBar/View',
+                    )
+
+                ]
             )
         ]
