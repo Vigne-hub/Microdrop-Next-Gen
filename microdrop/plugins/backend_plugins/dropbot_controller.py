@@ -56,7 +56,7 @@ class DropbotControllerPlugin(Plugin):
         @staticmethod
         @dramatiq.actor(queue_name='dropbot_actions')
         def process_task(task):
-            method_name = task.get("method_name")
+            method_name = task.get("task_name")
             task_args = task.get("args")
             task_kwargs = task.get("kwargs")
             logger.info(f"Processing task: {task}")
