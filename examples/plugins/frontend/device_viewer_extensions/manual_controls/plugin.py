@@ -3,6 +3,8 @@ from traits.api import List
 from envisage.api import Plugin, TASK_EXTENSIONS
 from envisage.ui.tasks.api import TaskExtension
 
+# This module's package.
+PKG = '.'.join(__name__.split('.')[:-1])
 
 class ManualControlsPlugin(Plugin):
     """ Contributes UI actions on top of the IPython Kernel Plugin. """
@@ -10,7 +12,7 @@ class ManualControlsPlugin(Plugin):
     #### 'IPlugin' interface ##################################################
 
     #: The plugin unique identifier.
-    id = "manual_controls.plugin"
+    id = PKG + ".plugin"
 
     #: The plugin name (suitable for displaying to the user).
     name = "IPython embedded kernel UI plugin"

@@ -69,6 +69,8 @@ class DeviceViewerTask(Task):
 
     def _default_layout_default(self):
         return TaskLayout(
+            left=Tabbed(
+            )
 
         )
 
@@ -144,3 +146,4 @@ class DeviceViewerTask(Task):
         _electrodes.set_electrodes_from_svg_file(DEFAULT_SVG_FILE)
 
         self.electrodes_model = _electrodes
+

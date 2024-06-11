@@ -5,11 +5,14 @@ from pyface.tasks.api import TraitsDockPane
 # local imports
 from .MVC import ManualControlModel, ManualControlView, ManualControlControl
 
+# This module's package.
+PKG = '.'.join(__name__.split('.')[:-1])
+
 
 class ManualControlsDockPane(TraitsDockPane):
     #### 'ITaskPane' interface ################################################
 
-    id = "manual_controls.dock_pane"
+    id = PKG + ".dock_pane"
     name = "Manual Controls Dock Pane"
 
     #### 'ManualControlsPane' interface ##########################################
