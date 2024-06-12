@@ -4,6 +4,9 @@ from _logger import get_logger
 
 logger = get_logger(__name__)
 
+from _logger import get_logger
+logger = get_logger(__name__)
+
 
 class ManualControlModel(HasTraits):
     voltage = Range(0, 1000, desc="the voltage to set on the dropbot device")
@@ -15,11 +18,13 @@ ManualControlView = View(
         Item(
             name='voltage',
             label='Voltage (V)',
+            resizable=True,
         ),
 
         Item(
             name='frequency',
             label='Frequency (Hz)',
+            resizable=True,
         ),
     ),
     title='Manual Controls',

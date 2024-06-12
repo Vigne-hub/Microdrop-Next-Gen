@@ -1,8 +1,9 @@
 # system imports.
 from functools import partial
+import os
 
 # Enthought library imports.
-from pyface.tasks.action.api import SMenu, SMenuBar, TaskToggleGroup, TaskAction, TaskActionController
+from pyface.tasks.action.api import SMenu, SMenuBar, TaskToggleGroup, TaskAction
 from pyface.tasks.api import Task, TaskLayout, Tabbed
 from pyface.api import FileDialog, OK
 from traits.api import Instance
@@ -14,7 +15,7 @@ from _logger import get_logger
 from .views.electrodes_view import ElectrodeView
 
 logger = get_logger(__name__)
-DEFAULT_SVG_FILE = "2x3device.svg"
+DEFAULT_SVG_FILE = os.path.dirname(__file__) + "\\2x3device.svg"
 
 
 class DeviceViewerTask(Task):
@@ -69,6 +70,8 @@ class DeviceViewerTask(Task):
 
     def _default_layout_default(self):
         return TaskLayout(
+            left=Tabbed(
+            )
 
         )
 
@@ -144,3 +147,11 @@ class DeviceViewerTask(Task):
         _electrodes.set_electrodes_from_svg_file(DEFAULT_SVG_FILE)
 
         self.electrodes_model = _electrodes
+
+    ##########################################################
+    # Public interface.
+    ##########################################################
+    def show_help(self):
+        """Show the help dialog."""
+        logger.info("Showing help dialog.")
+

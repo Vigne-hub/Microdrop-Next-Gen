@@ -1,10 +1,11 @@
 # enthought imports
+from pyface.action.schema.schema_addition import SchemaAddition
 from traits.api import List
-from envisage.api import Plugin
+from envisage.api import Plugin, TASK_EXTENSIONS
 from envisage.ui.tasks.api import TaskExtension
 
-TASK_EXTENSIONS = "envisage.ui.tasks.task_extensions"
-
+# This module's package.
+PKG = '.'.join(__name__.split('.')[:-1])
 
 class ManualControlsPlugin(Plugin):
     """ Contributes UI actions on top of the IPython Kernel Plugin. """
@@ -12,7 +13,7 @@ class ManualControlsPlugin(Plugin):
     #### 'IPlugin' interface ##################################################
 
     #: The plugin unique identifier.
-    id = "manual_controls.plugin"
+    id = PKG + ".plugin"
 
     #: The plugin name (suitable for displaying to the user).
     name = "IPython embedded kernel UI plugin"
@@ -26,10 +27,19 @@ class ManualControlsPlugin(Plugin):
     def _contributed_task_extensions_default(self):
 
         from .DockPane import ManualControlsDockPane
+        from .menus import menu_factory
 
         return [
             TaskExtension(
                 task_id="device_viewer.task",
-                dock_pane_factories=[ManualControlsDockPane]
+                dock_pane_factories=[ManualControlsDockPane],
+                actions=[
+                    SchemaAddition(
+                        factory=menu_factory,
+                        before="TaskToggleGroup",
+                        path='MenuBar/View',
+                    )
+
+                ]
             )
         ]
