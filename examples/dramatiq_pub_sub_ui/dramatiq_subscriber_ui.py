@@ -40,7 +40,7 @@ class Orchestrator:
             if routing_info == "ui.notify":
                 on_message_recived_actor.send(message)
 
-        # we can iget this as a service from the service registry
+        # we can get this as a service from the service registry
         @dramatiq.actor
         def on_message_recived_actor(message):
             """
