@@ -1,6 +1,5 @@
 import pytest
 import numpy as np
-from examples.plugins.frontend.qt_widgets.device_viewer.models.electrodes_model import Electrode, Electrodes
 from traits.trait_errors import TraitError
 
 correct_path_array = np.array(
@@ -15,6 +14,8 @@ correct_path_array = np.array(
 
 
 def test_electrode_creation_traits_check_fail():
+    from examples.plugins.frontend.device_viewer.models.electrodes import Electrode
+
     try:
         Electrode(channel=1, path=[[1, 1], [2, 2], [3, 3]])
     except Exception as e:
@@ -27,12 +28,16 @@ def test_electrode_creation_traits_check_fail():
 
 
 def test_electrode_creation_traits_check_path_pass():
+    from examples.plugins.frontend.device_viewer.models.electrodes import Electrode
+
     test_electrode = Electrode(channel=1, path=correct_path_array)
 
     assert test_electrode.channel == 1 and np.array_equal(test_electrode.path, correct_path_array)
 
 
 def test_electrodes_creation_traits_check_fail():
+    from examples.plugins.frontend.device_viewer.models.electrodes import Electrode, Electrodes
+
     try:
         Electrodes(electrodes={"1": Electrode(channel=1, path=correct_path_array),
                                "2": Electrode(channel=2, path=[[1, 1], [2, 2], [3, 3]])})
@@ -47,10 +52,8 @@ def test_electrodes_creation_traits_check_fail():
 
 
 def test_electrodes_creation_traits_check_pass():
+    from examples.plugins.frontend.device_viewer.models.electrodes import Electrode, Electrodes
+
     electrodes = Electrodes(electrodes={"1": Electrode(channel=1, path=correct_path_array),
                                         "2": Electrode(channel=2, path=correct_path_array)})
     assert isinstance(electrodes.electrodes, dict) and len(electrodes.electrodes) == 2
-
-
-if __name__ == "__main__":
-    pytest.main(['-vv', '-s', __file__])

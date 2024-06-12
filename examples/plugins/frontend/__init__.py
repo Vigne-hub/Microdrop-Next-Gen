@@ -1,4 +1,5 @@
 from .device_viewer.plugin import DeviceViewerPlugin
+from .device_viewer_extensions.manual_controls.plugin import ManualControlsPlugin
 from .device_viewer.application import DeviceViewerApplication
 from .toy_ui_views.ui import UIPlugin
 from .toy_ui_views.plot_view import PlotViewPlugin

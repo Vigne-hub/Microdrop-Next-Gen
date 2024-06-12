@@ -5,17 +5,12 @@ import os.path
 from traits.api import List
 
 # Enthought library imports.
-from envisage.api import Plugin
+from envisage.api import Plugin, PREFERENCES, PREFERENCES_PANES, TASKS
 from envisage.ui.tasks.api import TaskFactory
 
 
 class DeviceViewerPlugin(Plugin):
     """Device Viewer plugin based on enthought envisage's The chaotic attractors plugin."""
-
-    # Extension point IDs.
-    PREFERENCES = "envisage.preferences"
-    PREFERENCES_PANES = "envisage.ui.tasks.preferences_panes"
-    TASKS = "envisage.ui.tasks.tasks"
 
     #### 'IPlugin' interface ##################################################
 
