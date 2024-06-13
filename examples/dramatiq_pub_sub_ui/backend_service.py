@@ -1,9 +1,7 @@
-import time
-
 import dramatiq
-from _logger import get_logger
+from microdrop_utils._logger import get_logger
 logger = get_logger(__name__)
-from examples.dramatiq_pub_sub_ui.dramatiq_pub_sub_helpers import publish_message
+from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
 
 TOPICS_OF_INTEREST = ["ui.event.publish_button.clicked"]
 

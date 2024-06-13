@@ -20,7 +20,7 @@ def main():
     from examples.dramatiq_pub_sub_ui.backend_service import print_ui_message, TOPICS_OF_INTEREST
 
     # initialize the pub sub message router. Again this would be done via plugin registering with envsiage
-    from examples.dramatiq_pub_sub_ui.dramatiq_pub_sub_helpers import MessageRouterActor
+    from microdrop_utils.dramatiq_pub_sub_helpers import MessageRouterActor
     message_router_actor = MessageRouterActor()
 
     app = QApplication(sys.argv)

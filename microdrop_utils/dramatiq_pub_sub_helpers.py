@@ -1,6 +1,6 @@
 from traits.api import HasTraits, Dict, Str, List, Callable
 import dramatiq
-from _logger import get_logger
+from microdrop_utils._logger import get_logger
 
 logger = get_logger(__name__)
 

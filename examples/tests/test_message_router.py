@@ -10,7 +10,7 @@ def router_actor():
     Returns:
         MessageRouterActor: An instance of MessageRouterActor.
     """
-    from examples.dramatiq_pub_sub_ui.dramatiq_pub_sub_helpers import MessageRouterActor
+    from microdrop_utils.dramatiq_pub_sub_helpers import MessageRouterActor
 
     return MessageRouterActor()
 
@@ -22,7 +22,7 @@ def router_data():
     Returns:
         MessageRouterData: An instance of MessageRouterData.
     """
-    from examples.dramatiq_pub_sub_ui.dramatiq_pub_sub_helpers import MessageRouterData
+    from microdrop_utils.dramatiq_pub_sub_helpers import MessageRouterData
 
     return MessageRouterData()
 
@@ -73,7 +73,7 @@ def test_get_subscribers_for_topic(router_data):
 
 
 def test_message_router_actor_can_route_message(router_actor):
-    from examples.dramatiq_pub_sub_ui.dramatiq_pub_sub_helpers import publish_message
+    from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
 
     # Given that I have a database
     database = {}
@@ -101,7 +101,7 @@ def test_message_router_actor_can_route_message(router_actor):
 
 
 def test_message_router_actor_can_route_message_to_multiple_subscribing_actors(router_actor):
-    from examples.dramatiq_pub_sub_ui.dramatiq_pub_sub_helpers import publish_message
+    from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
 
     # Given that I have two databases
     database1 = {}

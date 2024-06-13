@@ -9,7 +9,7 @@ from pyface.qt.QtCore import Qt
 # TODO: maybe get these from an extension point for very granular control
 from .electrodes_view import ElectrodeLayer
 from ..utils.auto_fit_graphics_view import AutoFitGraphicsView
-from _logger import get_logger
+from microdrop_utils._logger import get_logger
 
 logger = get_logger(__name__)
 

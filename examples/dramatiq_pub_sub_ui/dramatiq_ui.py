@@ -1,10 +1,9 @@
-import json
 import dramatiq
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget, QMessageBox, QPushButton
 from PySide6.QtCore import Signal
-from examples.dramatiq_pub_sub_ui.dramatiq_pub_sub_helpers import publish_message
+from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
 
-from _logger import get_logger
+from microdrop_utils._logger import get_logger
 logger = get_logger(__name__)
 
 
