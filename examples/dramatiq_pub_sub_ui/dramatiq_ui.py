@@ -2,7 +2,10 @@ import json
 import dramatiq
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget, QMessageBox, QPushButton
 from PySide6.QtCore import Signal
-from examples.dramatiq_pub_sub_ui.dramatiq_publisher import publish_message
+from examples.dramatiq_pub_sub_ui.dramatiq_pub_sub_helpers import publish_message
+
+from _logger import get_logger
+logger = get_logger(__name__)
 
 
 class MainWindow(QWidget):
@@ -27,10 +30,10 @@ class MainWindow(QWidget):
 
     @staticmethod
     def publish_button_clicked():
-        print("Publishing message")
+        logger.info("GUI: Publishing message...")
         topic = "ui.event.publish_button.clicked"
         message = "Hello world!"
-        publish_message(message, topic, actor_to_send="orchestrator_actor")
+        publish_message(message, topic)
 
 
 class MainWindowController:
@@ -38,10 +41,15 @@ class MainWindowController:
         self.window = window
         self.on_publish_button_clicked_actor = MainWindow.publish_button_clicked
 
+        self.topics_of_interest = ["ui.notify"]
+
         @dramatiq.actor
         def ui_listener_actor(message, topic):
+            logger.info(f"UI_LISTENER: Received message: {message} from topic: {topic}")
 
             if "popup" in topic:
                 self.window.show_popup_signal.emit(message)
+
+        self.ui_listener_actor = ui_listener_actor
 
 

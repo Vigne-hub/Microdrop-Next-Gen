@@ -1,7 +1,6 @@
 import dramatiq
 from PySide6.QtWidgets import QApplication
 import sys
-import json
 
 BROKER = dramatiq.get_broker()
 
@@ -10,34 +9,35 @@ for el in dramatiq.get_broker().middleware:
     if el.__module__ == "dramatiq.middleware.prometheus":
         dramatiq.get_broker().middleware.remove(el)
 
-from examples.dramatiq_pub_sub_ui.dramatiq_publisher import publish_message
+
+# import the MainWindow and MainWindowController classes from the dramatiq_ui module
 from examples.dramatiq_pub_sub_ui.dramatiq_ui import MainWindow, MainWindowController
-from examples.dramatiq_pub_sub_ui.backend_service import print_ui_message
 
+# import relevant services, this would be done via plugin registering with envsiage in a real application
+# this is done to make these actors name visible to the broker
 
-@dramatiq.actor
-def orchestrator_actor(message, topic):
-    """
-    This actor is responsible for routing messages to the correct actors. It needs access to all the relevant
-    actors and their routing info. it has to be setup in the main plugin or app level.
-    """
+from examples.dramatiq_pub_sub_ui.backend_service import print_ui_message, TOPICS_OF_INTEREST
 
-    # the routing info would be a property from the service registry associated with each service.
-    # each service offer upon registry should provide this as a property
-    if "ui.event.publish_button.clicked" in topic:
-        publish_message(message, topic, actor_to_send="print_ui_message")
-
-    if "ui.notify" in topic:
-        publish_message(message, topic, actor_to_send="ui_listener_actor")
-
-
+# initialize the pub sub message router. Again this would be done via plugin registering with envsiage
+from examples.dramatiq_pub_sub_ui.dramatiq_pub_sub_helpers import MessageRouterActor
+message_router_actor = MessageRouterActor()
 
 
 app = QApplication(sys.argv)
 window = MainWindow()
 window_controller = MainWindowController(window)
 
-worker = dramatiq.Worker(broker=BROKER, worker_timeout=1000, worker_threads=10)
+# register the subscribers in window controller to the appropriate topics
+for topic in window_controller.topics_of_interest:
+    message_router_actor.message_router_data.add_subscriber_to_topic(topic, window_controller.ui_listener_actor.actor_name)
+
+for topic in TOPICS_OF_INTEREST:
+    message_router_actor.message_router_data.add_subscriber_to_topic(topic, print_ui_message.actor_name)
+
+
+
+# start the dramatiq workers
+worker = dramatiq.Worker(broker=BROKER, worker_timeout=100000, worker_threads=10)
 worker.start()
 
 window.show()
