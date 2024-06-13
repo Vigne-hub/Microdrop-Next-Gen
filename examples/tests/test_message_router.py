@@ -67,8 +67,8 @@ def test_get_subscribers_for_topic(router_data):
     router_data.add_subscriber_to_topic("x.y.z", "actor3")
 
     assert router_data.get_subscribers_for_topic("x") == ["actor1"]
-    assert set(router_data.get_subscribers_for_topic("x.y")) == set(["actor1", "actor2"])
-    assert set(router_data.get_subscribers_for_topic("x.y.z")) == set(["actor1", "actor2", "actor3"])
+    assert set(router_data.get_subscribers_for_topic("x.y")) == {"actor1", "actor2"}
+    assert set(router_data.get_subscribers_for_topic("x.y.z")) == {"actor1", "actor2", "actor3"}
     assert router_data.get_subscribers_for_topic("nonexistent") == []
 
 
