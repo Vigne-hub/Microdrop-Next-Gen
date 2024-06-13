@@ -1,4 +1,4 @@
-from traits.api import HasTraits, Dict, Str, List, Callable
+from traits.api import HasTraits, Dict, Str, List
 import dramatiq
 from microdrop_utils._logger import get_logger
 

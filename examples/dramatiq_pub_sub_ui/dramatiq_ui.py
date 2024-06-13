@@ -36,19 +36,45 @@ class MainWindow(QWidget):
 
 
 class MainWindowController:
+    """
+    Controller class for handling the main window logic.
+    """
+    topics_of_interest = ["ui.notify"]
+
     def __init__(self, window):
+        """
+        Initialize the MainWindowController with the given window.
+
+        Parameters:
+        window (QMainWindow): The main window instance.
+        """
         self.window = window
         self.on_publish_button_clicked_actor = MainWindow.publish_button_clicked
 
-        self.topics_of_interest = ["ui.notify"]
+        self.ui_listener_actor = self.create_ui_listener_actor()
+
+    def create_ui_listener_actor(self):
+        """
+        Create a Dramatiq actor for listening to UI-related messages.
+
+        Returns:
+        dramatiq.Actor: The created Dramatiq actor.
+        """
 
         @dramatiq.actor
         def ui_listener_actor(message, topic):
+            """
+            A Dramatiq actor that listens to UI-related messages.
+
+            Parameters:
+            message (str): The received message.
+            topic (str): The topic of the message.
+            """
             logger.info(f"UI_LISTENER: Received message: {message} from topic: {topic}")
 
             if "popup" in topic:
                 self.window.show_popup_signal.emit(message)
 
-        self.ui_listener_actor = ui_listener_actor
+        return ui_listener_actor
 
 
