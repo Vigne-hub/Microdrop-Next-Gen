@@ -42,8 +42,8 @@ class MessageRouterData(HasTraits):
     def remove_subscriber_from_topic(self, topic, subscribing_actor_name):
         if topic in self.topic_subscriber_map:
             self.topic_subscriber_map[topic].remove(subscribing_actor_name)
-            if not self.topics[topic]:
-                del self.topics[topic]
+            if not self.topic_subscriber_map[topic]:
+                del self.topic_subscriber_map[topic]
 
     def get_subscribers_for_topic(self, topic):
 
@@ -69,8 +69,8 @@ class MessageRouterActor:
         self.message_router_data = message_router_data
         self.message_router_actor = self.create_message_router_actor()
 
-        # We define this actor here like this since we need to access self.message_router_data but cannot have this actor as
-        # a method of this class since we cannot have other processes call this with the self object.
+        # We define this actor here like this since we need to access self.message_router_data but cannot have this
+        # actor as a method of this class since we cannot have other processes call this with the self object.
 
     def create_message_router_actor(self):
         """
@@ -81,12 +81,15 @@ class MessageRouterActor:
             """
             A Dramatiq actor that routes messages to subscribers based on topics.
             """
+            logger.debug(f"MESSAGE_ROUTER: Received message: {message} on topic: {topic}")
+
             subscribing_actor_names = self.message_router_data.get_subscribers_for_topic(topic)
+
             for subscribing_actor_name in subscribing_actor_names:
                 logger.debug(f"MESSAGE_ROUTER: Publishing message: {message} to actor: {subscribing_actor_name}")
                 publish_message(message, topic, subscribing_actor_name)
 
-            logger.info(
+            logger.debug(
                 f"MESSAGE_ROUTER: Message: {message} on topic {topic} published to {len(subscribing_actor_names)} subscribers")
 
         return message_router_actor
