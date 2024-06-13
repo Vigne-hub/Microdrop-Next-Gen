@@ -32,4 +32,6 @@ def test_publish_message_can_send_messages_to_actors():
     # I expect the database to be populated
     assert database == {"test": "test"}
 
+    dramatiq.get_broker().actors.clear()
+
 
