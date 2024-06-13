@@ -67,21 +67,26 @@ class MessageRouterActor:
             message_router_data = MessageRouterData()
 
         self.message_router_data = message_router_data
+        self.message_router_actor = self.create_message_router_actor()
 
-        # We define this actor here since we need to access self.message_router_data but cannot have this actor as
+        # We define this actor here like this since we need to access self.message_router_data but cannot have this actor as
         # a method of this class since we cannot have other processes call this with the self object.
 
+    def create_message_router_actor(self):
+        """
+        Create a message router actor that routes messages to subscribers based on topics.
+        """
         @dramatiq.actor
         def message_router_actor(message: Str, topic: Str):
             """
-            A dramatiq actor that routes messages to subscribers based on topics
+            A Dramatiq actor that routes messages to subscribers based on topics.
             """
             subscribing_actor_names = self.message_router_data.get_subscribers_for_topic(topic)
             for subscribing_actor_name in subscribing_actor_names:
                 logger.debug(f"MESSAGE_ROUTER: Publishing message: {message} to actor: {subscribing_actor_name}")
-
                 publish_message(message, topic, subscribing_actor_name)
 
-            logger.info(f"MESSAGE_ROUTER: Message: {message} on topic {topic} published to {len(subscribing_actor_names)} subscribers")
+            logger.info(
+                f"MESSAGE_ROUTER: Message: {message} on topic {topic} published to {len(subscribing_actor_names)} subscribers")
 
-        self.message_router_actor = message_router_actor
+        return message_router_actor

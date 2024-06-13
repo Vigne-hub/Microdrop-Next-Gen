@@ -27,10 +27,11 @@ app = QApplication(sys.argv)
 window = MainWindow()
 window_controller = MainWindowController(window)
 
-# register the subscribers in window controller to the appropriate topics
+# register the subscribers in window controller to the appropriate topics. On plugin startup
 for topic in window_controller.topics_of_interest:
     message_router_actor.message_router_data.add_subscriber_to_topic(topic, window_controller.ui_listener_actor.actor_name)
 
+# on plugin startup, register the print_ui_message actor to the appropriate topics
 for topic in TOPICS_OF_INTEREST:
     message_router_actor.message_router_data.add_subscriber_to_topic(topic, print_ui_message.actor_name)
 
