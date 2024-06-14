@@ -61,30 +61,36 @@ class MessageRouterData(HasTraits):
             if not self.topic_subscriber_map[topic]:
                 del self.topic_subscriber_map[topic]
 
-    def get_subscribers_for_topic(self, topic):
+    def get_subscribers_for_topic(self, topic, strict=False):
         """
         Gets the list of subscribers for a specific topic. A subscriber to a topic 'x' is also a subscriber to 'x.y.z',
         but a subscriber to 'x.y.z' is not a subscriber to 'x'.
 
         Args:
             topic (str): The topic to get subscribers for.
+            strict (bool): If True, only return subscribers for the exact topic. If False, return subscribers for subtopics as well.
 
         Returns:
             list: A list of subscribers for the topic.
         """
-        subscribers = set()
-        topic_parts = topic.split('.')
 
-        try:
-            for key, value in self.topic_subscriber_map.items():
-                key_parts = key.split('.')
-                if len(key_parts) <= len(topic_parts) and key_parts == topic_parts[:len(key_parts)]:
-                    subscribers.update(value)
-        except Exception as e:
-            logger.error(f"Error getting subscribers for topic: {topic}")
-            logger.error(e)
+        if strict:
+            return self.topic_subscriber_map.get(topic, [])
 
-        return list(subscribers)
+        else:
+            subscribers = set()
+            topic_parts = topic.split('.')
+
+            try:
+                for key, value in self.topic_subscriber_map.items():
+                    key_parts = key.split('.')
+                    if len(key_parts) <= len(topic_parts) and key_parts == topic_parts[:len(key_parts)]:
+                        subscribers.update(value)
+            except Exception as e:
+                logger.error(f"Error getting subscribers for topic: {topic}")
+                logger.error(e)
+
+            return list(subscribers)
 
 
 class MessageRouterActor:

@@ -2,6 +2,7 @@ import pytest
 import dramatiq
 from .common import worker
 
+
 @pytest.fixture()
 def router_actor():
     """
@@ -13,6 +14,7 @@ def router_actor():
     from microdrop_utils.dramatiq_pub_sub_helpers import MessageRouterActor
 
     return MessageRouterActor()
+
 
 @pytest.fixture
 def router_data():
@@ -70,6 +72,23 @@ def test_get_subscribers_for_topic(router_data):
     assert set(router_data.get_subscribers_for_topic("x.y")) == {"actor1", "actor2"}
     assert set(router_data.get_subscribers_for_topic("x.y.z")) == {"actor1", "actor2", "actor3"}
     assert router_data.get_subscribers_for_topic("nonexistent") == []
+
+
+def test_get_subscribers_for_topic_strict(router_data):
+    """
+    Test getting subscribers for a topic.
+
+    Args:
+        router_data (MessageRouterData): The message router data instance.
+    """
+    router_data.add_subscriber_to_topic("x", "actor1")
+    router_data.add_subscriber_to_topic("x.y", "actor2")
+    router_data.add_subscriber_to_topic("x.y.z", "actor3")
+
+    assert router_data.get_subscribers_for_topic("x", strict=True) == ["actor1"]
+    assert set(router_data.get_subscribers_for_topic("x.y", strict=True)) == {"actor2"}
+    assert set(router_data.get_subscribers_for_topic("x.y.z", strict=True)) == {"actor3"}
+    assert router_data.get_subscribers_for_topic("nonexistent", strict=True) == []
 
 
 def test_message_router_actor_can_route_message(router_actor):
