@@ -9,7 +9,7 @@ def router_data():
     return MessageRouterData()
 
 
-def test_publish_message_can_send_messages_to_actors():
+def test_publish_message_can_send_messages_to_actors(stub_broker):
     # this is adapted from the dramatiq testing suite
 
     from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
@@ -26,12 +26,12 @@ def test_publish_message_can_send_messages_to_actors():
     publish_message("test", "test", "put")
 
     # And I give the workers time to process the messages
-    with worker(dramatiq.get_broker(), worker_timeout=100):
-        dramatiq.get_broker().join("default")
+    with worker(stub_broker, worker_timeout=100):
+        stub_broker.join("default")
 
     # I expect the database to be populated
     assert database == {"test": "test"}
 
-    dramatiq.get_broker().actors.clear()
+    stub_broker.actors.clear()
 
 

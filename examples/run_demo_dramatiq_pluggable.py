@@ -11,8 +11,9 @@ class ExampleApp(Application):
 
 
 def demo():
+
     from examples.plugins.frontend import UIPlugin, PlotViewPlugin, TableViewPlugin
-    from examples.tests.common import BROKER
+    from examples.broker import BROKER
 
     # Note that fully fledged unittests for enthought services is available via
     # https://github.com/enthought/envisage/blob/main/envisage/tests
@@ -201,10 +202,38 @@ def demo():
     app.stop()
     worker.stop()
 
+    try:
+        from dramatiq.brokers.redis import RedisBroker
+        if isinstance(BROKER, RedisBroker):
+            import subprocess
+            # stop redis server
+            subprocess.Popen(["redis-cli", "shutdown"])
+    except ImportError:
+        print("Redis broker not available")
+
+    # if using a rabbitmq broker, it keeps running until you stop it manually.
+
 
 if __name__ == '__main__':
     # insert source and content root to pythonpath
     import sys
     import os
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+    from dramatiq import get_broker
+
+    try:
+        from dramatiq.brokers.redis import RedisBroker
+
+        # if we have a redis broker, start the server
+        if isinstance(get_broker(), RedisBroker):
+            import subprocess
+            # start redis server
+            subprocess.Popen(["redis-server"])
+    except ImportError:
+        print("Redis broker not available")
+
+
+    # if using a rabbitmq broker, ensure it is running already.
+
     demo()
+

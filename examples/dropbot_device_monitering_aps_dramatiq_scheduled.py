@@ -1,16 +1,14 @@
 import sys
 import base_node_rpc as bnr
-from traits.api import HasTraits, Str, Callable, Union
+from traits.api import HasTraits, Str, Callable
 from microdrop_utils.dramatiq_pub_sub_helpers import publish_message, MessageRouterActor
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.interval import IntervalTrigger
-
 import dramatiq
 
-# remove prometheus metrics for now
-for el in dramatiq.get_broker().middleware:
-    if el.__module__ == "dramatiq.middleware.prometheus":
-        dramatiq.get_broker().middleware.remove(el)
+from microdrop_utils._logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class DropBotDeviceConnectionMonitor(HasTraits):
@@ -19,6 +17,7 @@ class DropBotDeviceConnectionMonitor(HasTraits):
 
     def _port_default(self):
         return ''
+
     def _check_dropbot_devices_available_actor_default(self):
         return self.create_check_dropbot_devices_available()
 
@@ -45,10 +44,11 @@ class DropBotDeviceConnectionMonitor(HasTraits):
                     publish_message(port, 'dropbot/port')
 
             except Exception as e:
-               # print(f'Error: {e}')
+                # print(f'Error: {e}')
                 publish_message(str(e), 'dropbot/error')
 
         return check_dropbot_devices_available_actor
+
 
 @dramatiq.actor
 def print_dropbot_message(message=str, topic=str):
@@ -56,7 +56,6 @@ def print_dropbot_message(message=str, topic=str):
 
 
 def main(args):
-
     message_router_actor = MessageRouterActor()
 
     message_router_actor.message_router_data.add_subscriber_to_topic('dropbot/#', 'print_dropbot_message')
@@ -77,7 +76,10 @@ def main(args):
 
 if __name__ == "__main__":
     from dramatiq import Worker
+    from examples.broker import BROKER
 
-    worker = Worker(dramatiq.get_broker(), worker_threads=1)
+    init_broker_server()
+
+    worker = Worker(BROKER, worker_threads=1)
     worker.start()
     sys.exit(main(sys.argv))
