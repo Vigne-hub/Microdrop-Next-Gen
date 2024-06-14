@@ -174,6 +174,5 @@ class TestMessageRouterActor:
 
         assert database3 == {test_topic + "/y/z": test_message}
 
-
 if __name__ == "__main__":
     pytest.main()

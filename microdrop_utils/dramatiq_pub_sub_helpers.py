@@ -1,6 +1,8 @@
 from traits.api import HasTraits, Dict, Str, List
 import dramatiq
+
 import re
+
 from microdrop_utils._logger import get_logger
 
 logger = get_logger(__name__)
@@ -170,7 +172,6 @@ class MessageRouterData(HasTraits):
         >>> router_data.get_subscribers_for_topic("NONEXISTENT")
         []
     """
-
     topic_subscriber_map = Dict(Str, List(Str),
                                 desc="A dictionary of topics and a list of their subscribing actor names")
 
@@ -191,6 +192,7 @@ class MessageRouterData(HasTraits):
             >>> router_data.add_subscriber_to_topic("SENSOR/+", "actor1")
             >>> router_data.topic_subscriber_map
             {'SENSOR/+': ['actor1']}
+
         """
         if topic not in self.topic_subscriber_map:
             self.topic_subscriber_map[topic] = [subscribing_actor_name]
@@ -216,6 +218,7 @@ class MessageRouterData(HasTraits):
             >>> router_data.remove_subscriber_from_topic("SENSOR/+", "actor1")
             >>> router_data.topic_subscriber_map
             {}
+
         """
         if topic in self.topic_subscriber_map:
             self.topic_subscriber_map[topic].remove(subscribing_actor_name)
@@ -287,7 +290,7 @@ class MessageRouterData(HasTraits):
             return True
         except StopIteration:
             return False
-
+ 
 
 class MessageRouterActor:
     """
@@ -308,7 +311,7 @@ class MessageRouterActor:
         """
         Create a message router actor that routes messages to subscribers based on topics.
         """
-
+        
         @dramatiq.actor
         def message_router_actor(message: Str, topic: Str):
             """
