@@ -1,7 +1,7 @@
 from traits.api import HasTraits, provides
 from ..interfaces.i_dropbot_controller_service import IDropbotControllerService
 from ..plugins.backend_plugins.dropbot_controller import DropbotActor
-from _logger import get_logger
+from microdrop_utils._logger import get_logger
 
 logger = get_logger(__name__)
 

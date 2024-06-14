@@ -3,7 +3,7 @@ from traits.api import HasTraits, provides
 
 from ..plugins.control_plugins.event_hub import EventHubActor
 from ..interfaces.i_event_hub_service import IEventHubService
-from _logger import get_logger
+from microdrop_utils._logger import get_logger
 
 logger = get_logger(__name__)
 
