@@ -3,14 +3,12 @@ import time
 import sys
 import logging
 
-import dramatiq
-
 logger = logging.getLogger(__name__)
 
 
 def is_redis_running():
-    import redis
     """Check if Redis is running by attempting to connect to it."""
+    import redis
     try:
         client = redis.StrictRedis(host='localhost', port=6379)
         client.ping()
@@ -20,8 +18,8 @@ def is_redis_running():
 
 
 def is_rabbitmq_running():
-    import pika
     """Check if RabbitMQ is running by attempting to connect to it using pika."""
+    import pika
     try:
         connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
         connection.close()
