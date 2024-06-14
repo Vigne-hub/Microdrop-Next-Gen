@@ -14,9 +14,9 @@ import sys
 import numpy as np
 from nptyping import NDArray, Shape, UInt8
 
-from ..utils.logger import initialize_logger
+from microdrop_utils._logger import get_logger
 
-logger = initialize_logger(__name__)
+logger = get_logger(__name__)
 
 to_delete = []
 for m in sys.modules:

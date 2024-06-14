@@ -6,9 +6,10 @@ from pyface.qt.QtOpenGLWidgets import QOpenGLWidget
 from pyface.qt.QtCore import Qt
 
 # local imports
+# TODO: maybe get these from an extension point for very granular control
 from .electrodes_view import ElectrodeLayer
 from ..utils.auto_fit_graphics_view import AutoFitGraphicsView
-from _logger import get_logger
+from microdrop_utils._logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -50,11 +51,9 @@ class DeviceViewerPane(TaskPane):
         self.control = self.view
         self.control.setParent(parent)
 
-    def set_new_layer_from_model(self, new_model):
+    def set_view_from_model(self, new_model):
         self.remove_current_layer()
         self.current_electrode_layer = ElectrodeLayer("layer1", new_model)
         self.scene.addItem(self.current_electrode_layer)
-
-    def fit_scene_to_view(self):
         self.scene.setSceneRect(self.scene.itemsBoundingRect())
         self.view.fitInView(self.scene.sceneRect(), Qt.AspectRatioMode.KeepAspectRatio)

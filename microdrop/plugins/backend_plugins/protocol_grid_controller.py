@@ -4,10 +4,10 @@ import dramatiq
 from dramatiq.brokers.rabbitmq import RabbitmqBroker
 import threading
 
-from ...interfaces.protocol_grid_structure_interface import IPGSService
-from ...utils.logger import initialize_logger
+from ...interfaces.i_protocol_grid_controller_service import IPGSService
+from microdrop_utils._logger import get_logger
 
-logger = initialize_logger(__name__)
+logger = get_logger(__name__)
 
 rabbitmq_broker = RabbitmqBroker(url="amqp://guest:guest@localhost/")
 dramatiq.set_broker(rabbitmq_broker)

@@ -8,9 +8,9 @@ from traits.api import Dict, Callable, Any, HasTraits, provides
 from traits.trait_types import Str, List
 
 from ..interfaces.i_protocol_grid_controller_service import IPGSService
-from ..utils.logger import initialize_logger
+from microdrop_utils._logger import get_logger
 
-logger = initialize_logger(__name__)
+logger = get_logger(__name__)
 
 
 @provides(IPGSService)
@@ -139,13 +139,13 @@ class ProtocolGridStructureService(HasTraits):
         voltage = step['Voltage']
         frequency = step['Frequency']
 
-        print(f"Executing {description}: Duration={duration}s, Voltage={voltage}V, Frequency={frequency}Hz")
-        time.sleep(duration)
+        logger.info(f"Executing {description}: Duration={duration}s, Voltage={voltage}V, Frequency={frequency}Hz")
+        time.sleep(0)
 
     def execute_protocol(self, protocol, order):
         """ Execute the protocol based on the order list provided. """
         steps_by_order = self.extract_commands(protocol)  # gets list of unique command rows in the protocol
-        print(steps_by_order)
+        logger.info(steps_by_order)
 
         for step_order in order:
             self.execute_step(steps_by_order[step_order - 1])  # execute the command based on the order

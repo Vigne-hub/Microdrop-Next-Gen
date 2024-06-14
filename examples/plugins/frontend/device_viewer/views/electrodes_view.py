@@ -2,12 +2,15 @@
 import numpy as np
 
 # local imports
-from _logger import get_logger
+from microdrop_utils._logger import get_logger
 
 # enthought imports
+from traits.api import Instance, Array, Str
 from pyface.qt.QtCore import Qt
 from pyface.qt.QtGui import (QColor, QPen, QBrush, QFont, QPainterPath, QGraphicsPathItem, QGraphicsTextItem,
                              QGraphicsItem, QGraphicsItemGroup)
+
+from ..models.electrodes import Electrode
 
 logger = get_logger(__name__, level='DEBUG')
 
@@ -18,8 +21,19 @@ default_alphas = {'line': 1.0, 'fill': 1.0, 'text': 1.0}
 
 
 class ElectrodeView(QGraphicsPathItem):
+    """
+    Class defining the view for an electrode in the device viewer:
 
-    def __init__(self, id_, electrode, path_data, parent=None):
+    - This view is a QGraphicsPathItem that represents the electrode as a polygon with a text label in the center.
+    The view is responsible for updating the color and alpha of the electrode based on the state of the electrode.
+
+    - The view also handles the mouse events for the electrode. The view is selectable and focusable.
+    the callbacks for the clicking has to be implemented by a controller for the view.
+
+    - The view requires an electrode model to be passed to it.
+    """
+
+    def __init__(self, id_: Str, electrode: Instance(Electrode), path_data: Array, parent=None):
         super().__init__(parent)
 
         self.state_map = {k: v for k, v in default_colors.items()}
@@ -60,15 +74,9 @@ class ElectrodeView(QGraphicsPathItem):
         self.text_path.setDefaultTextColor(self.text_color)
         self.path_extremes = [np.min(path_data[:, 0]), np.max(path_data[:, 0]),
                               np.min(path_data[:, 1]), np.max(path_data[:, 1])]
-        self.fit_text_in_path(str(self.electrode.channel), self.path_extremes)
+        self._fit_text_in_path(str(self.electrode.channel), self.path_extremes)
 
-        self.enable_electrode()
-
-    def disable_electrode(self):
-        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, False)
-        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsFocusable, False)
-
-    def enable_electrode(self):
+        # Make the electrode selectable and focusable
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsFocusable, True)
 
@@ -82,7 +90,14 @@ class ElectrodeView(QGraphicsPathItem):
         """
         pass
 
-    def fit_text_in_path(self, text: str, path_extremes, default_font_size: int = 8):
+    #################################################################################
+    # electrode view protected methods
+    ##################################################################################
+
+    def _fit_text_in_path(self, text: str, path_extremes, default_font_size: int = 8):
+        """
+        Method to fit the text in the center of the electrode path
+        """
         if text == 'None':
             self.text_path.setPlainText('')
             self.state_map[False] = default_colors['no-channel']
@@ -114,13 +129,22 @@ class ElectrodeView(QGraphicsPathItem):
         posy = top + (bottom - top - text_size.height()) / 2
         self.text_path.setPos(posx, posy)
 
+    ##################################################################################
+    # Public electrode view update methods
+    ##################################################################################
     def update_color(self, state):
+        """
+        Method to update the color of the electrode based on the state
+        """
         self.color = QColor(self.state_map.get(state, self.state_map[False]))
         self.color.setAlphaF(self.alphas['fill'])
         self.setBrush(QBrush(self.color))
         self.update()
 
     def update_alpha(self, line=False, fill=False, text=False, global_alpha=False):
+        """
+        Method to update the alpha of the electrode view
+        """
         if line or global_alpha:
             self.pen_color.setAlphaF(self.alphas['line'])
             self.setPen(QPen(self.pen_color, 1))
@@ -137,6 +161,12 @@ class ElectrodeView(QGraphicsPathItem):
 
 
 class ElectrodeLayer(QGraphicsItemGroup):
+    """
+    Class defining the view for an electrode layer in the device viewer.
+
+    - This view is a QGraphicsItemGroup that contains a group of electrode view objects
+    - The view is responsible for updating the properties of all the electrode views contained in bulk.
+    """
 
     def __init__(self, id_: str, electrodes, parent=None):
         super().__init__(parent=parent)
@@ -153,6 +183,7 @@ class ElectrodeLayer(QGraphicsItemGroup):
 
         logger.debug(f"Creating Electrode Layer {id_} with {len(electrodes.electrodes)} electrodes.")
 
+        # Create the electrode views for each electrode from the electrodes model and add them to the group
         for electrode_id, electrode in electrodes.electrodes.items():
             self.electrode_views[electrode_id] = ElectrodeView(electrode_id, electrodes[electrode_id],
                                                                modifier * electrode.path[:, 0, :])
@@ -161,11 +192,17 @@ class ElectrodeLayer(QGraphicsItemGroup):
 
         self._electrodes = electrodes
 
+        # Create the connections between the electrodes
         self.connections = [con * modifier for con in svg.connections]
+        # Create the connection items
         self.connection_items = []
+        # Draw the connections
         self.draw_connections()
 
     def change_alphas(self, alpha: float, **kwargs):
+        """
+        Method to change the alpha of the electrode views in the layer
+        """
         if kwargs.get('path'):
             self.update_connection_alpha(alpha)
             kwargs.pop('path')
@@ -181,6 +218,9 @@ class ElectrodeLayer(QGraphicsItemGroup):
             self.electrode_views[name].update_alpha(**kwargs)
 
     def draw_connections(self):
+        """
+        Method to draw the connections between the electrodes in the layer
+        """
         for connection in self.connections:
             path = QPainterPath()
             coords = connection.flatten()
@@ -194,6 +234,9 @@ class ElectrodeLayer(QGraphicsItemGroup):
             self.connection_items.append(connection_item)
 
     def update_connection_alpha(self, alpha: float):
+        """
+        Method to update the alpha of the connections in the layer
+        """
         for item in self.connection_items:
             color = item.pen().color()
             color.setAlphaF(alpha)

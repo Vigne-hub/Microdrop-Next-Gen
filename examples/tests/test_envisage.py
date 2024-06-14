@@ -13,22 +13,23 @@ def results_file():
 
 @pytest.fixture(scope="module")
 def setup_app():
-    from ..plugins.frontend import UIPlugin
-    from ..plugins.frontend import PlotViewPlugin
-    from ..plugins.frontend import TableViewPlugin
-    from ..plugins.backend import LoggingPlugin
-    from ..plugins.backend import AnalysisPlugin
-    from ..app import MyApp
+    from examples.plugins.frontend import UIPlugin, PlotViewPlugin, TableViewPlugin
+    from examples.plugins.backend import LoggingPlugin, AnalysisPlugin
+    from envisage.api import CorePlugin, Application
+
+    class ExampleApp(Application):
+        def __init__(self, plugins, broker=None):
+            super().__init__(plugins=plugins)
 
     # Assuming `MyApp` and related plugins are defined elsewhere
-    plugins = [UIPlugin(), PlotViewPlugin(), TableViewPlugin(), AnalysisPlugin(), LoggingPlugin()]
-    app = MyApp(plugins=plugins)
+    plugins = [CorePlugin(), UIPlugin(), PlotViewPlugin(), TableViewPlugin(), AnalysisPlugin(), LoggingPlugin()]
+    app = ExampleApp(plugins=plugins)
     app.start()
     return app
 
 
 def test_analysis_plugin_import():
-    from .common import BROKER
+    from examples.tests.common import BROKER
 
     print("#" * 100)
     print("Testing actor declaration with the broker\n")
@@ -38,7 +39,7 @@ def test_analysis_plugin_import():
     print(f"Declared actors before: {BROKER.get_declared_actors()}\n")
 
     # importing plugin with an actor
-    from ..plugins.backend import AnalysisPlugin
+    from examples.plugins.backend import AnalysisPlugin
 
     # after...
     assert len(BROKER.get_declared_actors()) == 1
@@ -48,7 +49,7 @@ def test_analysis_plugin_import():
 def test_plugin_manager(setup_app):
     app = setup_app
     print("Testing plugin manager")
-    assert len(app.plugin_manager._plugins) == 5
+    assert len(app.plugin_manager._plugins) == 6
 
 
 def test_service_registry(setup_app):
@@ -59,7 +60,7 @@ def test_service_registry(setup_app):
 
 def test_service_properties_access_regular(setup_app):
 
-    from ..plugins.backend.toy_service_plugins.analysis.interfaces.i_analysis_service import IAnalysisService
+    from examples.plugins.backend.toy_service_plugins.analysis.interfaces.i_analysis_service import IAnalysisService
 
     app = setup_app
     regular_task = app.get_service(IAnalysisService, query="type=='regular'")
@@ -69,7 +70,7 @@ def test_service_properties_access_regular(setup_app):
 
 def test_service_properties_access_dramatiq(setup_app):
 
-    from ..plugins.backend.toy_service_plugins.analysis.interfaces.i_analysis_service import IAnalysisService
+    from examples.plugins.backend.toy_service_plugins.analysis.interfaces.i_analysis_service import IAnalysisService
 
     app = setup_app
     dramatiq_task = app.get_service(IAnalysisService, query="type=='dramatiq'")
@@ -86,7 +87,7 @@ def test_view_access(setup_app):
 
 def test_regular_task_processing(setup_app):
 
-    from ..plugins.backend.toy_service_plugins.analysis.interfaces.i_analysis_service import IAnalysisService
+    from examples.plugins.backend.toy_service_plugins.analysis.interfaces.i_analysis_service import IAnalysisService
 
     app = setup_app
     regular_task = app.get_service(IAnalysisService, query="type=='regular'")
@@ -101,7 +102,7 @@ def test_regular_task_processing(setup_app):
 @pytest.fixture(scope="module")
 def dramatiq_task_setup(setup_app):
 
-    from ..plugins.backend.toy_service_plugins.analysis.interfaces.i_analysis_service import IAnalysisService
+    from examples.plugins.backend.toy_service_plugins.analysis.interfaces.i_analysis_service import IAnalysisService
 
     app = setup_app
     dramatiq_task = app.get_service(IAnalysisService, query="type=='dramatiq'")
@@ -120,7 +121,7 @@ def test_dramatiq_task_processing_regular_call(dramatiq_task_setup):
 
 def test_dramatiq_task_send_call(dramatiq_task_setup, results_file):
 
-    from .common import worker, BROKER
+    from examples.tests.common import worker, BROKER
     import time
 
     dramatiq_task = dramatiq_task_setup
@@ -141,7 +142,3 @@ def test_dramatiq_task_send_call(dramatiq_task_setup, results_file):
         for el in results:
             assert el == "Analysis result: 6\n"
         assert len(results) == N_tasks
-
-
-if __name__ == "__main__":
-    pytest.main()

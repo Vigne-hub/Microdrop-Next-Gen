@@ -1,8 +1,10 @@
-import json
 import dramatiq
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget, QMessageBox, QPushButton
 from PySide6.QtCore import Signal
-from examples.dramatiq_pub_sub_ui.dramatiq_publisher import publish_message
+from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
+
+from microdrop_utils._logger import get_logger
+logger = get_logger(__name__)
 
 
 class MainWindow(QWidget):
@@ -27,21 +29,55 @@ class MainWindow(QWidget):
 
     @staticmethod
     def publish_button_clicked():
-        print("Publishing message")
-        topic = "ui.event.publish_button.clicked"
+        logger.info("GUI: Publishing message...")
+
+        topic = "ui/event/publish_button/clicked"
+
         message = "Hello world!"
-        publish_message(message, topic, actor_to_send="orchestrator_actor")
+        publish_message(message, topic)
 
 
 class MainWindowController:
+    """
+    Controller class for handling the main window logic.
+    """
+
+    topics_of_interest = ["ui/+/popup"]
+
     def __init__(self, window):
+        """
+        Initialize the MainWindowController with the given window.
+
+        Parameters:
+        window (QMainWindow): The main window instance.
+        """
         self.window = window
         self.on_publish_button_clicked_actor = MainWindow.publish_button_clicked
 
+        self.ui_listener_actor = self.create_ui_listener_actor()
+
+    def create_ui_listener_actor(self):
+        """
+        Create a Dramatiq actor for listening to UI-related messages.
+
+        Returns:
+        dramatiq.Actor: The created Dramatiq actor.
+        """
+
         @dramatiq.actor
         def ui_listener_actor(message, topic):
+            """
+            A Dramatiq actor that listens to UI-related messages.
+
+            Parameters:
+            message (str): The received message.
+            topic (str): The topic of the message.
+            """
+            logger.info(f"UI_LISTENER: Received message: {message} from topic: {topic}")
 
             if "popup" in topic:
                 self.window.show_popup_signal.emit(message)
+
+        return ui_listener_actor
 
 
