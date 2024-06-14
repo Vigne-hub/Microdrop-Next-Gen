@@ -5,9 +5,10 @@ from dramatiq.brokers.stub import StubBroker
 from dramatiq.rate_limits import backends as rl_backends
 from dramatiq.results import backends as res_backends
 
-@pytest.fixture()
+@pytest.fixture
 def stub_broker():
     broker = StubBroker()
+    broker.declare_queue("default")
     broker.emit_after("process_boot")
     dramatiq.set_broker(broker)
     yield broker
@@ -15,7 +16,7 @@ def stub_broker():
     broker.close()
 
 
-@pytest.fixture()
+@pytest.fixture
 def stub_worker(stub_broker):
     worker = Worker(stub_broker, worker_timeout=100, worker_threads=32)
     worker.start()

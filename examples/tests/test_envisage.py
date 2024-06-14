@@ -1,18 +1,19 @@
 import pytest
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def results_file():
     from pathlib import Path
-    test_results = Path(__file__).parent / "results.txt"
+    from .common import TEST_PATH
+    test_results = Path(TEST_PATH) / "results.txt"
     with open(test_results, "w") as f:
         f.write("")
 
     return test_results
 
 
-@pytest.fixture(scope="module")
-def setup_app():
+@pytest.fixture
+def setup_app(stub_broker):
     from examples.plugins.frontend import UIPlugin, PlotViewPlugin, TableViewPlugin
     from examples.plugins.backend import LoggingPlugin, AnalysisPlugin
     from envisage.api import CorePlugin, Application
@@ -28,22 +29,20 @@ def setup_app():
     return app
 
 
-def test_analysis_plugin_import():
-    from examples.tests.common import BROKER
-
+def test_analysis_plugin_import(stub_broker):
     print("#" * 100)
     print("Testing actor declaration with the broker\n")
 
     # before...
-    assert len(BROKER.get_declared_actors()) == 0
-    print(f"Declared actors before: {BROKER.get_declared_actors()}\n")
+    assert len(stub_broker.get_declared_actors()) == 0
+    print(f"Declared actors before: {stub_broker.get_declared_actors()}\n")
 
     # importing plugin with an actor
     from examples.plugins.backend import AnalysisPlugin
 
     # after...
-    assert len(BROKER.get_declared_actors()) == 1
-    print(f"Declared actors after: {BROKER.get_declared_actors()}\n")
+    assert len(stub_broker.get_declared_actors()) == 1
+    print(f"Declared actors after: {stub_broker.get_declared_actors()}\n")
 
 
 def test_plugin_manager(setup_app):
@@ -99,7 +98,7 @@ def test_regular_task_processing(setup_app):
     assert result == 6
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def dramatiq_task_setup(setup_app):
 
     from examples.plugins.backend.toy_service_plugins.analysis.interfaces.i_analysis_service import IAnalysisService
@@ -119,23 +118,18 @@ def test_dramatiq_task_processing_regular_call(dramatiq_task_setup):
     assert result == 6
 
 
-def test_dramatiq_task_send_call(dramatiq_task_setup, results_file):
-
-    from examples.tests.common import worker, BROKER
-    import time
+def test_dramatiq_task_send_call(dramatiq_task_setup, results_file, stub_broker, stub_worker):
 
     dramatiq_task = dramatiq_task_setup
 
     payload = {"args_to_sum": [1, 2, 3], "sleep_time": 2, "reply": 0, "results_file": str(results_file)}
     N_tasks = 3
 
-    with worker(broker=BROKER, queues=None, worker_timeout=1000, worker_threads=N_tasks) as test_worker:
+    for i in range(N_tasks):
+        assert dramatiq_task.process_task.send(payload)
 
-        for i in range(N_tasks):
-            dramatiq_task.process_task.send(payload)
-        test_worker.join()
-
-    time.sleep(1)
+    stub_broker.join("default")
+    stub_worker.join()
 
     with open(results_file) as f:
         results = f.readlines()

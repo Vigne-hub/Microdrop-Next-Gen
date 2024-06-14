@@ -12,4 +12,5 @@ def worker(*args, **kwargs):
     finally:
         worker.stop()
 
+
 TEST_PATH = os.getenv("TEST_PATH", os.path.dirname(os.path.abspath(__file__)))
