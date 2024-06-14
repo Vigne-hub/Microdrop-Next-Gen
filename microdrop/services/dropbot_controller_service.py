@@ -1,16 +1,14 @@
-from time import sleep
-
 from PySide6.QtCore import QTimer
 import logging
 
-from ..interfaces.i_pub_sub_manager_service import IPubSubManagerService
+from traits.api import HasTraits, provides, Union, Instance, Array
+from microdrop.interfaces.i_dropbot_controller_service import IDropbotControllerService
 
-from ..pydantic_models.dropbot_controller_output_state_model import DBOutputStateModel, \
+from microdrop.pydantic_models.dropbot_controller_output_state_model import DBOutputStateModel, \
     DBChannelsChangedModel, DBVoltageChangedModel, DBChannelsMetastateChanged
 
 logger = logging.getLogger(__name__)
 
-from typing import Union
 import dropbot
 from dropbot.monitor import DROPBOT_SIGNAL_NAMES
 import serial
@@ -25,43 +23,28 @@ for m in to_delete:
     del sys.modules[m]
 
 import numpy as np
-from nptyping import NDArray, Shape, UInt8
 
 
-class DropbotController:
-    output_state_true = DBOutputStateModel(Signal='output_state_changed', OutputState=True)
-    output_state_false = DBOutputStateModel(Signal='output_state_changed', OutputState=False)
+@provides(IDropbotControllerService)
+class DropbotControllerService(HasTraits):
+    # init traits
 
+    proxy = Union(None, Instance(dropbot.SerialProxy))
+    last_state = Array(dtype=np.uint8, shape=(None, 1))
+    dropbot_timer = Instance(QTimer)
 
-    def __init__(self, app, parent=None):
+    # set default values for traits
+    def _last_state_default(self):
+        return np.zeros(128, dtype=np.uint8)
 
-        """
-        Initializes the DropbotController instance and sets up timers for
-        Dropbot initialization and voltage polling.
+    def _proxy_default(self):
+        return None
 
-        Args:
-            parent (QObject, optional): The parent QObject. Defaults to None.
-        """
-        self.proxy: Union[None, dropbot.SerialProxy] = None
-        self.last_state: NDArray[Shape['*, 1'], UInt8] = np.zeros(128, dtype='uint8')
-
-        self.pub_sub_manager = app.get_service(IPubSubManagerService)
-
-        self.pub_sub_manager.create_publisher(publisher_name=f'dropbot_publisher', exchange_name='output_state_changed')
-        self.pub_sub_manager.create_publisher(publisher_name=f'dropbot_publisher', exchange_name='channels_changed')
-        self.pub_sub_manager.create_publisher(publisher_name=f'dropbot_publisher', exchange_name='voltage_changed')
-        self.pub_sub_manager.create_publisher(publisher_name=f'dropbot_publisher',
-                                              exchange_name='channels_metastate_changed')
-
-        # self.init_dropbot_proxy()
-
-        self.dropbot_timer = QTimer()
-        self.dropbot_timer.timeout.connect(self.init_dropbot_proxy)
-        self.dropbot_timer.start(1000)
-
-    def emit_signal(self, message):
-        self.pub_sub_manager.publish(message=message, publisher=f'dropbot_publisher')
-        logger.info(f"Emitted: {message}")
+    def _dropbot_timer_default(self):
+        timer = QTimer()
+        timer.timeout.connect(self.init_dropbot_proxy)
+        timer.start(1000)
+        return timer
 
     def init_dropbot_proxy(self):
         """
@@ -175,7 +158,7 @@ class DropbotController:
         if self.proxy is not None:
             self.proxy.hv_output_enabled = on
 
-    def get_channels(self) -> NDArray[Shape['*, 1'], UInt8]:
+    def get_channels(self) -> Array(dtype=np.uint8, shape=(None, 1)):
         """
         Retrieves and returns the current state of all channels from the Dropbot,
         emitting a signal if there is a change from the last known state.
@@ -192,7 +175,7 @@ class DropbotController:
             self.emit_signal(DBChannelsChangedModel(Signal='channels_changed', channels=str(channels)))
         return channels
 
-    def set_channels(self, channels: NDArray[Shape['*, 1'], UInt8]):
+    def set_channels(self, channels: Array(dtype=np.uint8, shape=(None, 1))):
         """
         Sets the state of all channels in the Dropbot to the specified array and
         updates the last known state.
