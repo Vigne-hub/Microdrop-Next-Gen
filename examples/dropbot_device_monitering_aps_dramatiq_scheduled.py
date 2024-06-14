@@ -1,7 +1,7 @@
 import sys
 import base_node_rpc as bnr
 from traits.api import HasTraits, Str, Callable, Union
-
+from microdrop_utils.dramatiq_pub_sub_helpers import publish_message, MessageRouterActor
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
@@ -42,19 +42,30 @@ class DropBotDeviceConnectionMonitor(HasTraits):
                 if port != self.port:
                     self.port = port
                     print(f'New dropbot found on port {port}')
+                    publish_message(port, 'dropbot/port')
 
             except Exception as e:
-                print(f'Error: {e}')
+               # print(f'Error: {e}')
+                publish_message(str(e), 'dropbot/error')
 
         return check_dropbot_devices_available_actor
 
+@dramatiq.actor
+def print_dropbot_message(message=str, topic=str):
+    print(f"PRINT_DROPBOT_MESSAGE_SERVICE: Received message: {message}! from topic: {topic}")
+
 
 def main(args):
+
+    message_router_actor = MessageRouterActor()
+
+    message_router_actor.message_router_data.add_subscriber_to_topic('dropbot/#', 'print_dropbot_message')
+
     example_instance = DropBotDeviceConnectionMonitor()
     scheduler = BlockingScheduler()
     scheduler.add_job(
         example_instance.check_dropbot_devices_available_actor.send,
-        IntervalTrigger(seconds=2),
+        IntervalTrigger(seconds=0.2),
     )
     try:
         scheduler.start()
