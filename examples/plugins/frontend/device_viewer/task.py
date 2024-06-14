@@ -11,7 +11,9 @@ from traits.api import Instance
 # Local imports.
 from .models.electrodes import Electrodes, Electrode
 from .views.device_view_pane import DeviceViewerPane
+
 from microdrop_utils._logger import get_logger
+
 from .views.electrodes_view import ElectrodeView
 
 logger = get_logger(__name__)

@@ -1,10 +1,8 @@
 from traits.api import HasTraits, Range
 from traitsui.api import View, Group, Item, Controller
-from microdrop_utils._logger import get_logger
-
-logger = get_logger(__name__)
 
 from microdrop_utils._logger import get_logger
+
 logger = get_logger(__name__)
 
 

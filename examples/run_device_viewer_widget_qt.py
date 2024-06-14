@@ -8,8 +8,8 @@ import sys
 from examples.plugins.frontend.device_viewer.views.device_viewer_qt import DeviceViewerWidget
 from examples.plugins.frontend.device_viewer.models.electrodes import Electrodes
 from examples.tests.common import TEST_PATH
-from microdrop_utils._logger import get_logger
 
+from microdrop_utils._logger import get_logger
 logger = get_logger(__name__)
 
 if not QApplication.instance():
