@@ -202,17 +202,6 @@ def demo():
     app.stop()
     worker.stop()
 
-    try:
-        from dramatiq.brokers.redis import RedisBroker
-        if isinstance(BROKER, RedisBroker):
-            import subprocess
-            # stop redis server
-            subprocess.Popen(["redis-cli", "shutdown"])
-    except ImportError:
-        print("Redis broker not available")
-
-    # if using a rabbitmq broker, it keeps running until you stop it manually.
-
 
 if __name__ == '__main__':
     # insert source and content root to pythonpath
@@ -221,19 +210,15 @@ if __name__ == '__main__':
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
     from dramatiq import get_broker
 
+    from microdrop_utils.broker_server_helpers import init_broker_server, stop_broker_server
+    BROKER = get_broker()
+
     try:
-        from dramatiq.brokers.redis import RedisBroker
+        # start broker server
+        init_broker_server(BROKER)
+        demo()
+    finally:
+        # stop broker server
+        stop_broker_server(BROKER)
 
-        # if we have a redis broker, start the server
-        if isinstance(get_broker(), RedisBroker):
-            import subprocess
-            # start redis server
-            subprocess.Popen(["redis-server"])
-    except ImportError:
-        print("Redis broker not available")
-
-
-    # if using a rabbitmq broker, ensure it is running already.
-
-    demo()
 
