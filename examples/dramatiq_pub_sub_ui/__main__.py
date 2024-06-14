@@ -3,7 +3,7 @@ from PySide6.QtWidgets import QApplication
 import sys
 
 def main():
-    from examples.tests.common import BROKER
+    from examples.broker import BROKER
 
     # import the MainWindow and MainWindowController classes from the dramatiq_ui module
     from examples.dramatiq_pub_sub_ui.dramatiq_ui import MainWindow, MainWindowController
@@ -39,4 +39,11 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    from examples.broker import BROKER
+    from microdrop_utils.broker_server_helpers import init_broker_server, stop_broker_server
+    try:
+        init_broker_server(BROKER)
+        main()
+    finally:
+        stop_broker_server(BROKER)
+
