@@ -1,5 +1,6 @@
 from traits.api import HasTraits, Dict, Str, List
 import dramatiq
+import re
 from microdrop_utils._logger import get_logger
 
 logger = get_logger(__name__)
@@ -24,13 +25,152 @@ def publish_message(message, topic, actor_to_send="message_router_actor"):
     broker.enqueue(message)
 
 
+class MQTTMatcher:
+    """Intended to manage topic filters including wildcards.
+
+    Internally, MQTTMatcher use a prefix tree (trie) to store
+    values associated with filters, and has an iter_match()
+    method to iterate efficiently over all filters that match
+    some topic name.
+
+    This was taken from https://github.com/eclipse/paho.mqtt.python/blob/master/src/paho/mqtt/matcher.py
+
+    """
+
+    class Node:
+        __slots__ = '_children', '_content'
+
+        def __init__(self):
+            self._children = {}
+            self._content = None
+
+    def __init__(self):
+        self._root = self.Node()
+
+    def __setitem__(self, key, value):
+        """Add a topic filter :key to the prefix tree
+        and associate it to :value"""
+        node = self._root
+        for sym in key.split('/'):
+            node = node._children.setdefault(sym, self.Node())
+        node._content = value
+
+    def __getitem__(self, key):
+        """Retrieve the value associated with some topic filter :key"""
+        try:
+            node = self._root
+            for sym in key.split('/'):
+                node = node._children[sym]
+            if node._content is None:
+                raise KeyError(key)
+            return node._content
+        except KeyError as ke:
+            raise KeyError(key) from ke
+
+    def __delitem__(self, key):
+        """Delete the value associated with some topic filter :key"""
+        lst = []
+        try:
+            parent, node = None, self._root
+            for k in key.split('/'):
+                 parent, node = node, node._children[k]
+                 lst.append((parent, k, node))
+            # TODO
+            node._content = None
+        except KeyError as ke:
+            raise KeyError(key) from ke
+        else:  # cleanup
+            for parent, k, node in reversed(lst):
+                if node._children or node._content is not None:
+                     break
+                del parent._children[k]
+
+    def iter_match(self, topic):
+        """Return an iterator on all values associated with filters
+        that match the :topic"""
+        lst = topic.split('/')
+        normal = not topic.startswith('$')
+        def rec(node, i=0):
+            if i == len(lst):
+                if node._content is not None:
+                    yield node._content
+            else:
+                part = lst[i]
+                if part in node._children:
+                    for content in rec(node._children[part], i + 1):
+                        yield content
+                if '+' in node._children and (normal or i > 0):
+                    for content in rec(node._children['+'], i + 1):
+                        yield content
+            if '#' in node._children and (normal or i > 0):
+                content = node._children['#']._content
+                if content is not None:
+                    yield content
+        return rec(self._root)
+
+
+
 class MessageRouterData(HasTraits):
     """
-    A class that stores topics and their subscribers.
+    A class that stores topics and their subscribers, with MQTT-style wildcards.
+
+    It follows the guidelines from here: https://eclipse.dev/paho/files/mqttdoc/MQTTClient/html/wildcard.html
+
+    As it states in the link above:
+    To provide more flexibility, MQTT supports a hierarchical topic namespace. This allows application designers to
+    organize topics to simplify their management. Levels in the hierarchy are delimited by the '/' character,
+    such as SENSOR/1/HUMIDITY. Publishers and subscribers use these hierarchical topics as already described.
+
+    For subscriptions, two wildcard characters are supported:
+
+   - A '#' character represents a complete sub-tree of the hierarchy and thus must be the last character in a
+   subscription topic string, such as SENSOR/#. This will match any topic starting with SENSOR/,
+   such as SENSOR/1/TEMP and SENSOR/2/HUMIDITY.
+
+    - A '+' character represents a single level of the hierarchy and is used between delimiters. For
+    example, SENSOR/+/TEMP will match SENSOR/1/TEMP and SENSOR/2/TEMP.
+
+    - Publishers are not allowed to use the wildcard characters in their topic names.
+
+    - Deciding on your topic hierarchy is an important step in your system design.
+
+    The matcher here will pass all the tests here: https://github.com/eclipse/paho.mqtt.python/blob/master/tests/test_matcher.py
+
+    We are using the same matcher as the one in the link above.
+
+    This will also be shown in the pytest module for this project.
 
     Attributes:
         topic_subscriber_map (Dict): A dictionary mapping topics to a list of their subscribing actor names.
+
+    Preconditions:
+        - `topic` should be a string.
+        - `subscribing_actor_name` should be a string.
+        - Topics can contain wildcards '+' for single level and '#' for multiple levels. The '#' character must be the last character in the subscription topic string.
+
+    Example:
+
+        # while assigning subscribers top topics, you can use wildcards in teh topics
+
+        >>> router_data = MessageRouterData()
+        >>> router_data.add_subscriber_to_topic("SENSOR/+", "actor1")
+        >>> router_data.add_subscriber_to_topic("SENSOR/1/HUMIDITY", "actor2")
+        >>> router_data.add_subscriber_to_topic("SENSOR/#", "actor3")
+        >>> router_data.add_subscriber_to_topic("SENSOR/2/TEMP", "actor4")
+
+        # While trying to find subscribers for a certain topic published, you cannot use wildcards in the topics
+        >>> sorted(router_data.get_subscribers_for_topic("SENSOR/1/HUMIDITY"))
+        ['actor2', 'actor3']
+        >>> sorted(router_data.get_subscribers_for_topic("SENSOR/1/TEMP"))
+        ['actor3']
+        >>> sorted(router_data.get_subscribers_for_topic("SENSOR/2/TEMP"))
+        ['actor3', 'actor4']
+        >>> sorted(router_data.get_subscribers_for_topic("SENSOR/1"))
+        ['actor1', 'actor3']
+        >>> router_data.get_subscribers_for_topic("NONEXISTENT")
+        []
     """
+
     topic_subscriber_map = Dict(Str, List(Str),
                                 desc="A dictionary of topics and a list of their subscribing actor names")
 
@@ -41,6 +181,16 @@ class MessageRouterData(HasTraits):
         Args:
             topic (str): The topic to subscribe to.
             subscribing_actor_name (str): The name of the subscribing actor.
+
+        Preconditions:
+            - `topic` should be a valid string.
+            - `subscribing_actor_name` should be a valid string.
+
+        Example:
+            >>> router_data = MessageRouterData()
+            >>> router_data.add_subscriber_to_topic("SENSOR/+", "actor1")
+            >>> router_data.topic_subscriber_map
+            {'SENSOR/+': ['actor1']}
         """
         if topic not in self.topic_subscriber_map:
             self.topic_subscriber_map[topic] = [subscribing_actor_name]
@@ -55,42 +205,88 @@ class MessageRouterData(HasTraits):
         Args:
             topic (str): The topic to unsubscribe from.
             subscribing_actor_name (str): The name of the subscribing actor.
+
+        Preconditions:
+            - `topic` should be a valid string.
+            - `subscribing_actor_name` should be a valid string.
+
+        Example:
+            >>> router_data = MessageRouterData()
+            >>> router_data.add_subscriber_to_topic("SENSOR/+", "actor1")
+            >>> router_data.remove_subscriber_from_topic("SENSOR/+", "actor1")
+            >>> router_data.topic_subscriber_map
+            {}
         """
         if topic in self.topic_subscriber_map:
             self.topic_subscriber_map[topic].remove(subscribing_actor_name)
             if not self.topic_subscriber_map[topic]:
                 del self.topic_subscriber_map[topic]
 
-    def get_subscribers_for_topic(self, topic, strict=False):
+    def get_subscribers_for_topic(self, topic: str) -> list:
         """
-        Gets the list of subscribers for a specific topic. A subscriber to a topic 'x' is also a subscriber to 'x.y.z',
-        but a subscriber to 'x.y.z' is not a subscriber to 'x'.
+        Gets the list of subscribers for a specific topic. Supports MQTT-style wildcard patterns.
 
         Args:
             topic (str): The topic to get subscribers for.
-            strict (bool): If True, only return subscribers for the exact topic. If False, return subscribers for subtopics as well.
 
         Returns:
             list: A list of subscribers for the topic.
+
+        Preconditions:
+            - `topic` should be a valid string.
+
+        Example:
+            >>> router_data = MessageRouterData()
+            >>> router_data.add_subscriber_to_topic("SENSOR/+", "actor1")
+            >>> router_data.add_subscriber_to_topic("SENSOR/1/HUMIDITY", "actor2")
+            >>> router_data.add_subscriber_to_topic("SENSOR/#", "actor3")
+            >>> sorted(router_data.get_subscribers_for_topic("SENSOR/1/HUMIDITY"))
+            ['actor2', 'actor3']
         """
+        subscribers = set()
+        for key, value in self.topic_subscriber_map.items():
+            if self._topic_matches_pattern(key, topic):
+                subscribers.update(value)
 
-        if strict:
-            return self.topic_subscriber_map.get(topic, [])
+        return list(subscribers)
 
-        else:
-            subscribers = set()
-            topic_parts = topic.split('.')
+    @staticmethod
+    def _topic_matches_pattern(pattern: str, topic: str) -> bool:
+        """
+        Checks if a topic matches a pattern with MQTT-style wildcards.
 
-            try:
-                for key, value in self.topic_subscriber_map.items():
-                    key_parts = key.split('.')
-                    if len(key_parts) <= len(topic_parts) and key_parts == topic_parts[:len(key_parts)]:
-                        subscribers.update(value)
-            except Exception as e:
-                logger.error(f"Error getting subscribers for topic: {topic}")
-                logger.error(e)
+        This method was taken from here: https://github.com/eclipse/paho.mqtt.python/blob/master/src/paho/mqtt/client.py
 
-            return list(subscribers)
+        Args:
+            pattern (str): The pattern with wildcards.
+            topic (str): The topic to check.
+
+        Returns:
+            bool: True if the topic matches the pattern, False otherwise.
+
+        Preconditions:
+            - `pattern` should be a valid string.
+            - `topic` should be a valid string.
+
+        Example:
+            >>> MessageRouterData._topic_matches_pattern("SENSOR/+", "SENSOR/1")
+            True
+            >>> MessageRouterData._topic_matches_pattern("SENSOR/+", "SENSOR/1/HUMIDITY")
+            False
+            >>> MessageRouterData._topic_matches_pattern("SENSOR/#", "SENSOR/1/HUMIDITY")
+            True
+            >>> MessageRouterData._topic_matches_pattern("SENSOR/#", "SENSOR")
+            True
+            >>> MessageRouterData._topic_matches_pattern("SENSOR/+", "SENSOR")
+            False
+        """
+        matcher = MQTTMatcher()
+        matcher[pattern] = True
+        try:
+            next(matcher.iter_match(topic))
+            return True
+        except StopIteration:
+            return False
 
 
 class MessageRouterActor:
@@ -112,6 +308,7 @@ class MessageRouterActor:
         """
         Create a message router actor that routes messages to subscribers based on topics.
         """
+
         @dramatiq.actor
         def message_router_actor(message: Str, topic: Str):
             """
