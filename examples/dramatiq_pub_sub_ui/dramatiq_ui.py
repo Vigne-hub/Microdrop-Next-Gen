@@ -30,7 +30,9 @@ class MainWindow(QWidget):
     @staticmethod
     def publish_button_clicked():
         logger.info("GUI: Publishing message...")
-        topic = "ui.event.publish_button.clicked"
+
+        topic = "ui/event/publish_button/clicked"
+
         message = "Hello world!"
         publish_message(message, topic)
 
@@ -39,7 +41,8 @@ class MainWindowController:
     """
     Controller class for handling the main window logic.
     """
-    topics_of_interest = ["ui.notify"]
+
+    topics_of_interest = ["ui/+/popup"]
 
     def __init__(self, window):
         """
