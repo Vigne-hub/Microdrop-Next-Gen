@@ -3,13 +3,12 @@ from envisage.plugin import Plugin
 from traits.api import List
 import dramatiq
 from dramatiq.brokers.rabbitmq import RabbitmqBroker
-import logging
 
-from ...backend_logic.dropbot_controller import DropbotController
+from microdrop_utils._logger import get_logger
 from ...interfaces.i_dropbot_controller_service import IDropbotControllerService
 
 # Initialize logger
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Setup RabbitMQ broker for Dramatiq
 rabbitmq_broker = RabbitmqBroker(url="amqp://guest:guest@localhost/")
@@ -28,22 +27,21 @@ class DropbotControllerPlugin(Plugin):
     def start(self):
         super().start()
         self._register_services()
-        logger.info("DropbotController Plugin started")
         self._start_worker()
-        init_global_dropbot(self.application)
+        self._start_actor()
 
     def _register_services(self):
-        dropbot_service = self._create_service()
-        self.application.register_service(IDropbotControllerService, dropbot_service)
+        self.dropbot_service = self._create_service()
+        self.application.register_service(IDropbotControllerService, self.dropbot_service)
 
     def _service_offers_default(self):
         return [
             ServiceOffer(protocol=IDropbotControllerService, factory=self._create_service)
         ]
 
-    def _create_service(self, *args, **kwargs):
+    def _create_service(self):
         from microdrop.services.dropbot_services import DropbotService
-        return DropbotService()
+        return DropbotService(self.application)
 
     def _start_worker(self):
         import threading
@@ -54,49 +52,30 @@ class DropbotControllerPlugin(Plugin):
         worker_thread.daemon = True
         worker_thread.start()
 
+    def _start_actor(self):
+        @staticmethod
+        @dramatiq.actor(queue_name='dropbot_actions')
+        def process_task(task):
+            method_name = task.get("task_name")
+            task_args = task.get("args")
+            task_kwargs = task.get("kwargs")
+            logger.info(f"Processing task: {task}")
 
-global dropbot
+            # Map task names to DropbotController methods
+            task_map = {
+                "poll_voltage": lambda: self.dropbot_service.poll_voltage(),
+                "set_voltage": lambda: self.dropbot_service.set_voltage(*task_args, **task_kwargs),
+                "set_frequency": lambda: self.dropbot_service.set_frequency(*task_args, **task_kwargs),
+                "set_hv": lambda: self.dropbot_service.set_hv(*task_args, **task_kwargs),
+                "get_channels": lambda: self.dropbot_service.get_channels(),
+                "set_channels": lambda: self.dropbot_service.set_channels(*task_args, **task_kwargs),
+                "set_channel_single": lambda: self.dropbot_service.set_channel_single(*task_args, **task_kwargs),
+                "droplet_search": lambda: self.dropbot_service.droplet_search(*task_args, **task_kwargs),
+            }
 
-
-def init_global_dropbot(app):
-    global dropbot
-    dropbot = DropbotController(app)
-
-
-class DropbotActor:
-
-    @staticmethod
-    @dramatiq.actor(queue_name='dropbot_actions')
-    def process_task(task):
-        print(f"Processing task: {task}")
-        task_name = task.get("name")
-        print(f"Task name: {task_name}")
-        task_args = task.get("args")
-        print(f"Task args: {task_args}")
-        task_kwargs = task.get("kwargs")
-        print(f"Task kwargs: {task_kwargs}")
-        logger.info(f"Processing task: {task}")
-
-        if dropbot is None:
-            logger.error("DropbotController instance is not initialized.")
-            return
-
-        # Map task names to DropbotController methods
-        task_map = {
-            "poll_voltage": lambda: dropbot.poll_voltage(),
-            "set_voltage": lambda: dropbot.set_voltage(*task_args, **task_kwargs),
-            "set_frequency": lambda: dropbot.set_frequency(*task_args, **task_kwargs),
-            "set_hv": lambda: dropbot.set_hv(*task_args, **task_kwargs),
-            "get_channels": lambda: dropbot.get_channels(),
-            "set_channels": lambda: dropbot.set_channels(*task_args, **task_kwargs),
-            "set_channel_single": lambda: dropbot.set_channel_single(*task_args, **task_kwargs),
-            "droplet_search": lambda: dropbot.droplet_search(*task_args, **task_kwargs),
-        }
-
-        if task_name in task_map:
-            result = task_map[task_name]()
-            print(f"Task {task_name} completed with result: {result}")
-            logger.info(f"Task {task_name} completed with result: {result}")
-            return result
-        else:
-            logger.error(f"Unknown task name: {task_name}")
+            if method_name in task_map:
+                result = task_map[method_name]()
+                logger.info(f"Task {method_name} completed with result: {result}")
+                return result
+            else:
+                logger.error(f"Unknown task name: {method_name}")
