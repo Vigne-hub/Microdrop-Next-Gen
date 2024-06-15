@@ -2,15 +2,9 @@ import dramatiq
 from PySide6.QtWidgets import QApplication
 import sys
 
-BROKER = dramatiq.get_broker()
-
-# remove prometheus metrics for now
-for el in BROKER.middleware:
-    if el.__module__ == "dramatiq.middleware.prometheus":
-        BROKER.middleware.remove(el)
-
-
 def main():
+    from examples.broker import BROKER
+
     # import the MainWindow and MainWindowController classes from the dramatiq_ui module
     from examples.dramatiq_pub_sub_ui.dramatiq_ui import MainWindow, MainWindowController
 
@@ -37,7 +31,7 @@ def main():
         message_router_actor.message_router_data.add_subscriber_to_topic(topic, print_ui_message.actor_name)
 
     # start the dramatiq workers
-    worker = dramatiq.Worker(broker=BROKER, worker_timeout=100000, worker_threads=10)
+    worker = dramatiq.Worker(broker=BROKER)
     worker.start()
 
     window.show()
@@ -45,4 +39,11 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    from examples.broker import BROKER
+    from microdrop_utils.broker_server_helpers import init_broker_server, stop_broker_server
+    try:
+        init_broker_server(BROKER)
+        main()
+    finally:
+        stop_broker_server(BROKER)
+

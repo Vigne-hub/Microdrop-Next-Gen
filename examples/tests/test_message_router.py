@@ -82,7 +82,7 @@ class TestMessageRouterActor:
     """
 
     @pytest.fixture()
-    def router_actor(self):
+    def router_actor(self, stub_broker):
         """
         Fixture to initialize a MessageRouterActor instance.
 
@@ -93,7 +93,7 @@ class TestMessageRouterActor:
 
         return MessageRouterActor()
 
-    def test_message_router_actor_can_route_message(self, router_actor):
+    def test_message_router_actor_can_route_message(self, router_actor, stub_broker, stub_worker):
         from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
 
         # Given that I have a database
@@ -114,13 +114,13 @@ class TestMessageRouterActor:
         publish_message(test_message, test_topic, "message_router_actor")
 
         # And I give the workers time to process the messages
-        with worker(dramatiq.get_broker(), worker_timeout=1000):
-            dramatiq.get_broker().join("default")
+        stub_broker.join("default")
+        stub_worker.join()
 
         # I expect the database to be populated
         assert database == {test_topic: test_message}
 
-    def test_message_router_actor_can_route_message_to_multiple_subscribing_actors(self, router_actor):
+    def test_message_router_actor_can_route_message_to_multiple_subscribing_actors(self, router_actor, stub_broker, stub_worker):
         from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
 
         # Given that I have two databases
@@ -162,9 +162,8 @@ class TestMessageRouterActor:
         # this should trigger the three actors that are subscribed to the topic, the topic/y/* (the subtopic) and the
         # topic/# (the sub
 
-        # And I give the workers time to process the messages
-        with worker(dramatiq.get_broker(), worker_timeout=100):
-            dramatiq.get_broker().join("default")
+        stub_broker.join("default")
+        stub_worker.join()
 
         # I expect the database to be populated like so
         assert database1 == {test_topic: test_message, test_topic + "/y": test_message,
@@ -173,6 +172,7 @@ class TestMessageRouterActor:
         assert database2 == {test_topic + "/y": test_message}
 
         assert database3 == {test_topic + "/y/z": test_message}
+
 
 if __name__ == "__main__":
     pytest.main()

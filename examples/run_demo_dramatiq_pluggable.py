@@ -11,8 +11,9 @@ class ExampleApp(Application):
 
 
 def demo():
+
     from examples.plugins.frontend import UIPlugin, PlotViewPlugin, TableViewPlugin
-    from examples.tests.common import BROKER
+    from examples.broker import BROKER
 
     # Note that fully fledged unittests for enthought services is available via
     # https://github.com/enthought/envisage/blob/main/envisage/tests
@@ -207,4 +208,17 @@ if __name__ == '__main__':
     import sys
     import os
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-    demo()
+    from dramatiq import get_broker
+
+    from microdrop_utils.broker_server_helpers import init_broker_server, stop_broker_server
+    BROKER = get_broker()
+
+    try:
+        # start broker server
+        init_broker_server(BROKER)
+        demo()
+    finally:
+        # stop broker server
+        stop_broker_server(BROKER)
+
+
