@@ -13,7 +13,7 @@ def results_file():
 
 
 @pytest.fixture
-def setup_app(stub_broker):
+def setup_app():
     from examples.plugins.frontend import UIPlugin, PlotViewPlugin, TableViewPlugin
     from examples.plugins.backend import LoggingPlugin, AnalysisPlugin
     from envisage.api import CorePlugin, Application
@@ -118,21 +118,40 @@ def test_dramatiq_task_processing_regular_call(dramatiq_task_setup):
     assert result == 6
 
 
-def test_dramatiq_task_send_call(dramatiq_task_setup, results_file, stub_broker, stub_worker):
+def test_dramatiq_task_send_call(dramatiq_task_setup, results_file):
 
-    dramatiq_task = dramatiq_task_setup
+    from dramatiq import Worker
+    from examples.broker import BROKER
+    from time import sleep
+    from microdrop_utils.broker_server_helpers import init_broker_server, stop_broker_server
 
-    payload = {"args_to_sum": [1, 2, 3], "sleep_time": 2, "reply": 0, "results_file": str(results_file)}
+    payload = {"args_to_sum": [1, 2, 3], "sleep_time": 0.1, "reply": 0, "results_file": str(results_file)}
     N_tasks = 3
 
+    # first start the server
+    init_broker_server(BROKER)
+
+    # then the worker
+    worker = Worker(broker=BROKER, queues=None, worker_timeout=1000, worker_threads=N_tasks)
+    worker.start()
+
+    # send the tasks in
     for i in range(N_tasks):
-        assert dramatiq_task.process_task.send(payload)
+        assert dramatiq_task_setup.process_task.send(payload)
 
-    stub_broker.join("default")
-    stub_worker.join()
+    # The result will be printed on the dramatiq worker process
 
+    # wait for the job to finish
+    sleep(2 + (payload["sleep_time"] * N_tasks))
+
+    # check the results
     with open(results_file) as f:
         results = f.readlines()
+        print(results)
         for el in results:
             assert el == "Analysis result: 6\n"
         assert len(results) == N_tasks
+
+    # cleanup
+    worker.stop()
+    stop_broker_server(BROKER)
