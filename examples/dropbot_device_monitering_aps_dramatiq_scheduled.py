@@ -46,9 +46,9 @@ class DropBotDeviceConnectionMonitor(HasTraits):
         return ''
 
     def _check_dropbot_devices_available_actor_default(self):
-        return self.create_check_dropbot_devices_available()
+        return self.create_check_dropbot_devices_available_actor()
 
-    def create_check_dropbot_devices_available(self):
+    def create_check_dropbot_devices_available_actor(self):
         @dramatiq.actor
         def check_dropbot_devices_available_actor():
 
