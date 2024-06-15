@@ -7,11 +7,12 @@ from apscheduler.triggers.interval import IntervalTrigger
 import dramatiq
 from serial.tools.list_ports import grep
 from microdrop_utils._logger import get_logger
+import re
 
 logger = get_logger(__name__)
 
 
-def check_connected_ports_hwid(id, regexp='USB Serial'):
+def check_connected_ports_hwid(id_to_screen, regexp='USB Serial'):
     """
     Check connected USB ports for a specific hardware id.
     """
@@ -23,8 +24,11 @@ def check_connected_ports_hwid(id, regexp='USB Serial'):
     valid_ports = []
 
     # go through connected ports and check if the hardware id matches the id
-    for port in connected_ports:
-        if port.hwid.split(" ")[1] == id:
+    # try using regex: neglect PID use the VID
+    for n, (port, desc, hwid) in enumerate(connected_ports):
+        teensy = re.match(f".*{id_to_screen}*", hwid)
+
+        if bool(teensy):
             valid_ports.append(port)
 
     return valid_ports
@@ -32,11 +36,11 @@ def check_connected_ports_hwid(id, regexp='USB Serial'):
 
 class DropBotDeviceConnectionMonitor(HasTraits):
     check_dropbot_devices_available_actor = Callable
-    #port = Str()
+    # port = Str()
     hwids_to_check = List(Str())
 
     def _hwids_to_check_default(self):
-        return ["VID:PID=16C0:0483"]
+        return ["VID:PID=16C0:"]
 
     def _port_default(self):
         return ''
@@ -61,7 +65,6 @@ class DropBotDeviceConnectionMonitor(HasTraits):
 
             except Exception as e:
                 publish_message(f'No DropBot available for connection with exception {e}', 'dropbot/error')
-
 
             # this is the other method. It can work with all ids as long as it is a dropbot.
             # so it avoids the need to know the id of the dropbot. But it needs to setup a conenction with the dropbot first.
@@ -100,10 +103,20 @@ def print_dropbot_message(message=str, topic=str):
     print(f"PRINT_DROPBOT_MESSAGE_SERVICE: Received message: {message}! from topic: {topic}")
 
 
+@dramatiq.actor
+def make_serial_proxy(ports):
+    import dropbot
+    try:
+        proxy = dropbot.SerialProxy(port=ports[0])
+    except (IOError, AttributeError):
+        publish_message('No DropBot available for connection', 'dropbot/error')
+
+
 def main(args):
     message_router_actor = MessageRouterActor()
 
     message_router_actor.message_router_data.add_subscriber_to_topic('dropbot/#', 'print_dropbot_message')
+    message_router_actor.message_router_data.add_subscriber_to_topic('dropbot/ports', 'make_serial_proxy')
 
     example_instance = DropBotDeviceConnectionMonitor()
     scheduler = BlockingScheduler()
@@ -133,5 +146,3 @@ if __name__ == "__main__":
     finally:
         worker.stop()
         stop_broker_server(BROKER)
-
-
