@@ -1,16 +1,13 @@
-import logging
-
 from envisage.api import ServiceOffer
 from envisage.core_plugin import CorePlugin
 from traits.api import List
 
-
 from ...interfaces.i_pub_sub_manager_service import IPubSubManagerService
 from ...services.pub_sub_manager_services import PubSubManager
-
+from ...utils.logger import initialize_logger
 
 # Initialize logger
-logger = logging.getLogger(__name__)
+logger = initialize_logger(__name__)
 
 
 class PubSubManagerPlugin(CorePlugin):
