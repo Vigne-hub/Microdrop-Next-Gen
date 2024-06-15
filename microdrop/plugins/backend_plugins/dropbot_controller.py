@@ -4,11 +4,11 @@ from traits.api import List
 import dramatiq
 from dramatiq.brokers.rabbitmq import RabbitmqBroker
 
+from microdrop_utils._logger import get_logger
 from ...interfaces.i_dropbot_controller_service import IDropbotControllerService
-from ...utils.logger import initialize_logger
 
 # Initialize logger
-logger = initialize_logger(__name__)
+logger = get_logger(__name__)
 
 # Setup RabbitMQ broker for Dramatiq
 rabbitmq_broker = RabbitmqBroker(url="amqp://guest:guest@localhost/")
