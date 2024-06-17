@@ -25,8 +25,12 @@ def check_connected_ports_hwid(id_to_screen, regexp='USB Serial'):
 
     # go through connected ports and check if the hardware id matches the id
     # try using regex: neglect PID use the VID
-    for n, (port, desc, hwid) in enumerate(connected_ports):
-        teensy = re.match(f".*{id_to_screen}*", hwid)
+    for port in connected_ports:
+        # Regex pattern to find the VID in the hwid string
+        pattern = re.compile(f".*{id_to_screen}.*")
+
+        # Search for the pattern in the string
+        teensy = re.search(pattern, port.hwid)
 
         if bool(teensy):
             valid_ports.append(port)
