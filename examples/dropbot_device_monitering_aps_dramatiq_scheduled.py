@@ -42,9 +42,6 @@ class DropBotDeviceConnectionMonitor(HasTraits):
     def _hwids_to_check_default(self):
         return ["VID:PID=16C0:"]
 
-    def _port_default(self):
-        return ''
-
     def _check_dropbot_devices_available_actor_default(self):
         return self.create_check_dropbot_devices_available_actor()
 
@@ -145,4 +142,4 @@ if __name__ == "__main__":
         main(sys.argv[1:])
     finally:
         worker.stop()
-        stop_broker_server(BROKER)
+     #   stop_broker_server(BROKER)
