@@ -63,7 +63,8 @@ class DropBotDeviceConnectionMonitor(HasTraits):
                     valid_ports = check_connected_ports_hwid(hwid)
                     if valid_ports:
                         port_names = [port.name for port in valid_ports]
-                        publish_message(f'New dropbot found on ports: {port_names}', 'dropbot/ports')
+                        publish_message(f'New dropbot found on ports: {port_names}', 'dropbot/info')
+                        publish_message(port_names, 'dropbot/ports')
                     else:
                         publish_message('No DropBot available for connection', 'dropbot/error')
 
@@ -108,7 +109,7 @@ def print_dropbot_message(message=str, topic=str):
 
 
 @dramatiq.actor
-def make_serial_proxy(ports):
+def make_serial_proxy(ports:Str, topic: Str):
     import dropbot
     try:
         proxy = dropbot.SerialProxy(port=ports[0])
