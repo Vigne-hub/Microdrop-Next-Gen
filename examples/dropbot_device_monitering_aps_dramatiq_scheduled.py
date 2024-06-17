@@ -142,4 +142,4 @@ if __name__ == "__main__":
         main(sys.argv[1:])
     finally:
         worker.stop()
-     #   stop_broker_server(BROKER)
+        stop_broker_server(BROKER)
