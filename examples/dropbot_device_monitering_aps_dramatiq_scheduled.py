@@ -137,6 +137,8 @@ def make_serial_proxy(port_name:Str, topic: Str):
         proxy = dropbot.SerialProxy(port=port_name)
     except (IOError, AttributeError):
         publish_message('No DropBot available for connection', 'dropbot/error')
+    except dropbot.proxy.NoPower:
+        publish_message('No power to DropBot', 'dropbot/error/NoPower')
 
 
 def main(args):
