@@ -13,7 +13,7 @@ def publish_message(message, topic, actor_to_send="message_router_actor"):
     Publish a message to a given actor with a certain topic
     """
     logger.debug(f"Publishing message: {message} to actor: {actor_to_send} on topic: {topic}")
-    print(f"Publishing message: {message} to actor: {actor_to_send} on topic: {topic}")
+    # print(f"Publishing message: {message} to actor: {actor_to_send} on topic: {topic}")
     broker = dramatiq.get_broker()
 
     message = dramatiq.Message(
@@ -75,8 +75,8 @@ class MQTTMatcher:
         try:
             parent, node = None, self._root
             for k in key.split('/'):
-                 parent, node = node, node._children[k]
-                 lst.append((parent, k, node))
+                parent, node = node, node._children[k]
+                lst.append((parent, k, node))
             # TODO
             node._content = None
         except KeyError as ke:
@@ -84,7 +84,7 @@ class MQTTMatcher:
         else:  # cleanup
             for parent, k, node in reversed(lst):
                 if node._children or node._content is not None:
-                     break
+                    break
                 del parent._children[k]
 
     def iter_match(self, topic):
@@ -92,6 +92,7 @@ class MQTTMatcher:
         that match the :topic"""
         lst = topic.split('/')
         normal = not topic.startswith('$')
+
         def rec(node, i=0):
             if i == len(lst):
                 if node._content is not None:
@@ -108,8 +109,8 @@ class MQTTMatcher:
                 content = node._children['#']._content
                 if content is not None:
                     yield content
-        return rec(self._root)
 
+        return rec(self._root)
 
 
 class MessageRouterData(HasTraits):
@@ -290,7 +291,7 @@ class MessageRouterData(HasTraits):
             return True
         except StopIteration:
             return False
- 
+
 
 class MessageRouterActor:
     """
@@ -311,7 +312,7 @@ class MessageRouterActor:
         """
         Create a message router actor that routes messages to subscribers based on topics.
         """
-        
+
         @dramatiq.actor
         def message_router_actor(message: Str, topic: Str):
             """
