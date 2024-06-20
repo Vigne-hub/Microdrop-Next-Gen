@@ -2,7 +2,6 @@ from traits.api import HasTraits, provides
 from PySide6.QtCore import QTimer
 
 from ..interfaces.i_dropbot_controller_service import IDropbotControllerService
-from ..interfaces.i_pub_sub_manager_service import IPubSubManagerService
 from ..pydantic_models.dropbot_controller_output_state_model import DBOutputStateModel, \
         DBChannelsChangedModel, DBVoltageChangedModel, DBChannelsMetastateChanged
 
@@ -44,13 +43,12 @@ class DropbotService(HasTraits):
         self.proxy: Union[None, dropbot.SerialProxy] = None
         self.last_state: NDArray[Shape['*, 1'], UInt8] = np.zeros(128, dtype='uint8')
 
-        self.pub_sub_manager = application.get_service(IPubSubManagerService)
-        self.pub_sub_manager.create_publisher(publisher_name=f'dropbot_publisher',
-                                              exchange_name='output_state_changed')
-        self.pub_sub_manager.create_publisher(publisher_name=f'dropbot_publisher', exchange_name='channels_changed')
-        self.pub_sub_manager.create_publisher(publisher_name=f'dropbot_publisher', exchange_name='voltage_changed')
-        self.pub_sub_manager.create_publisher(publisher_name=f'dropbot_publisher',
-                                              exchange_name='channels_metastate_changed')
+        # self.pub_sub_manager.create_publisher(publisher_name=f'dropbot_publisher',
+        #                                       exchange_name='output_state_changed')
+        # self.pub_sub_manager.create_publisher(publisher_name=f'dropbot_publisher', exchange_name='channels_changed')
+        # self.pub_sub_manager.create_publisher(publisher_name=f'dropbot_publisher', exchange_name='voltage_changed')
+        # self.pub_sub_manager.create_publisher(publisher_name=f'dropbot_publisher',
+        #                                       exchange_name='channels_metastate_changed')
 
         # self.init_dropbot_proxy()
 
@@ -238,3 +236,12 @@ class DropbotService(HasTraits):
                     drops[electrode] = 'droplet'
 
             self.emit_signal(DBChannelsMetastateChanged(Signal='channels_metastate_changed', Drops=str(drops)))
+
+
+if __name__ == "__main__":
+    import sys
+    from PySide6.QtWidgets import QApplication
+
+    app = QApplication(sys.argv)
+    service = DropbotService()
+    sys.exit(app.exec())
