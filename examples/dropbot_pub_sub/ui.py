@@ -1,14 +1,14 @@
+import functools
+
 import dramatiq
 import dropbot
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget, QMessageBox, QPushButton
 from PySide6.QtCore import Signal
+from apscheduler.events import EVENT_JOB_EXECUTED
 from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
-from examples.dropbot_pub_sub.dropbot_searcher import DropbotSearcher
-from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
-
+from examples.dropbot_pub_sub.dropbot_searcher import check_dropbot_devices_available
 from microdrop_utils._logger import get_logger
 from microdrop_utils.pub_sub_serial_proxy import DropbotSerialProxy
 
@@ -16,8 +16,7 @@ logger = get_logger(__name__)
 
 
 class MainWindow(QWidget):
-    output_state_changed = Signal(bool)
-    show_dropbot_connection_popup_signal = Signal(str)
+    show_popup_signal = Signal(str)
 
     def __init__(self):
         super().__init__()
@@ -28,16 +27,9 @@ class MainWindow(QWidget):
         self.setLayout(layout)
         self.connect_button = QPushButton("Connect to DropBot")
         layout.addWidget(self.connect_button)
-        self.output_state_changed.connect(self.output_state_changed_handler)
-        self.show_dropbot_connection_popup_signal.connect(self.show_dropbot_connection_popup)
+        self.show_popup_signal.connect(self.show_popup)
 
-    def output_state_changed_handler(self, state):
-        self.label.setText(f"Output state changed: {state}")
-        msg_box = QMessageBox()
-        msg_box.setText(f"Output state changed: {state}")
-        msg_box.exec()
-
-    def show_dropbot_connection_popup(self, message):
+    def show_popup(self, message):
         self.label.setText(f"Received message: {message}")
         msg_box = QMessageBox()
         msg_box.setText(f"Received message: {message}")
@@ -57,15 +49,31 @@ class MainWindowController:
         window (QMainWindow): The main window instance.
         """
         self.window = window
-        self.window.connect_button.clicked.connect(self.connect_button_clicked)
-        self.make_dropbot_proxy_actor = self._make_serial_proxy()
-        self.dropbot_connection_monitor = self.create_connection_monitor()
-        self.proxy: DropbotSerialProxy = None
 
-        example_instance = DropbotSearcher()
+        self.window.connect_button.clicked.connect(self.connect_button_clicked)
+
+        self.proxy: DropbotSerialProxy = None
+        self.port_name = None
+
         scheduler = BackgroundScheduler()
-        scheduler.add_job(example_instance.check_dropbot_devices_available_actor.send, 'interval', seconds=2)
+
+        self.dropbot_search_submitted = False
+        # Add a job to the scheduler with the specific argument
+        hwids_to_check = ["VID:PID=16C0:"]  # the teensy id (the dropbot device)
+        scheduler.add_job(
+            func=functools.partial(check_dropbot_devices_available, hwids_to_check),
+            trigger=IntervalTrigger(seconds=1),
+        )
+
+        # Add listeners to handle job events
+        scheduler.add_listener(self.on_dropbot_port_found, EVENT_JOB_EXECUTED)
+
         self.scheduler = scheduler
+
+        self.ui_listener = self.create_ui_listener_actor()
+        self.make_serial_proxy = self._make_serial_proxy()
+
+        self.actor_topics_dict = {"ui_listener_actor": ["dropbot/signals/+"]}
 
     def connect_button_clicked(self):
         """
@@ -73,25 +81,38 @@ class MainWindowController:
         """
         if not self.scheduler.running:
             self.scheduler.start()
+            logger.info("DropBot detection job started.")
+
+        elif self.proxy:
+            self.window.show_popup_signal.emit("DropBot already connected.")
+            logger.info("DropBot already connected.")
+
         else:
-            logger.info("DropBot connection already being monitored.")
+            logger.info("DropBot detection job already submitted.")
+
+    def on_dropbot_port_found(self, event):
+        # pause looking for DropBot devices
+        self.scheduler.pause()
+        # get port name
+        port_name = str(event.retval)
+        # send actor job to connect to DropBot
+        self.make_serial_proxy.send(port_name)
 
     def _make_serial_proxy(self):
-        @dramatiq.actor
-        def make_serial_proxy(port_names, topic):
-            self.scheduler.shutdown()
-            example_instance = DropbotSearcher()
-            scheduler = BackgroundScheduler()
-            scheduler.add_job(example_instance.check_dropbot_devices_available_actor.send, 'interval', seconds=2)
-            self.scheduler = scheduler
 
+        @dramatiq.actor
+        def make_serial_proxy(port_name):
             try:
-                self.proxy = DropbotSerialProxy(port=port_names[0])
+                self.proxy = DropbotSerialProxy(port=port_name)
+                logger.info(f"Connected to DropBot on port {port_name}")
+
             except (IOError, AttributeError):
-                self.window.show_dropbot_connection_popup_signal.emit('No DropBot available for connection')
+                self.window.show_popup_signal.emit('No DropBot available for connection')
+                logger.error("No DropBot available for connection")
 
             except dropbot.proxy.NoPower:
-                self.window.show_dropbot_connection_popup_signal.emit('No power to DropBot')
+                self.window.show_popup_signal.emit('No power to DropBot')
+                logger.error("No power to DropBot")
 
             self.setup_dropbot()
 
@@ -101,28 +122,28 @@ class MainWindowController:
         """
         Setup the DropBot serial proxy.
         """
-        self.proxy.signals.signal('output_enabled').connect(self.output_state_changed_wrapper)
-        self.proxy.signals.signal('output_disabled').connect(self.output_state_changed_wrapper)
-
         OUTPUT_ENABLE_PIN = 22
         # Chip may have been inserted before connecting, so `chip-inserted`
         # event may have been missed.
         # Explicitly check if chip is inserted by reading **active low**
         # `OUTPUT_ENABLE_PIN`.
         if self.proxy.digital_read(OUTPUT_ENABLE_PIN):
-            self.window.output_state_changed.emit(False)
+            self.window.show_popup_signal.emit("Chip not inserted")
         else:
-            self.window.output_state_changed.emit(True)
+            self.window.show_popup_signal.emit("Chip inserted")
+
+        self.proxy.signals.signal('output_enabled').connect(self.output_state_changed_wrapper)
+        self.proxy.signals.signal('output_disabled').connect(self.output_state_changed_wrapper)
 
     def output_state_changed_wrapper(self, signal: dict[str, str]):
         if signal['event'] == 'output_enabled':
-            self.window.output_state_changed.emit(True)
+            self.window.show_popup_signal.emit("Chip inserted")
         elif signal['event'] == 'output_disabled':
-            self.window.output_state_changed.emit(False)
+            self.window.show_popup_signal.emit("Chip not inserted")
         else:
-            print("Unknown signal received: %s", signal)
+            logger.warn(f"Unknown signal received: {Signal}")
 
-    def create_connection_monitor(self):
+    def create_ui_listener_actor(self):
         """
         Create a Dramatiq actor for listening to UI-related messages.
 
@@ -131,7 +152,7 @@ class MainWindowController:
         """
 
         @dramatiq.actor
-        def dropbot_connection_monitor(message, topic):
+        def ui_listener_actor(message, topic):
             """
             A Dramatiq actor that listens to UI-related messages.
 
@@ -141,11 +162,18 @@ class MainWindowController:
             """
             logger.info(f"UI_LISTENER: Received message: {message} from topic: {topic}")
 
-            if "disconnect" in topic:
-                if self.scheduler.running:
-                    self.scheduler.shutdown()
+            topic = topic.split("/")
+
+            if topic[-1] == "connected":
+                self.window.show_popup_signal.emit("DropBot connected")
+
+            if topic[-1] == "disconnected":
+                self.window.show_popup_signal.emit("DropBot disconnected")
                 self.proxy.terminate()
+                del self.proxy
+                del self.port_name
 
-            self.window.show_dropbot_connection_popup_signal.emit(message)
+            if "popup" in topic:
+                self.window.show_popup_signal.emit(message)
 
-        return dropbot_connection_monitor
+        return ui_listener_actor
