@@ -1,9 +1,17 @@
+import functools
+
+from apscheduler.events import EVENT_JOB_EXECUTED
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.interval import IntervalTrigger
 from traits.api import HasTraits, provides
 from PySide6.QtCore import QTimer
 
 from ..interfaces.i_dropbot_controller_service import IDropbotControllerService
-from ..pydantic_models.dropbot_controller_output_state_model import DBOutputStateModel, \
-        DBChannelsChangedModel, DBVoltageChangedModel, DBChannelsMetastateChanged
+from ..pydantic_models.dropbot_controller_signals import DBOutputStateModel, \
+    DBChannelsChangedModel, DBVoltageChangedModel, DBChannelsMetastateChanged
+
+import dramatiq
+from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
 
 from typing import Union
 import dropbot
@@ -31,7 +39,7 @@ class DropbotService(HasTraits):
     output_state_true = DBOutputStateModel(Signal='output_state_changed', OutputState=True)
     output_state_false = DBOutputStateModel(Signal='output_state_changed', OutputState=False)
 
-    def __init__(self, application):
+    def __init__(self):
         """
         Initializes the DropbotController instance and sets up timers for
         Dropbot initialization and voltage polling.
@@ -40,24 +48,40 @@ class DropbotService(HasTraits):
             parent (QObject, optional): The parent QObject. Defaults to None.
         """
         super().__init__()
-        self.proxy: Union[None, dropbot.SerialProxy] = None
+        self.proxy: DropbotSerialProxy = None
+        self.port_name = None
+        self.dropbot_job_submitted = False
+        scheduler = BackgroundScheduler()
+        self.dropbot_search_submitted = False
+        hwids_to_check = ["VID:PID=16C0:"]
+        scheduler.add_job(
+            func=functools.partial(check_dropbot_devices_available, hwids_to_check),
+            trigger=IntervalTrigger(seconds=1),
+        )
+
+        # Add listeners to handle job events
+        scheduler.add_listener(self.on_dropbot_port_found, EVENT_JOB_EXECUTED)
+
+        self.scheduler = scheduler
+
+        self.ui_listener = self.create_ui_listener_actor()
+        self.make_serial_proxy = self._make_serial_proxy()
+
+        self.actor_topics_dict = {"ui_listener_actor": ["dropbot/signals/+"]}
+
         self.last_state: NDArray[Shape['*, 1'], UInt8] = np.zeros(128, dtype='uint8')
 
-        # self.pub_sub_manager.create_publisher(publisher_name=f'dropbot_publisher',
-        #                                       exchange_name='output_state_changed')
-        # self.pub_sub_manager.create_publisher(publisher_name=f'dropbot_publisher', exchange_name='channels_changed')
-        # self.pub_sub_manager.create_publisher(publisher_name=f'dropbot_publisher', exchange_name='voltage_changed')
-        # self.pub_sub_manager.create_publisher(publisher_name=f'dropbot_publisher',
-        #                                       exchange_name='channels_metastate_changed')
-
-        # self.init_dropbot_proxy()
-
-        self.dropbot_timer = QTimer()
-        self.dropbot_timer.timeout.connect(self.init_dropbot_proxy)
-        self.dropbot_timer.start(1000)
+    def connect_signals(self):
+        self.proxy.signals.signal('connected').connect(self.connected)
+        self.proxy.signals.signal('disconnected').connect(self.disconnected)
+        self.proxy.signals.signal('output_enabled').connect(self.output_state_changed)
+        self.proxy.signals.signal('output_disabled').connect(self.output_state_changed)
+        self.proxy.signals.signal('capacitance_updated').connect(self.capacitance_updated)
+        self.proxy.signals.signal('channels_updated').connect(self.channels_updated)
+        self.proxy.signals.signal('shorts_detected').connect(self.shorts_detected)
 
     def emit_signal(self, message):
-        self.pub_sub_manager.publish(message=message, publisher=f'dropbot_publisher')
+        publish_message(message, f'dropbot_controller/{message.Signal}')  #assume message is already in json format
         logger.info(f"Emitted: {message}")
 
     def init_dropbot_proxy(self):
@@ -73,6 +97,7 @@ class DropbotService(HasTraits):
             self.proxy = None
             return
 
+        self.connect_signals()
         # Stop timer
         self.dropbot_timer.stop()
         self.dropbot_timer.timeout.disconnect(self.init_dropbot_proxy)
@@ -86,17 +111,8 @@ class DropbotService(HasTraits):
         self.last_state = np.array(self.proxy.state_of_channels)
         self.last_state = self.get_channels()
 
-        # self.proxy.
-
-        # Connect signals
-        # for signal in DROPBOT_SIGNAL_NAMES:
-        #     logger.info("Connecting to signal %s", signal)
-        #     self.proxy.signals.signal(signal).connect(self.signal_wrapper)
-
         self.proxy.signals.signal('output_enabled').connect(self.output_state_changed)
         self.proxy.signals.signal('output_disabled').connect(self.output_state_changed)
-
-        # self.dropbot_signal.connect(self.log_signal)
 
         OUTPUT_ENABLE_PIN = 22
         # Chip may have been inserted before connecting, so `chip-inserted`
@@ -123,9 +139,7 @@ class DropbotService(HasTraits):
         else:
             raise ValueError("Unknown signal received")
 
-    # def signal_wrapper(self, signal):
-    #     self.dropbot_signal.emit(signal)
-
+    @dramatiq.actor
     def poll_voltage(self):
         """
         Periodically polls for the current voltage from the Dropbot and emits
@@ -138,6 +152,7 @@ class DropbotService(HasTraits):
             except OSError:  # No dropbot connected
                 pass
 
+    @dramatiq.actor
     def set_voltage(self, voltage: int):
         """
         Sets the voltage of the Dropbot to the specified value.
@@ -150,6 +165,7 @@ class DropbotService(HasTraits):
             self.proxy.voltage = voltage
         logger.info("Voltage set to %d", voltage)
 
+    @dramatiq.actor
     def set_frequency(self, frequency: int):
         """
         Sets the frequency of the Dropbot to the specified value.
@@ -162,6 +178,7 @@ class DropbotService(HasTraits):
             self.proxy.frequency = frequency
         logger.info("Frequency set to %d", frequency)
 
+    @dramatiq.actor
     def set_hv(self, on: bool):
         """
         Enables or disables the high voltage output of the Dropbot.
@@ -172,6 +189,7 @@ class DropbotService(HasTraits):
         if self.proxy is not None:
             self.proxy.hv_output_enabled = on
 
+    @dramatiq.actor
     def get_channels(self) -> NDArray[Shape['*, 1'], UInt8]:
         """
         Retrieves and returns the current state of all channels from the Dropbot,
@@ -189,6 +207,7 @@ class DropbotService(HasTraits):
             self.emit_signal(DBChannelsChangedModel(Signal='channels_changed', channels=str(channels)))
         return channels
 
+    @dramatiq.actor
     def set_channels(self, channels: NDArray[Shape['*, 1'], UInt8]):
         """
         Sets the state of all channels in the Dropbot to the specified array and
@@ -203,6 +222,7 @@ class DropbotService(HasTraits):
         self.proxy.state_of_channels = np.array(channels)
         self.last_state = self.get_channels()
 
+    @dramatiq.actor
     def set_channel_single(self, channel: int, state: bool):
         """
         Sets the state of a single channel.
@@ -217,6 +237,7 @@ class DropbotService(HasTraits):
         channels[channel] = state
         self.set_channels(channels)
 
+    @dramatiq.actor
     def droplet_search(self, threshold: float = 0):
         """
         Searches for droplets above a specified capacitance threshold and updates
@@ -236,6 +257,41 @@ class DropbotService(HasTraits):
                     drops[electrode] = 'droplet'
 
             self.emit_signal(DBChannelsMetastateChanged(Signal='channels_metastate_changed', Drops=str(drops)))
+
+    #####SIGNAL HANDLERS######
+
+    @dramatiq.actor
+    def shorts_detected(self, sender, **kwargs):
+        # Handle shorts detection, depending on application specifics
+        shorts_info = kwargs.get('info')
+        self.emit_signal({'Signal': 'shorts_detected', 'Info': shorts_info})
+
+    @dramatiq.actor
+    def channels_updated(self, sender, **kwargs):
+        # Handle channels updates, depending on application specifics
+        channels = kwargs.get('channels')
+        self.emit_signal(DBChannelsChangedModel(Signal='channels_changed', channels=str(channels)))
+
+    @dramatiq.actor
+    def capacitance_updated(self, sender, **kwargs):
+        # Handle capacitance updates, depending on application specifics
+        capacitance = kwargs.get('capacitance')
+        self.emit_signal({'Signal': 'capacitance_updated', 'Capacitance': capacitance})
+
+    @dramatiq.actor
+    def output_state_changed(self, sender, **kwargs):
+        if kwargs.get('event') == 'output_enabled':
+            self.emit_signal(DBOutputStateModel(Signal='output_state_changed', OutputState=True))
+        elif kwargs.get('event') == 'output_disabled':
+            self.emit_signal(DBOutputStateModel(Signal='output_state_changed', OutputState=False))
+
+    @dramatiq.actor
+    def connected(self, sender, **kwargs):
+        self.emit_signal({'Signal': 'connected', 'Message': 'DropBot connected.'})
+
+    @dramatiq.actor
+    def disconnected(self, sender, **kwargs):
+        self.emit_signal({'Signal': 'disconnected', 'Message': 'DropBot disconnected.'})
 
 
 if __name__ == "__main__":
