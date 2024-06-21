@@ -1,3 +1,5 @@
+import os
+
 from PySide6.QtWidgets import QApplication, QLabel, QWidget, QVBoxLayout, QPushButton, QMessageBox, QHBoxLayout
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QPixmap
@@ -18,10 +20,10 @@ class DropBotStatusLabel(QLabel):
 
     def __init__(self):
         super().__init__()
-        self.setFixedSize(150, 150)
-
+        self.setFixedSize(500,100)
         self.status_bar = QHBoxLayout()
         self.dropbot_icon = QLabel()
+        self.dropbot_icon.setFixedSize(100,100)
         self.text_layout = QVBoxLayout()
         self.dropbot_connection_status = QLabel("Disconnected")
         self.dropbot_chip_status = QLabel("No chip inserted")
@@ -32,8 +34,7 @@ class DropBotStatusLabel(QLabel):
         self.text_layout.addWidget(self.dropbot_chip_status)
         self.text_layout.addWidget(self.dropbot_capacitance_reading)
         self.status_bar.addLayout(self.text_layout)
-        self.setLayout(self.text_layout)
-
+        self.setLayout(self.status_bar)
 
         self.update_status_icon('disconnected', self.red)  # Default to disconnected
 
@@ -48,10 +49,15 @@ class DropBotStatusLabel(QLabel):
             'no_db_available': 'dropbot.png'
         }
 
-        img_blob = pkgutil.get_data(__package__, f'images/{images[status]}')
-        pixmap = QPixmap()
-        pixmap.loadFromData(img_blob)
-        self.dropbot_icon.setPixmap(pixmap.scaled(150, 150, Qt.AspectRatioMode.KeepAspectRatio))
+        current_file_path = __file__
+        current_folder_path = os.path.dirname(os.path.abspath(current_file_path))
+        img_path = os.path.join(current_folder_path, 'images', images[status])
+
+        pixmap = QPixmap(img_path)
+        if pixmap.isNull():
+            logger.error(f"Failed to load image: {img_path}")
+
+        self.dropbot_icon.setPixmap(pixmap.scaled(100, 150, Qt.AspectRatioMode.KeepAspectRatio))
         self.dropbot_icon.setStyleSheet('QLabel { background-color : %s ; }' % status_color)
 
     def update_connection_status(self, connection_status):
@@ -125,11 +131,3 @@ class DropBotControlWidget(QWidget):
                 self.signal_received.emit(f"{topic}, {message}")
 
         return dropbot_status_listener
-
-
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    widget = DropBotControlWidget()
-    widget.show()
-    sys.exit(app.exec())
