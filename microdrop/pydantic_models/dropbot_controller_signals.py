@@ -22,13 +22,13 @@ class DBChannelsMetastateChanged(BaseModel):
 class DBConnectionStateModel(BaseModel):
     """ Pydantic model for Dropbot connection """
     Signal: str
-    Connected: str
+    Connected: bool
 
 
 class DBChipInsertStateModel(BaseModel):
     """ Pydantic model for Dropbot chip inserted state """
     Signal: str
-    ChipInserted: str
+    ChipInserted: bool
 
 
 class DBErrorModel(BaseModel):
