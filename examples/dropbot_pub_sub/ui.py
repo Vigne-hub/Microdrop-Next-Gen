@@ -55,6 +55,7 @@ class MainWindowController:
         self.proxy: DropbotSerialProxy = None
         self.port_name = None
 
+        self.dropbot_job_submitted = False
         scheduler = BackgroundScheduler()
 
         self.dropbot_search_submitted = False
@@ -79,11 +80,16 @@ class MainWindowController:
         """
         Handle the connect button click event.
         """
-        if not self.scheduler.running:
-            self.scheduler.start()
+        if not self.dropbot_job_submitted:
+            if self.scheduler.running:
+                self.scheduler.resume()
+            else:
+                self.scheduler.start()
+
+            self.dropbot_job_submitted = True
             logger.info("DropBot detection job started.")
 
-        elif self.proxy:
+        elif self.proxy.monitor is not None:
             self.window.show_popup_signal.emit("DropBot already connected.")
             logger.info("DropBot already connected.")
 
@@ -93,10 +99,13 @@ class MainWindowController:
     def on_dropbot_port_found(self, event):
         # pause looking for DropBot devices
         self.scheduler.pause()
+        self.dropbot_job_submitted = False
         # get port name
         port_name = str(event.retval)
         # send actor job to connect to DropBot
         self.make_serial_proxy.send(port_name)
+
+        # later is to publish this: publish_message(some message, some topic)
 
     def _make_serial_proxy(self):
 
@@ -168,10 +177,10 @@ class MainWindowController:
                 self.window.show_popup_signal.emit("DropBot connected")
 
             if topic[-1] == "disconnected":
-                self.window.show_popup_signal.emit("DropBot disconnected")
-                self.proxy.terminate()
-                del self.proxy
-                del self.port_name
+                if self.proxy.monitor is not None:
+                    self.window.show_popup_signal.emit("DropBot disconnected")
+                    self.proxy.terminate()
+                    self.proxy.monitor = None
 
             if "popup" in topic:
                 self.window.show_popup_signal.emit(message)
