@@ -26,16 +26,12 @@ def check_dropbot_devices_available(hwids_to_check):
     """
     Method to find the USB port of the DropBot if it is connected.
     """
-    try:
-        for hwid in hwids_to_check:
-            valid_ports = check_connected_ports_hwid(hwid)
-            if valid_ports:
-                port_name = str(valid_ports[0].name)
-                # Indicate success by returning the port name
-                logger.info(f'DropBot found on port {port_name}, topic is dropbot/info')
-                return port_name
-
-    except Exception as e:
-        logger.error(f'No DropBot available for connection with exception {e}: dropbot/error')
-        # Indicate failure by returning None
-        return None
+    for hwid in hwids_to_check:
+        valid_ports = check_connected_ports_hwid(hwid)
+        if valid_ports:
+            port_name = str(valid_ports[0].name)
+            # Indicate success by returning the port name
+            logger.info(f'DropBot found on port {port_name}, topic is dropbot/info')
+            return port_name
+        else:
+            raise Exception("DropBot not found.")
