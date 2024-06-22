@@ -68,7 +68,7 @@ class DropBotStatusLabel(QLabel):
         if chip_status == 'chip_inserted':
             self.update_status_icon('chip_inserted', self.green)
         elif chip_status == 'chip_removed':
-            self.update_status_icon('chip_removed', self.red)
+            self.update_status_icon('chip_removed', self.yellow)
         self.dropbot_chip_status.setText(chip_status.capitalize())
 
     def update_capacitance_reading(self, capacitance):
