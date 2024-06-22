@@ -1,14 +1,10 @@
 import os
-from time import sleep
-
 from PySide6.QtWidgets import QApplication, QLabel, QWidget, QVBoxLayout, QPushButton, QMessageBox, QHBoxLayout
 from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import QPixmap
 import sys
-import pkgutil
 import dramatiq
 from microdrop_utils._logger import get_logger
-from microdrop_utils.dramatiq_pub_sub_helpers import MessageRouterActor
 
 logger = get_logger(__name__)
 
@@ -80,6 +76,7 @@ class DropBotStatusLabel(QLabel):
 
 class DropBotControlWidget(QWidget):
     signal_received = Signal(str)
+    device_connected = False
 
     def __init__(self):
         super().__init__()
@@ -95,11 +92,10 @@ class DropBotControlWidget(QWidget):
         self.signal_received.connect(self.handle_signal)
 
         # Subscribe to backend messages
-        self.setup_listeners()
-        self.simulate_button = QPushButton("Simulate")
-        self.simulate_button.clicked.connect(self.simulate_GUI_run)
-        self.layout.addWidget(self.simulate_button)
+        self.actor_topics_dict = {"dropbot_status_listener": ["dropbot/signals/+"]}
 
+        # create actors:
+        self.dropbot_status_listener = self.create_dropbot_status_listener_actor()
 
     def detect_shorts(self):
         # Placeholder function to emit a message that shorts detection was triggered
@@ -107,15 +103,6 @@ class DropBotControlWidget(QWidget):
 
     def show_warning(self, title, message):
         QMessageBox.information(self, title, message)
-
-    def setup_listeners(self):
-        actor_topics_dict = {"dropbot_status_listener": ["dropbot/signals/+"]}
-        self.router_actor = MessageRouterActor()
-        self.dropbot_status_update_listener = self.create_dropbot_status_listener_actor()
-
-        for actor_name, topics_list in actor_topics_dict.items():
-            for topic in topics_list:
-                self.router_actor.message_router_data.add_subscriber_to_topic(topic, actor_name)
 
     def handle_signal(self, message):
         topic, body = message.split(", ")
@@ -142,26 +129,6 @@ class DropBotControlWidget(QWidget):
                 self.signal_received.emit(f"{topic}, {message}")
 
         return dropbot_status_listener
-
-    def simulate_GUI_run(self):
-        steps = [
-            ("dropbot/signals/connected, DropBot connected", "Attempting to simulate DropBot connection", 4000),
-            ("dropbot/signals/chip_inserted, Chip inserted", "Attempting to simulate DropBot chip insertion", 4000),
-            ("dropbot/signals/chip_removed, Chip removed", "Attempting to simulate DropBot chip removal", 4000),
-            (
-            "dropbot/signals/disconnected, DropBot disconnected", "Attempting to simulate DropBot disconnection", 4000),
-            ("dropbot/signals/no_power, No power to DropBot", "Attempting to simulate DropBot no power", 4000),
-            ("dropbot/signals/no_db_available, No DropBot available for connection",
-             "Attempting to simulate DropBot no DB available", 4000)
-        ]
-        self.simulate_step(steps, 0)
-
-    def simulate_step(self, steps, index):
-        if index < len(steps):
-            message, log_message, delay = steps[index]
-            logger.info(log_message)
-            self.handle_signal(message)
-            QTimer.singleShot(delay, lambda: self.simulate_step(steps, index + 1))
 
 
 if __name__ == "__main__":

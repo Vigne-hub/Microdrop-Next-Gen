@@ -20,7 +20,7 @@ from microdrop.plugins.frontend_plugins.dropbot_GUI import DropBotControlWidget
 from microdrop.pydantic_models.dropbot_controller_signals import DBVoltageChangedModel, \
     DBChannelsMetastateChanged, DBChannelsChangedModel, DBConnectionStateModel, \
     DBChipInsertStateModel, DBErrorModel
-from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
+from microdrop_utils.dramatiq_pub_sub_helpers import publish_message, MessageRouterActor
 from microdrop_utils._logger import get_logger
 from microdrop_utils.pub_sub_serial_proxy import DropbotSerialProxy
 
@@ -29,6 +29,7 @@ logger = get_logger(__name__)
 
 def check_connected_ports_hwid(id_to_screen, regexp='USB Serial'):
     """Check connected USB ports for a list of valid ports"""
+    logger.info(f'attempting to find valid ports')
     connected_ports = grep(regexp)
     valid_ports = []
 
@@ -38,17 +39,19 @@ def check_connected_ports_hwid(id_to_screen, regexp='USB Serial'):
         if bool(teensy):
             valid_ports.append(port)
 
+    logger.info(f'Valid ports found: {valid_ports}')
     return valid_ports
 
 
 def check_dropbot_devices_available(hwids_to_check):
     """Method to find dropbots avaliable and which ports it make be connected to"""
     try:
+        logger.info(f'Checking to see if there exists a DropBot device available')
         for hwid in hwids_to_check:
             valid_ports = check_connected_ports_hwid(hwid)
             if valid_ports:
                 port_name = str(valid_ports[0].name)
-                logger.info(f'DropBot found on port {port_name}, topic is dropbot/info')
+                logger.info(f'DropBot found on port {port_name}')
                 return port_name
     except Exception as e:
         logger.error(f'No DropBot available for connection with exception {e}: dropbot/error')
@@ -65,8 +68,18 @@ class DropbotService(HasTraits):
     db_error_no_db_available = DBErrorModel(Signal='dropbot_warning', Error='No DropBot available for connection')
 
     def __init__(self):
+        logger.info('Initializing dropbot services')
+
+        self.make_serial_proxy = self._make_serial_proxy()
+        self.ui_listener = self.create_dropbot_backend_listener_actor()
+
+        # actor_topics
+
+        self.actor_topics_dict = {"dropbot_backend_listener": ["dropbot/signals/+"],
+                                  ""
+                                  }
+
         self.proxy: Union[DropbotSerialProxy, None] = None
-        self.dropbot_job_submitted = False
 
         hwids_to_check = ["VID:PID=16C0:"]
 
@@ -77,7 +90,7 @@ class DropbotService(HasTraits):
         )
         scheduler.add_listener(self.on_dropbot_port_found, EVENT_JOB_EXECUTED)
         self.scheduler = scheduler
-        self.make_serial_proxy = self._make_serial_proxy()
+        self.scheduler.start()
 
     @staticmethod
     def emit_signal(message):
@@ -85,6 +98,7 @@ class DropbotService(HasTraits):
         publish_message(message, f'dropbot_controller/signals/{message.Signal}')
         logger.info(f"Emitted: {message}")
 
+    #### Dropbot mike actions ####
     @dramatiq.actor
     def poll_voltage(self):
         """
@@ -203,17 +217,26 @@ class DropbotService(HasTraits):
                     drops[electrode] = 'droplet'
 
             self.emit_signal(DBChannelsMetastateChanged(Signal='channels_metastate_changed', Drops=str(drops)))
+    ##############################
 
-    @dramatiq.actor
     def on_dropbot_port_found(self, event):
+        logger.info("DropBot port found")
+        logger.info('Attempting to make serial proxy for DropBot')
         self.scheduler.pause()
-        self.dropbot_job_submitted = False
         port_name = str(event.retval)
         self.make_serial_proxy.send(port_name)
 
+    def on_disconnected(self):
+        self.scheduler.resume()
+
+    def on_connected(self):
+        self.scheduler.pause()
+
     def _make_serial_proxy(self):
+        logger.info("Creating serial proxy function")
         @dramatiq.actor
         def make_serial_proxy(port_name):
+            logger.info(f"Attempting to create serial proxy")
             try:
                 self.proxy = DropbotSerialProxy(port=port_name)
                 logger.info(f"Connected to DropBot on port {port_name}")
@@ -225,7 +248,41 @@ class DropbotService(HasTraits):
                 self.emit_signal(self.db_error_no_power)
                 logger.error("No power to DropBot")
 
+        logger.info('Completed making serial proxy')
         return make_serial_proxy
+
+    def create_dropbot_backend_listener_actor(self):
+        """
+        Create a Dramatiq actor for listening to UI-related messages.
+
+        Returns:
+        dramatiq.Actor: The created Dramatiq actor.
+        """
+
+        @dramatiq.actor
+        def dropbot_backend_listener(message, topic):
+            """
+            A Dramatiq actor that listens to UI-related messages.
+
+            Parameters:
+            message (str): The received message.
+            topic (str): The topic of the message.
+            """
+            logger.info(f"UI_LISTENER: Received message: {message} from topic: {topic}")
+
+            topic = topic.split("/")
+
+            if topic[-1] == "connected":
+                self.on_connected()
+
+            if topic[-1] == "disconnected":
+                if self.proxy.monitor is not None:
+                    self.proxy.terminate()
+                    self.proxy.monitor = None
+                    self.on_disconnected()
+
+        return dropbot_backend_listener
+
 
     def setup_dropbot(self):
         OUTPUT_ENABLE_PIN = 22
@@ -247,8 +304,11 @@ class DropbotService(HasTraits):
 
 def main():
     app = QApplication(sys.argv)
+    router_actor = MessageRouterActor()
+
     dropbot_status = DropBotControlWidget()
     dropbot_status.show()
+    dropbot_services = DropbotService()
 
 
 if __name__ == "__main__":

@@ -16,11 +16,12 @@ logger = get_logger(__name__)
 
 
 class MainWindow(QWidget):
+    # Signal to show a popup message.
     show_popup_signal = Signal(str)
 
     def __init__(self):
         super().__init__()
-
+        # GUI setup for button into popup message on trigger
         self.label = QLabel("Waiting for messages...")
         layout = QVBoxLayout()
         layout.addWidget(self.label)
@@ -30,6 +31,7 @@ class MainWindow(QWidget):
         self.show_popup_signal.connect(self.show_popup)
 
     def show_popup(self, message):
+        # GUI POPUP
         self.label.setText(f"Received message: {message}")
         msg_box = QMessageBox()
         msg_box.setText(f"Received message: {message}")
@@ -50,14 +52,18 @@ class MainWindowController:
         """
         self.window = window
 
+        # connection to window's button click trigger
         self.window.connect_button.clicked.connect(self.connect_button_clicked)
 
+        # needs proxy for communication, (port name not used rn)
         self.proxy: DropbotSerialProxy = None
         self.port_name = None
 
-        self.dropbot_job_submitted = False
+        # setup the scheduler for DropBot detection
+        self.dropbot_job_submitted = False # used to check if job is already submitted
         scheduler = BackgroundScheduler()
 
+        # not used rn
         self.dropbot_search_submitted = False
         # Add a job to the scheduler with the specific argument
         hwids_to_check = ["VID:PID=16C0:"]  # the teensy id (the dropbot device)
@@ -66,12 +72,15 @@ class MainWindowController:
             trigger=IntervalTrigger(seconds=1),
         )
 
-        # Add listeners to handle job events
+        # trigger on port found on scheduler job completed (check available devices)
         scheduler.add_listener(self.on_dropbot_port_found, EVENT_JOB_EXECUTED)
 
         self.scheduler = scheduler
 
+        # create a listener actor for UI-related messages
         self.ui_listener = self.create_ui_listener_actor()
+
+        # create a Dramatiq actor for making the serial proxy
         self.make_serial_proxy = self._make_serial_proxy()
 
         self.actor_topics_dict = {"ui_listener_actor": ["dropbot/signals/+"]}
