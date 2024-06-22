@@ -1,6 +1,7 @@
 import functools
 import re
 import sys
+from typing import Union
 
 import dramatiq
 import dropbot
@@ -64,7 +65,7 @@ class DropbotService(HasTraits):
     db_error_no_db_available = DBErrorModel(Signal='dropbot_warning', Error='No DropBot available for connection')
 
     def __init__(self):
-        self.proxy: DropbotSerialProxy = None
+        self.proxy: Union[DropbotSerialProxy, None] = None
         self.dropbot_job_submitted = False
 
         hwids_to_check = ["VID:PID=16C0:"]
@@ -81,7 +82,7 @@ class DropbotService(HasTraits):
     @staticmethod
     def emit_signal(message):
         # assume message is already in json format
-        publish_message(message, f'dropbot_controller/{message.Signal}')
+        publish_message(message, f'dropbot_controller/signals/{message.Signal}')
         logger.info(f"Emitted: {message}")
 
     @dramatiq.actor
@@ -248,6 +249,7 @@ def main():
     app = QApplication(sys.argv)
     dropbot_status = DropBotControlWidget()
     dropbot_status.show()
+
 
 if __name__ == "__main__":
 
