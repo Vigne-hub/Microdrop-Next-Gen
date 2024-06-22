@@ -1,7 +1,8 @@
 import os
+from time import sleep
 
 from PySide6.QtWidgets import QApplication, QLabel, QWidget, QVBoxLayout, QPushButton, QMessageBox, QHBoxLayout
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import QPixmap
 import sys
 import pkgutil
@@ -20,10 +21,10 @@ class DropBotStatusLabel(QLabel):
 
     def __init__(self):
         super().__init__()
-        self.setFixedSize(500,100)
+        self.setFixedSize(500, 100)
         self.status_bar = QHBoxLayout()
         self.dropbot_icon = QLabel()
-        self.dropbot_icon.setFixedSize(100,100)
+        self.dropbot_icon.setFixedSize(100, 100)
         self.text_layout = QVBoxLayout()
         self.dropbot_connection_status = QLabel("Disconnected")
         self.dropbot_chip_status = QLabel("No chip inserted")
@@ -37,7 +38,6 @@ class DropBotStatusLabel(QLabel):
         self.setLayout(self.status_bar)
 
         self.update_status_icon('disconnected', self.red)  # Default to disconnected
-
 
     def update_status_icon(self, status, status_color):
         images = {
@@ -61,14 +61,21 @@ class DropBotStatusLabel(QLabel):
         self.dropbot_icon.setStyleSheet('QLabel { background-color : %s ; }' % status_color)
 
     def update_connection_status(self, connection_status):
+        if connection_status == 'connected':
+            self.update_status_icon('connected', self.green)
+        elif connection_status == 'disconnected':
+            self.update_status_icon('disconnected', self.red)
         self.dropbot_connection_status.setText(connection_status.capitalize())
 
     def update_chip_status(self, chip_status):
+        if chip_status == 'chip_inserted':
+            self.update_status_icon('chip_inserted', self.green)
+        elif chip_status == 'chip_removed':
+            self.update_status_icon('chip_removed', self.red)
         self.dropbot_chip_status.setText(chip_status.capitalize())
 
     def update_capacitance_reading(self, capacitance):
         self.dropbot_capacitance_reading.setText(f"Capacitance: {capacitance} pF")
-
 
 
 class DropBotControlWidget(QWidget):
@@ -76,19 +83,23 @@ class DropBotControlWidget(QWidget):
 
     def __init__(self):
         super().__init__()
-        layout = QVBoxLayout(self)
+        self.layout = QVBoxLayout(self)
 
         self.status_label = DropBotStatusLabel()
-        layout.addWidget(self.status_label)
+        self.layout.addWidget(self.status_label)
 
         self.detect_shorts_button = QPushButton("Detect Shorts")
         self.detect_shorts_button.clicked.connect(self.detect_shorts)
-        layout.addWidget(self.detect_shorts_button)
+        self.layout.addWidget(self.detect_shorts_button)
 
         self.signal_received.connect(self.handle_signal)
 
         # Subscribe to backend messages
         self.setup_listeners()
+        self.simulate_button = QPushButton("Simulate")
+        self.simulate_button.clicked.connect(self.simulate_GUI_run)
+        self.layout.addWidget(self.simulate_button)
+
 
     def detect_shorts(self):
         # Placeholder function to emit a message that shorts detection was triggered
@@ -131,3 +142,30 @@ class DropBotControlWidget(QWidget):
                 self.signal_received.emit(f"{topic}, {message}")
 
         return dropbot_status_listener
+
+    def simulate_GUI_run(self):
+        steps = [
+            ("dropbot/signals/connected, DropBot connected", "Attempting to simulate DropBot connection", 4000),
+            ("dropbot/signals/chip_inserted, Chip inserted", "Attempting to simulate DropBot chip insertion", 4000),
+            ("dropbot/signals/chip_removed, Chip removed", "Attempting to simulate DropBot chip removal", 4000),
+            (
+            "dropbot/signals/disconnected, DropBot disconnected", "Attempting to simulate DropBot disconnection", 4000),
+            ("dropbot/signals/no_power, No power to DropBot", "Attempting to simulate DropBot no power", 4000),
+            ("dropbot/signals/no_db_available, No DropBot available for connection",
+             "Attempting to simulate DropBot no DB available", 4000)
+        ]
+        self.simulate_step(steps, 0)
+
+    def simulate_step(self, steps, index):
+        if index < len(steps):
+            message, log_message, delay = steps[index]
+            logger.info(log_message)
+            self.handle_signal(message)
+            QTimer.singleShot(delay, lambda: self.simulate_step(steps, index + 1))
+
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    dropbot_status = DropBotControlWidget()
+    dropbot_status.show()
+    sys.exit(app.exec())
