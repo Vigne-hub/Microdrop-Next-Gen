@@ -26,12 +26,19 @@ def check_dropbot_devices_available(hwids_to_check):
     """
     Method to find the USB port of the DropBot if it is connected.
     """
+
     for hwid in hwids_to_check:
         valid_ports = check_connected_ports_hwid(hwid)
-        if valid_ports:
+        if len(valid_ports) > 0:
             port_name = str(valid_ports[0].name)
             # Indicate success by returning the port name
             logger.info(f'DropBot found on port {port_name}, topic is dropbot/info')
             return port_name
+
         else:
-            raise Exception("DropBot not found.")
+            raise Exception('DropBot not found')
+
+
+if __name__ == "__main__":
+    hwids = ['VID:PID=16C0:0483']
+    check_dropbot_devices_available(hwids)
