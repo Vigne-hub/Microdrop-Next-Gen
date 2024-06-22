@@ -28,16 +28,16 @@ def is_rabbitmq_running():
         return False
 
 
-def start_rabbitmq_server():
+def start_rabbitmq_server(retries=5, wait=3):
     """Start the RabbitMQ server."""
     process = subprocess.Popen(["rabbitmq-server"], shell=True)
-    for _ in range(5):  # Retry up to 5 times
+    for _ in range(retries):  # Retry up to 5 times
         if is_rabbitmq_running():
             print("RabbitMQ server is running.")
             return process
         else:
             print("Waiting for RabbitMQ server to start...")
-            time.sleep(3)
+            time.sleep(wait)
     print("Failed to start RabbitMQ server.")
     process.terminate()
     return None
@@ -52,16 +52,16 @@ def stop_rabbitmq_server():
         print(f"Failed to stop RabbitMQ server: {e}")
 
 
-def start_redis_server():
+def start_redis_server(retries=5, wait=3):
     """Start the Redis server."""
-    process = subprocess.Popen(["redis-server"])
-    for _ in range(5):  # Retry up to 5 times
+    process = subprocess.Popen(["redis-server"], shell=True)
+    for _ in range(retries):  # Retry up to 5 times
         if is_redis_running():
             print("Redis server is running.")
             return process
         else:
             print("Waiting for Redis server to start...")
-            time.sleep(3)
+            time.sleep(wait)
     print("Failed to start Redis server.")
     process.terminate()
     return None
