@@ -39,8 +39,7 @@ class DropbotService(HasTraits):
         self.ui_listener = self.create_dropbot_backend_listener_actor()
 
         # actor_topics
-        self.actor_topics_dict = {"dropbot_backend_listener": ["dropbot/signals/+"],
-                                  "dropbot_backend_listener": ["dropbot/ui/notifications/+"]}
+        self.actor_topics_dict = {"dropbot_backend_listener": ["dropbot/signals/#", "dropbot/ui/notifications/#"]}
 
         self.proxy: Union[DropbotSerialProxy, None] = None
 

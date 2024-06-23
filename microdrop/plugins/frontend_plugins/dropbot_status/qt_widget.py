@@ -185,7 +185,7 @@ class DropBotControlWidget(QWidget):
             logger.info(f"UI_LISTENER: Received message: {message} from topic: {topic}")
             topic_elements = topic.split("/")
             if topic_elements[-1] in ['connected', 'disconnected', 'chip_inserted', 'chip_not_inserted', 'no_power',
-                                      'no_dropbot_available', 'shorts_detected']:
+                                      'no_dropbot_available', 'shorts_detected', 'halted']:
                 self.signal_received.emit(f"{topic}, {message}")
 
         return dropbot_status_listener
