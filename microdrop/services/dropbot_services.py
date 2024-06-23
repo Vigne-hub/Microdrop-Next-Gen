@@ -27,45 +27,8 @@ from microdrop_utils.pub_sub_serial_proxy import DropbotSerialProxy
 logger = get_logger(__name__)
 
 
-def check_connected_ports_hwid(id_to_screen, regexp='USB Serial'):
-    """Check connected USB ports for a list of valid ports"""
-    logger.info(f'attempting to find valid ports')
-    connected_ports = grep(regexp)
-    valid_ports = []
-
-    for port in connected_ports:
-        pattern = re.compile(f".*{id_to_screen}.*")
-        teensy = re.search(pattern, port.hwid)
-        if bool(teensy):
-            valid_ports.append(port)
-
-    logger.info(f'Valid ports found: {valid_ports}')
-    return valid_ports
-
-
-def check_dropbot_devices_available(hwids_to_check):
-    """Method to find dropbots avaliable and which ports it make be connected to"""
-    try:
-        logger.info(f'Checking to see if there exists a DropBot device available')
-        for hwid in hwids_to_check:
-            valid_ports = check_connected_ports_hwid(hwid)
-            if valid_ports:
-                port_name = str(valid_ports[0].name)
-                logger.info(f'DropBot found on port {port_name}')
-                return port_name
-    except Exception as e:
-        logger.error(f'No DropBot available for connection with exception {e}: dropbot/error')
-        return None
-
-
 @provides(IDropbotControllerService)
 class DropbotService(HasTraits):
-    dropbot_connected = DBConnectionStateModel(Signal='dropbot_connected', Connected=True)
-    dropbot_disconnected = DBConnectionStateModel(Signal='dropbot_connected', Connected=False)
-    chip_inserted = DBChipInsertStateModel(Signal='chip_inserted', ChipInserted=True)
-    chip_not_inserted = DBChipInsertStateModel(Signal='chip_inserted', ChipInserted=False)
-    db_error_no_power = DBErrorModel(Signal='dropbot_warning', Error='No power to DropBot')
-    db_error_no_db_available = DBErrorModel(Signal='dropbot_warning', Error='No DropBot available for connection')
 
     def __init__(self):
         logger.info('Initializing dropbot services')
@@ -74,10 +37,7 @@ class DropbotService(HasTraits):
         self.ui_listener = self.create_dropbot_backend_listener_actor()
 
         # actor_topics
-
-        self.actor_topics_dict = {"dropbot_backend_listener": ["dropbot/signals/+"],
-                                  ""
-                                  }
+        self.actor_topics_dict = {"dropbot_backend_listener": ["dropbot/signals/+"]}
 
         self.proxy: Union[DropbotSerialProxy, None] = None
 
@@ -86,11 +46,10 @@ class DropbotService(HasTraits):
         scheduler = BackgroundScheduler()
         scheduler.add_job(
             func=functools.partial(check_dropbot_devices_available, hwids_to_check),
-            trigger=IntervalTrigger(seconds=1),
+            trigger=IntervalTrigger(seconds=2),
         )
         scheduler.add_listener(self.on_dropbot_port_found, EVENT_JOB_EXECUTED)
         self.scheduler = scheduler
-        self.scheduler.start()
 
     @staticmethod
     def emit_signal(message):
@@ -228,12 +187,15 @@ class DropbotService(HasTraits):
 
     def on_disconnected(self):
         self.scheduler.resume()
+        publish_message(topic='dropbot/ui/signals/disconnected', message='DropBot disconnected')
 
     def on_connected(self):
         self.scheduler.pause()
+        publish_message(topic='dropbot/ui/signals/connected', message='DropBot connected')
 
     def _make_serial_proxy(self):
         logger.info("Creating serial proxy function")
+
         @dramatiq.actor
         def make_serial_proxy(port_name):
             logger.info(f"Attempting to create serial proxy")
@@ -242,10 +204,11 @@ class DropbotService(HasTraits):
                 logger.info(f"Connected to DropBot on port {port_name}")
                 self.setup_dropbot()
             except (IOError, AttributeError):
-                self.emit_signal(self.db_error_no_db_available)
+                publish_message(topic='dropbot/ui/connection/warnings/no_dropbot_available',
+                                message='No DropBot available for connection')
                 logger.error("No DropBot available for connection")
             except dropbot.proxy.NoPower:
-                self.emit_signal(self.db_error_no_power)
+                publish_message(topic='dropbot/ui/connection/warnings/no_power', message='No power to DropBot')
                 logger.error("No power to DropBot")
 
         logger.info('Completed making serial proxy')
@@ -268,7 +231,7 @@ class DropbotService(HasTraits):
             message (str): The received message.
             topic (str): The topic of the message.
             """
-            logger.info(f"UI_LISTENER: Received message: {message} from topic: {topic}")
+            logger.info(f"DROPBOT BACKEND LISTENER: Received message: {message} from topic: {topic}")
 
             topic = topic.split("/")
 
@@ -276,64 +239,30 @@ class DropbotService(HasTraits):
                 self.on_connected()
 
             if topic[-1] == "disconnected":
-                if self.proxy.monitor is not None:
-                    self.proxy.terminate()
-                    self.proxy.monitor = None
-                    self.on_disconnected()
+                if self.proxy is not None:
+                    if self.proxy.monitor is not None:
+                        self.proxy.terminate()
+                        self.proxy.monitor = None
+                        self.on_disconnected()
+                else:
+                    print("Proxy is None")
 
         return dropbot_backend_listener
-
 
     def setup_dropbot(self):
         OUTPUT_ENABLE_PIN = 22
         if self.proxy.digital_read(OUTPUT_ENABLE_PIN):
-            self.emit_signal(self.chip_not_inserted)
+            publish_message(topic='dropbot/ui/signals/chip_not_inserted', message='Chip not inserted')
         else:
-            self.emit_signal(self.chip_inserted)
+            publish_message(topic='dropbot/ui/signals/chip_inserted', message='Chip inserted')
+
         self.proxy.signals.signal('output_enabled').connect(self.output_state_changed_wrapper)
         self.proxy.signals.signal('output_disabled').connect(self.output_state_changed_wrapper)
 
     def output_state_changed_wrapper(self, signal: dict[str, str]):
         if signal['event'] == 'output_enabled':
-            self.emit_signal(self.chip_inserted)
+            publish_message(topic='dropbot/ui/signals/chip_inserted', message='Chip inserted')
         elif signal['event'] == 'output_disabled':
-            self.emit_signal(self.chip_not_inserted)
+            publish_message(topic='dropbot/ui/signals/chip_not_inserted', message='Chip not inserted')
         else:
             logger.warn(f"Unknown signal received: {signal}")
-
-
-def main():
-    app = QApplication(sys.argv)
-    router_actor = MessageRouterActor()
-
-    dropbot_status = DropBotControlWidget()
-    dropbot_status.show()
-    dropbot_services = DropbotService()
-
-
-if __name__ == "__main__":
-
-    BROKER = get_broker()
-
-    for el in BROKER.middleware:
-        if el.__module__ == "dramatiq.middleware.prometheus":
-            BROKER.middleware.remove(el)
-
-    worker = Worker(broker=BROKER)
-
-    try:
-        BROKER.flush_all()
-        worker.start()
-        main()
-
-    except KeyboardInterrupt or SystemExit:
-        worker.stop()
-        BROKER.flush_all()
-        BROKER.close()
-        sys.exit(0)
-
-    finally:
-        worker.stop()
-        BROKER.flush_all()
-        BROKER.close()
-        sys.exit(0)

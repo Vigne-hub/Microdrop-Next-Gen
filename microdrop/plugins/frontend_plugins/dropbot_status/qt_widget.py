@@ -42,7 +42,7 @@ class DropBotStatusLabel(QLabel):
             'chip_inserted': 'dropbot-chip-inserted.png',
             'chip_removed': 'dropbot.png',
             'no_power': 'dropbot.png',
-            'no_db_available': 'dropbot.png'
+            'no_dropbot_available': 'dropbot.png'
         }
 
         current_file_path = __file__
@@ -57,6 +57,7 @@ class DropBotStatusLabel(QLabel):
         self.dropbot_icon.setStyleSheet('QLabel { background-color : %s ; }' % status_color)
 
     def update_connection_status(self, connection_status):
+        logger.info(f"Attempting to update connection status: {connection_status}")
         if connection_status == 'connected':
             self.update_status_icon('connected', self.green)
         elif connection_status == 'disconnected':
@@ -67,7 +68,7 @@ class DropBotStatusLabel(QLabel):
         if chip_status == 'chip_inserted':
             self.update_status_icon('chip_inserted', self.green)
         elif chip_status == 'chip_removed':
-            self.update_status_icon('chip_removed', self.red)
+            self.update_status_icon('chip_removed', self.yellow)
         self.dropbot_chip_status.setText(chip_status.capitalize())
 
     def update_capacitance_reading(self, capacitance):
@@ -92,7 +93,7 @@ class DropBotControlWidget(QWidget):
         self.signal_received.connect(self.handle_signal)
 
         # Subscribe to backend messages
-        self.actor_topics_dict = {"dropbot_status_listener": ["dropbot/signals/+"]}
+        self.actor_topics_dict = {"dropbot_status_listener": ["dropbot/ui/#"]}
 
         # create actors:
         self.dropbot_status_listener = self.create_dropbot_status_listener_actor()
@@ -106,26 +107,27 @@ class DropBotControlWidget(QWidget):
 
     def handle_signal(self, message):
         topic, body = message.split(", ")
-        if "connected" in topic:
-            self.status_label.update_connection_status('connected')
-        elif "disconnected" in topic:
+        if "disconnected" in topic:
             self.status_label.update_connection_status('disconnected')
+        elif "connected" in topic:
+            self.status_label.update_connection_status('connected')
         elif "chip_inserted" in topic:
             self.status_label.update_chip_status('chip_inserted')
-        elif "chip_removed" in topic:
+        elif "chip_not_inserted" in topic:
             self.status_label.update_chip_status('chip_removed')
         elif "no_power" in topic:
             self.show_warning('WARNING: no_power', f'{body}')
-        elif "no_db_available" in topic:
-            self.show_warning('WARNING: no_db_available', f'{body}')
+        elif "no_dropbot_available" in topic:
+            self.show_warning('WARNING: no_dropbot_available', f'{body}')
 
     def create_dropbot_status_listener_actor(self):
+
         @dramatiq.actor
         def dropbot_status_listener(message, topic):
             logger.info(f"UI_LISTENER: Received message: {message} from topic: {topic}")
             topic_elements = topic.split("/")
-            if topic_elements[-1] in ['connected', 'disconnected', 'chip_inserted', 'chip_removed', 'no_power',
-                                      'no_db_available']:
+            if topic_elements[-1] in ['connected', 'disconnected', 'chip_inserted', 'chip_not_inserted', 'no_power',
+                                      'no_dropbot_available']:
                 self.signal_received.emit(f"{topic}, {message}")
 
         return dropbot_status_listener

@@ -39,19 +39,6 @@ if __name__ == "__main__":
 
     worker = Worker(broker=BROKER)
 
-    try:
-        BROKER.flush_all()
-        worker.start()
-        main()
-
-    except KeyboardInterrupt or SystemExit:
-        worker.stop()
-        BROKER.flush_all()
-        BROKER.close()
-        sys.exit(0)
-
-    finally:
-        worker.stop()
-        BROKER.flush_all()
-        BROKER.close()
-        sys.exit(0)
+    BROKER.flush_all()
+    worker.start()
+    main()

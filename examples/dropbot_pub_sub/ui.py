@@ -57,7 +57,6 @@ class MainWindowController:
 
         # needs proxy for communication, (port name not used rn)
         self.proxy: DropbotSerialProxy = None
-        self.port_name = None
 
         # setup the scheduler for DropBot detection
         self.dropbot_job_submitted = False # used to check if job is already submitted
@@ -107,10 +106,10 @@ class MainWindowController:
 
     def on_dropbot_port_found(self, event):
         # pause looking for DropBot devices
+        port_name = str(event.retval)
         self.scheduler.pause()
         self.dropbot_job_submitted = False
         # get port name
-        port_name = str(event.retval)
         # send actor job to connect to DropBot
         self.make_serial_proxy.send(port_name)
 
