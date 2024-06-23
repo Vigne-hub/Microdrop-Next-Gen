@@ -1,4 +1,5 @@
 import functools
+import json
 import re
 import sys
 from typing import Union
@@ -16,10 +17,11 @@ from serial.tools.list_ports import grep
 from traits.has_traits import HasTraits, provides
 
 from microdrop.interfaces import IDropbotControllerService
-from microdrop.plugins.frontend_plugins.dropbot_GUI import DropBotControlWidget
+from microdrop.plugins.frontend_plugins.dropbot_status.qt_widget import DropBotControlWidget
 from microdrop.pydantic_models.dropbot_controller_signals import DBVoltageChangedModel, \
     DBChannelsMetastateChanged, DBChannelsChangedModel, DBConnectionStateModel, \
     DBChipInsertStateModel, DBErrorModel
+from microdrop.services.dropbot_service_helpers import check_dropbot_devices_available
 from microdrop_utils.dramatiq_pub_sub_helpers import publish_message, MessageRouterActor
 from microdrop_utils._logger import get_logger
 from microdrop_utils.pub_sub_serial_proxy import DropbotSerialProxy
@@ -37,7 +39,8 @@ class DropbotService(HasTraits):
         self.ui_listener = self.create_dropbot_backend_listener_actor()
 
         # actor_topics
-        self.actor_topics_dict = {"dropbot_backend_listener": ["dropbot/signals/+"]}
+        self.actor_topics_dict = {"dropbot_backend_listener": ["dropbot/signals/+"],
+                                  "dropbot_backend_listener": ["dropbot/ui/notifications/+"]}
 
         self.proxy: Union[DropbotSerialProxy, None] = None
 
@@ -247,6 +250,9 @@ class DropbotService(HasTraits):
                 else:
                     print("Proxy is None")
 
+            if topic[-1] == "detect_shorts_triggered":
+                self.detect_shorts()
+
         return dropbot_backend_listener
 
     def setup_dropbot(self):
@@ -258,6 +264,8 @@ class DropbotService(HasTraits):
 
         self.proxy.signals.signal('output_enabled').connect(self.output_state_changed_wrapper)
         self.proxy.signals.signal('output_disabled').connect(self.output_state_changed_wrapper)
+        self.proxy.signals.signal('halted').connect(self.halted_event_wrapper)
+        self.proxy.signals.signal('shorts-detected').connect(self.shorts_detected_event_wrapper)
 
     def output_state_changed_wrapper(self, signal: dict[str, str]):
         if signal['event'] == 'output_enabled':
@@ -266,3 +274,15 @@ class DropbotService(HasTraits):
             publish_message(topic='dropbot/ui/signals/chip_not_inserted', message='Chip not inserted')
         else:
             logger.warn(f"Unknown signal received: {signal}")
+
+    def halted_event_wrapper(self, signal: dict[str, str]):
+        publish_message(topic='dropbot/ui/signals/halted', message='DropBot halted')
+
+    def shorts_detected_event_wrapper(self, signal: dict[str, str]):
+        publish_message(topic='dropbot/ui/signals/shorts_detected', message='Shorts detected')
+
+    def detect_shorts(self):
+        if self.proxy is not None:
+            shorts_list = self.proxy.detect_shorts()
+            shorts_dict = {'Shorts_detected': shorts_list}
+            publish_message(topic='dropbot/ui/signals/shorts_detected', message=json.dumps(shorts_dict))
