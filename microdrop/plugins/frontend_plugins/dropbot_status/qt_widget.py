@@ -1,6 +1,6 @@
 import json
 import os
-from PySide6.QtWidgets import QApplication, QLabel, QWidget, QVBoxLayout, QPushButton, QMessageBox, QHBoxLayout
+from PySide6.QtWidgets import QApplication, QLabel, QWidget, QVBoxLayout, QPushButton, QMessageBox, QHBoxLayout, QDialog
 from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import QPixmap
 import sys
@@ -89,6 +89,7 @@ class DropBotStatusLabel(QLabel):
 class DropBotControlWidget(QWidget):
     signal_received = Signal(str)
     device_connected = False
+    halted_paths = []
 
     def __init__(self):
         super().__init__()
@@ -109,6 +110,43 @@ class DropBotControlWidget(QWidget):
         # create actors:
         self.dropbot_status_listener = self.create_dropbot_status_listener_actor()
 
+        self.setup_halted_popup()
+
+    def setup_halted_popup(self):
+        self.popup = QWidget()
+        self.popup_layout = QVBoxLayout()
+        self.image_label = QLabel(self)
+        self.popup_layout.addWidget(self.image_label)
+
+        self.button = QPushButton('Next', self)
+        self.button.clicked.connect(self.next_image)
+        self.popup_layout.addWidget(self.button)
+
+        # Automatically find all images in the images directory
+        self.image_dir = os.path.join(os.path.dirname(__file__), "images")
+        self.images = [os.path.join(self.image_dir, f) for f in os.listdir(self.image_dir) if f.endswith('.png') and 'power' in f]
+        self.current_image = 0
+
+        # Load the first image
+        self.update_image()
+        self.popup.setLayout(self.popup_layout)
+
+    def update_image(self):
+        pixmap = QPixmap(self.images[self.current_image])
+        self.image_label.setPixmap(pixmap.scaled(320, 320, Qt.AspectRatioMode.KeepAspectRatio))
+
+    def next_image(self):
+        if self.current_image < len(self.images) - 1:
+            self.current_image += 1
+            self.update_image()
+            if self.current_image == len(self.images) - 1:
+                self.button.setText('Exit')
+        else:
+            self.close()
+
+    def show_halted_popup(self):
+        self.popup.show()
+
     def detect_shorts_triggered(self):
         logger.info("Detecting shorts...")
         publish_message("Detect shorts button triggered", "dropbot/ui/notifications/detect_shorts_triggered")
@@ -116,7 +154,6 @@ class DropBotControlWidget(QWidget):
     def detect_shorts_response(self, shorts_dict):
         print(shorts_dict)
         shorts_list = json.loads(shorts_dict).get('Shorts_detected', [])
-        logger.info(f"Shorts detected received by GUI: {shorts_list}")
         self.status_label.update_shorts(shorts_list)
 
     def show_warning(self, title, message):
@@ -138,6 +175,8 @@ class DropBotControlWidget(QWidget):
             self.show_warning('WARNING: no_dropbot_available', f'{body}')
         elif "shorts_detected" in topic:
             self.detect_shorts_response(body)
+        elif "halted" in topic:
+            self.show_halted_popup()
 
     def create_dropbot_status_listener_actor(self):
 
