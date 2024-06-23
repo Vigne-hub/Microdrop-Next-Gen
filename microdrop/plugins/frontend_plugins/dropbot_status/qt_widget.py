@@ -27,13 +27,13 @@ class DropBotStatusLabel(QLabel):
         self.dropbot_connection_status = QLabel("Disconnected")
         self.dropbot_chip_status = QLabel("No chip inserted")
         self.dropbot_capacitance_reading = QLabel("Capacitance: 0 pF")
-        self.shorts_label = QLabel("Shorts: None")
+        self.dropbot_voltage_reading = QLabel("Voltage: 0 V")
 
         self.status_bar.addWidget(self.dropbot_icon)
         self.text_layout.addWidget(self.dropbot_connection_status)
         self.text_layout.addWidget(self.dropbot_chip_status)
         self.text_layout.addWidget(self.dropbot_capacitance_reading)
-        self.text_layout.addWidget(self.shorts_label)
+        self.text_layout.addWidget(self.dropbot_voltage_reading)
         self.status_bar.addLayout(self.text_layout)
         self.setLayout(self.status_bar)
 
@@ -78,12 +78,8 @@ class DropBotStatusLabel(QLabel):
     def update_capacitance_reading(self, capacitance):
         self.dropbot_capacitance_reading.setText(f"Capacitance: {capacitance} pF")
 
-    def update_shorts(self, shorts):
-        if len(shorts) > 0:
-            shorts_str = str(shorts).strip('[]')
-            self.shorts_label.setText(f"Shorts: {shorts_str}")
-        else:
-            self.shorts_label.setText("Shorts: None")
+    def update_voltage_reading(self, voltage):
+        self.dropbot_voltage_reading.setText(f"Voltage: {voltage} V")
 
 
 class DropBotControlWidget(QWidget):
@@ -113,14 +109,15 @@ class DropBotControlWidget(QWidget):
         self.setup_halted_popup()
 
     def setup_halted_popup(self):
-        self.popup = QWidget()
-        self.popup_layout = QVBoxLayout()
-        self.image_label = QLabel(self)
-        self.popup_layout.addWidget(self.image_label)
+        self.halted_popup_layout = QVBoxLayout()
+        self.halted_popup = QMessageBox()
+        self.halted_popup.setText("Please Unplug USB and Power Cables and Plug the Power then the USB Cable Back In")
+        self.halted_image = QLabel()
+        self.halted_popup_layout.addWidget(self.halted_image)
 
-        self.button = QPushButton('Next', self)
+        self.button = QPushButton('Next')
         self.button.clicked.connect(self.next_image)
-        self.popup_layout.addWidget(self.button)
+        self.halted_popup_layout.addWidget(self.button)
 
         # Automatically find all images in the images directory
         self.image_dir = os.path.join(os.path.dirname(__file__), "images")
@@ -129,11 +126,11 @@ class DropBotControlWidget(QWidget):
 
         # Load the first image
         self.update_image()
-        self.popup.setLayout(self.popup_layout)
+        self.halted_popup.setLayout(self.halted_popup_layout)
 
     def update_image(self):
         pixmap = QPixmap(self.images[self.current_image])
-        self.image_label.setPixmap(pixmap.scaled(320, 320, Qt.AspectRatioMode.KeepAspectRatio))
+        self.halted_image.setPixmap(pixmap.scaled(320, 320, Qt.AspectRatioMode.KeepAspectRatio))
 
     def next_image(self):
         if self.current_image < len(self.images) - 1:
@@ -142,10 +139,24 @@ class DropBotControlWidget(QWidget):
             if self.current_image == len(self.images) - 1:
                 self.button.setText('Exit')
         else:
-            self.close()
+            self.halted_popup.close()
 
     def show_halted_popup(self):
-        self.popup.show()
+        self.halted_popup.exec()
+
+    def show_shorts_popup(self, shorts):
+        self.shorts_popup_layout = QVBoxLayout()
+        self.shorts_popup = QMessageBox()
+        self.shorts_popup.setFixedSize(300, 200)
+        self.shorts_popup.setWindowTitle("Shorts Detected")
+        self.shorts_popup.setLayout(self.shorts_popup_layout)
+        if len(shorts) > 0:
+            shorts_str = str(shorts).strip('[]')
+            self.shorts_popup.setText(f"Electrodes: {shorts_str}")
+        else:
+            self.shorts_popup.setText("None")
+
+        self.shorts_popup.exec()
 
     def detect_shorts_triggered(self):
         logger.info("Detecting shorts...")
@@ -154,7 +165,7 @@ class DropBotControlWidget(QWidget):
     def detect_shorts_response(self, shorts_dict):
         print(shorts_dict)
         shorts_list = json.loads(shorts_dict).get('Shorts_detected', [])
-        self.status_label.update_shorts(shorts_list)
+        self.show_shorts_popup(shorts_list)
 
     def show_warning(self, title, message):
         QMessageBox.information(self, title, message)
@@ -166,6 +177,7 @@ class DropBotControlWidget(QWidget):
         elif "connected" in topic:
             self.status_label.update_connection_status('connected')
         elif "chip_inserted" in topic:
+            publish_message("Detect shorts", "dropbot/ui/notifications/detect_shorts_triggered")
             self.status_label.update_chip_status('chip_inserted')
         elif "chip_not_inserted" in topic:
             self.status_label.update_chip_status('chip_removed')
@@ -177,6 +189,12 @@ class DropBotControlWidget(QWidget):
             self.detect_shorts_response(body)
         elif "halted" in topic:
             self.show_halted_popup()
+        elif "voltage_changed" in topic:
+            voltage = json.loads(body)
+            self.status_label.update_voltage_reading(voltage)
+        elif "capacitance_changed" in topic:
+            capacitance = json.loads(body).get('Capacitance', 0)
+            self.status_label.update_capacitance_reading(capacitance)
 
     def create_dropbot_status_listener_actor(self):
 
@@ -185,7 +203,7 @@ class DropBotControlWidget(QWidget):
             logger.info(f"UI_LISTENER: Received message: {message} from topic: {topic}")
             topic_elements = topic.split("/")
             if topic_elements[-1] in ['connected', 'disconnected', 'chip_inserted', 'chip_not_inserted', 'no_power',
-                                      'no_dropbot_available', 'shorts_detected', 'halted']:
+                                      'no_dropbot_available', 'shorts_detected', 'halted', 'voltage_changed', 'capacitance_changed']:
                 self.signal_received.emit(f"{topic}, {message}")
 
         return dropbot_status_listener

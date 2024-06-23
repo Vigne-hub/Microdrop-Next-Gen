@@ -50,6 +50,12 @@ class DropbotService(HasTraits):
             func=functools.partial(check_dropbot_devices_available, hwids_to_check),
             trigger=IntervalTrigger(seconds=2),
         )
+
+        self.voltage_scheduler = BackgroundScheduler()
+        self.voltage_scheduler.add_job(
+            func=self.poll_voltage,
+            trigger=IntervalTrigger(seconds=3),
+        )
         scheduler.add_listener(self.on_dropbot_port_found, EVENT_JOB_EXECUTED)
         self.scheduler = scheduler
 
@@ -60,7 +66,6 @@ class DropbotService(HasTraits):
         logger.info(f"Emitted: {message}")
 
     #### Dropbot mike actions ####
-    @dramatiq.actor
     def poll_voltage(self):
         """
         Periodically polls for the current voltage from the Dropbot and emits
@@ -69,11 +74,10 @@ class DropbotService(HasTraits):
         if self.proxy is not None:
             try:
                 voltage = self.proxy.high_voltage()
-                self.emit_signal(DBVoltageChangedModel(Signal='voltage_changed', voltage=str(voltage)))
+                publish_message(topic='dropbot/ui/signals/voltage_changed', message=f'{voltage}')
             except OSError:  # No dropbot connected
                 pass
 
-    @dramatiq.actor
     def set_voltage(self, voltage: int):
         """
         Sets the voltage of the Dropbot to the specified value.
@@ -86,7 +90,6 @@ class DropbotService(HasTraits):
             self.proxy.voltage = voltage
         logger.info("Voltage set to %d", voltage)
 
-    @dramatiq.actor
     def set_frequency(self, frequency: int):
         """
         Sets the frequency of the Dropbot to the specified value.
@@ -99,7 +102,6 @@ class DropbotService(HasTraits):
             self.proxy.frequency = frequency
         logger.info("Frequency set to %d", frequency)
 
-    @dramatiq.actor
     def set_hv(self, on: bool):
         """
         Enables or disables the high voltage output of the Dropbot.
@@ -110,7 +112,6 @@ class DropbotService(HasTraits):
         if self.proxy is not None:
             self.proxy.hv_output_enabled = on
 
-    @dramatiq.actor
     def get_channels(self) -> NDArray[Shape['*, 1'], UInt8]:
         """
         Retrieves and returns the current state of all channels from the Dropbot,
@@ -128,7 +129,6 @@ class DropbotService(HasTraits):
             self.emit_signal(DBChannelsChangedModel(Signal='channels_changed', channels=str(channels)))
         return channels
 
-    @dramatiq.actor
     def set_channels(self, channels: NDArray[Shape['*, 1'], UInt8]):
         """
         Sets the state of all channels in the Dropbot to the specified array and
@@ -143,7 +143,6 @@ class DropbotService(HasTraits):
         self.proxy.state_of_channels = np.array(channels)
         self.last_state = self.get_channels()
 
-    @dramatiq.actor
     def set_channel_single(self, channel: int, state: bool):
         """
         Sets the state of a single channel.
@@ -158,7 +157,6 @@ class DropbotService(HasTraits):
         channels[channel] = state
         self.set_channels(channels)
 
-    @dramatiq.actor
     def droplet_search(self, threshold: float = 0):
         """
         Searches for droplets above a specified capacitance threshold and updates
@@ -189,10 +187,15 @@ class DropbotService(HasTraits):
 
     def on_disconnected(self):
         self.scheduler.resume()
+        self.voltage_scheduler.pause()
         publish_message(topic='dropbot/ui/signals/disconnected', message='DropBot disconnected')
 
     def on_connected(self):
         self.scheduler.pause()
+        if self.voltage_scheduler.running:
+            self.voltage_scheduler.resume()
+        else:
+            self.voltage_scheduler.start()
         publish_message(topic='dropbot/ui/signals/connected', message='DropBot connected')
 
     def _make_serial_proxy(self):
@@ -264,7 +267,7 @@ class DropbotService(HasTraits):
         self.proxy.signals.signal('output_enabled').connect(self.output_state_changed_wrapper)
         self.proxy.signals.signal('output_disabled').connect(self.output_state_changed_wrapper)
         self.proxy.signals.signal('halted').connect(self.halted_event_wrapper)
-        self.proxy.signals.signal('shorts-detected').connect(self.shorts_detected_event_wrapper)
+        self.proxy.monitor.signals.signal('capacitance-updated').connect(self.capacitance_updated_wrapper)
 
     def output_state_changed_wrapper(self, signal: dict[str, str]):
         if signal['event'] == 'output_enabled':
@@ -274,11 +277,13 @@ class DropbotService(HasTraits):
         else:
             logger.warn(f"Unknown signal received: {signal}")
 
-    def halted_event_wrapper(self, signal: dict[str, str]):
+    def halted_event_wrapper(self):
         publish_message(topic='dropbot/ui/signals/halted', message='DropBot halted')
 
-    def shorts_detected_event_wrapper(self, signal: dict[str, str]):
-        publish_message(topic='dropbot/ui/signals/shorts_detected', message='Shorts detected')
+    def capacitance_updated_wrapper(self, signal: dict[str, str]):
+        print(signal)
+        capacitance = signal['capacitance']
+        publish_message(topic='dropbot/ui/signals/capacitance_updated', message=json.dumps({'capacitance': {capacitance}}))
 
     def detect_shorts(self):
         if self.proxy is not None:
