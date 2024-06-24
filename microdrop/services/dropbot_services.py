@@ -33,6 +33,7 @@ class DropbotService(HasTraits):
         self.connected = False
         self.chip_inserted = False
         self.power_in = False
+        self.realtime_enabled = True
 
         # actor_topics
         self.actor_topics_dict = {
@@ -52,6 +53,9 @@ class DropbotService(HasTraits):
         pass  # add actor wrappers here
 
     def start_device_monitoring(self, hwids_to_check):
+        self.halted_check_scheduler = BackgroundScheduler()
+        self.halted_check_scheduler.add_job(self.check_halted, trigger=IntervalTrigger(seconds=2))
+
         scheduler = BackgroundScheduler()
         scheduler.add_job(
             func=functools.partial(check_dropbot_devices_available, hwids_to_check),
@@ -102,6 +106,11 @@ class DropbotService(HasTraits):
                                         event_mask=EVENT_CHANNELS_UPDATED |
                                                    EVENT_SHORTS_DETECTED |
                                                    EVENT_ENABLE)
+                if self.halted_check_scheduler.running:
+                    self.halted_check_scheduler.resume()
+                else:
+                    self.halted_check_scheduler.start()
+
             except (IOError, AttributeError):
                 self.connected = False
                 publish_message(topic='dropbot/signals/connection/warnings/no_dropbot_available',
@@ -213,3 +222,13 @@ class DropbotService(HasTraits):
             while len(formatted_num) < significant_digits + 1:
                 formatted_num += '0'
             return formatted_num
+
+    def check_halted(self):
+        if self.proxy is not None:
+            if not self.proxy.hv_output_enabled and self.realtime_enabled:
+                publish_message(topic='dropbot/signals/halted', message='DropBot halted')
+                self.halted_check_scheduler.pause()
+            else:
+                pass
+        else:
+            pass
