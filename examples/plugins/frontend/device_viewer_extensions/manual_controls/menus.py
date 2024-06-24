@@ -1,6 +1,8 @@
 from pyface.tasks.action.api import SGroup, DockPaneAction
 
 PKG = '.'.join(__name__.split('.')[:-1])
+
+
 def menu_factory():
     """
     Create a menu for the Manual Controls
@@ -15,5 +17,5 @@ def menu_factory():
             dock_pane_id=PKG + ".dock_pane",
             name="Manual Controls Help",
             method="show_help"
-    ),
+        ),
         id="example_help")
