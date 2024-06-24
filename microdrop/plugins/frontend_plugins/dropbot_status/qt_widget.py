@@ -20,21 +20,26 @@ class DropBotStatusLabel(QLabel):
     def __init__(self):
         super().__init__()
         self.setFixedSize(500, 100)
+
         self.status_bar = QHBoxLayout()
+
         self.dropbot_icon = QLabel()
         self.dropbot_icon.setFixedSize(100, 100)
+        self.status_bar.addWidget(self.dropbot_icon)
+
         self.text_layout = QVBoxLayout()
         self.dropbot_connection_status = QLabel("Disconnected")
         self.dropbot_chip_status = QLabel("No chip inserted")
         self.dropbot_capacitance_reading = QLabel("Capacitance: 0 pF")
         self.dropbot_voltage_reading = QLabel("Voltage: 0 V")
 
-        self.status_bar.addWidget(self.dropbot_icon)
         self.text_layout.addWidget(self.dropbot_connection_status)
         self.text_layout.addWidget(self.dropbot_chip_status)
         self.text_layout.addWidget(self.dropbot_capacitance_reading)
         self.text_layout.addWidget(self.dropbot_voltage_reading)
+
         self.status_bar.addLayout(self.text_layout)
+
         self.setLayout(self.status_bar)
 
         self.update_status_icon('disconnected', self.red)  # Default to disconnected
@@ -76,7 +81,7 @@ class DropBotStatusLabel(QLabel):
         self.dropbot_chip_status.setText(chip_status.capitalize())
 
     def update_capacitance_reading(self, capacitance):
-        self.dropbot_capacitance_reading.setText(f"Capacitance: {capacitance} pF")
+        self.dropbot_capacitance_reading.setText(f"Capacitance: {capacitance} F")
 
     def update_voltage_reading(self, voltage):
         self.dropbot_voltage_reading.setText(f"Voltage: {voltage} V")
@@ -84,11 +89,15 @@ class DropBotStatusLabel(QLabel):
 
 class DropBotControlWidget(QWidget):
     signal_received = Signal(str)
-    device_connected = False
-    halted_paths = []
 
     def __init__(self):
         super().__init__()
+        # Subscribe to backend messages
+        self.actor_topics_dict = {"dropbot_status_listener": ["dropbot/signals/#"]}
+
+        # create listener actor:
+        self.dropbot_status_listener = self.create_dropbot_status_listener_actor()
+
         self.layout = QVBoxLayout(self)
 
         self.status_label = DropBotStatusLabel()
@@ -98,20 +107,16 @@ class DropBotControlWidget(QWidget):
         self.detect_shorts_button.clicked.connect(self.detect_shorts_triggered)
         self.layout.addWidget(self.detect_shorts_button)
 
-        self.signal_received.connect(self.handle_signal)
-
-        # Subscribe to backend messages
-        self.actor_topics_dict = {"dropbot_status_listener": ["dropbot/ui/#"]}
-
-        # create actors:
-        self.dropbot_status_listener = self.create_dropbot_status_listener_actor()
+        self.signal_received.connect(self.signal_handler)
 
         self.setup_halted_popup()
 
     def setup_halted_popup(self):
         self.halted_popup_layout = QVBoxLayout()
+
         self.halted_popup = QMessageBox()
         self.halted_popup.setText("Please Unplug USB and Power Cables and Plug the Power then the USB Cable Back In")
+
         self.halted_image = QLabel()
         self.halted_popup_layout.addWidget(self.halted_image)
 
@@ -168,16 +173,18 @@ class DropBotControlWidget(QWidget):
         self.show_shorts_popup(shorts_list)
 
     def show_warning(self, title, message):
-        QMessageBox.information(self, title, message)
+        self.warning_popup = QMessageBox()
+        self.warning_popup.setWindowTitle(title)
+        self.warning_popup.setText(message)
+        self.warning_popup.exec()
 
-    def handle_signal(self, message):
+    def signal_handler(self, message):
         topic, body = message.split(", ", 1)
         if "disconnected" in topic:
             self.status_label.update_connection_status('disconnected')
         elif "connected" in topic:
             self.status_label.update_connection_status('connected')
         elif "chip_inserted" in topic:
-            publish_message("Detect shorts", "dropbot/ui/notifications/detect_shorts_triggered")
             self.status_label.update_chip_status('chip_inserted')
         elif "chip_not_inserted" in topic:
             self.status_label.update_chip_status('chip_removed')
@@ -189,12 +196,11 @@ class DropBotControlWidget(QWidget):
             self.detect_shorts_response(body)
         elif "halted" in topic:
             self.show_halted_popup()
-        elif "voltage_changed" in topic:
-            voltage = json.loads(body)
-            self.status_label.update_voltage_reading(voltage)
-        elif "capacitance_changed" in topic:
-            capacitance = json.loads(body).get('Capacitance', 0)
+        elif "capacitance_updated" in topic:
+            capacitance = json.loads(body).get('capacitance', 0)
+            voltage = json.loads(body).get('voltage', 0)
             self.status_label.update_capacitance_reading(capacitance)
+            self.status_label.update_voltage_reading(voltage)
 
     def create_dropbot_status_listener_actor(self):
 
@@ -203,7 +209,8 @@ class DropBotControlWidget(QWidget):
             logger.info(f"UI_LISTENER: Received message: {message} from topic: {topic}")
             topic_elements = topic.split("/")
             if topic_elements[-1] in ['connected', 'disconnected', 'chip_inserted', 'chip_not_inserted', 'no_power',
-                                      'no_dropbot_available', 'shorts_detected', 'halted', 'voltage_changed', 'capacitance_changed']:
+                                      'no_dropbot_available', 'shorts_detected', 'halted', 'capacitance_updated']:
+
                 self.signal_received.emit(f"{topic}, {message}")
 
         return dropbot_status_listener
