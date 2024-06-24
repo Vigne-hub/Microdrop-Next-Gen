@@ -59,7 +59,7 @@ class MainWindowController:
         self.proxy: DropbotSerialProxy = None
 
         # setup the scheduler for DropBot detection
-        self.dropbot_job_submitted = False # used to check if job is already submitted
+        self.dropbot_job_submitted = False  # used to check if job is already submitted
         scheduler = BackgroundScheduler()
 
         # not used rn
@@ -83,6 +83,25 @@ class MainWindowController:
         self.make_serial_proxy = self._make_serial_proxy()
 
         self.actor_topics_dict = {"ui_listener_actor": ["dropbot/signals/+"]}
+
+        self.voltage_scheduler = BackgroundScheduler()
+
+        self.voltage_scheduler.add_job(
+            func=self.poll_voltage,
+            trigger=IntervalTrigger(seconds=1),
+        )
+
+    def poll_voltage(self):
+        """
+        Periodically polls for the current voltage from the Dropbot and emits
+        the `voltage_changed` signal with the fetched voltage value.
+        """
+        if self.proxy is not None:
+            try:
+                voltage = self.proxy.high_voltage()
+                print(voltage)
+            except OSError:  # No dropbot connected
+                pass
 
     def connect_button_clicked(self):
         """
@@ -182,10 +201,17 @@ class MainWindowController:
             topic = topic.split("/")
 
             if topic[-1] == "connected":
+
+                if not self.voltage_scheduler.running:
+                    self.voltage_scheduler.start()
+                else:
+                    self.voltage_scheduler.resume()
+
                 self.window.show_popup_signal.emit("DropBot connected")
 
             if topic[-1] == "disconnected":
                 if self.proxy.monitor is not None:
+                    self.voltage_scheduler.pause()
                     self.window.show_popup_signal.emit("DropBot disconnected")
                     self.proxy.terminate()
                     self.proxy.monitor = None

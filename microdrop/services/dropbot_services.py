@@ -54,8 +54,10 @@ class DropbotService(HasTraits):
         self.voltage_scheduler = BackgroundScheduler()
         self.voltage_scheduler.add_job(
             func=self.poll_voltage,
-            trigger=IntervalTrigger(seconds=3),
+            trigger=IntervalTrigger(seconds=1),
+            max_instances=2,
         )
+
         scheduler.add_listener(self.on_dropbot_port_found, EVENT_JOB_EXECUTED)
         self.scheduler = scheduler
 
@@ -74,7 +76,8 @@ class DropbotService(HasTraits):
         if self.proxy is not None:
             try:
                 voltage = self.proxy.high_voltage()
-                publish_message(topic='dropbot/ui/signals/voltage_changed', message=f'{voltage}')
+                publish_message(topic='dropbot/ui/signals/voltage_changed', message=f'{voltage}'[:4])
+                #print(voltage)
             except OSError:  # No dropbot connected
                 pass
 
@@ -186,12 +189,18 @@ class DropbotService(HasTraits):
         self.make_serial_proxy.send(port_name)
 
     def on_disconnected(self):
-        self.scheduler.resume()
-        self.voltage_scheduler.pause()
-        publish_message(topic='dropbot/ui/signals/disconnected', message='DropBot disconnected')
+        if self.proxy is not None:
+            if self.proxy.monitor is not None:
+                self.proxy.terminate()
+                self.proxy.monitor = None
+
+                self.scheduler.resume()
+                self.voltage_scheduler.pause()
+                publish_message(topic='dropbot/ui/signals/disconnected', message='DropBot disconnected')
+        else:
+            print("Proxy is None")
 
     def on_connected(self):
-        self.scheduler.pause()
         if self.voltage_scheduler.running:
             self.voltage_scheduler.resume()
         else:
@@ -244,13 +253,7 @@ class DropbotService(HasTraits):
                 self.on_connected()
 
             if topic[-1] == "disconnected":
-                if self.proxy is not None:
-                    if self.proxy.monitor is not None:
-                        self.proxy.terminate()
-                        self.proxy.monitor = None
-                        self.on_disconnected()
-                else:
-                    print("Proxy is None")
+                    self.on_disconnected()
 
             if topic[-1] == "detect_shorts_triggered":
                 self.detect_shorts()
