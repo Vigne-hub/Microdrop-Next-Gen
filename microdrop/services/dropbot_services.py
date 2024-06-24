@@ -134,7 +134,7 @@ class DropbotService(HasTraits):
         self.proxy.signals.signal('output_enabled').connect(self.output_state_changed_wrapper)
         self.proxy.signals.signal('output_disabled').connect(self.output_state_changed_wrapper)
         self.proxy.signals.signal('halted').connect(self.halted_event_wrapper)
-        self.proxy.monitor.signals.signal('capacitance-updated').connect(self.capacitance_updated_wrapper)
+        self.proxy.signals.signal('capacitance-updated').connect(self.capacitance_updated_wrapper)
 
     def output_state_changed_wrapper(self, signal: dict[str, str]):
         if signal['event'] == 'output_enabled':
