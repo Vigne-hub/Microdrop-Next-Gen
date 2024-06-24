@@ -98,7 +98,7 @@ class DropbotService(HasTraits):
                 self.proxy.update_state(capacitance_update_interval_ms=1000,
                                         hv_output_selected=True,
                                         hv_output_enabled=True,
-                                        voltage=110,
+                                        voltage=75,
                                         event_mask=EVENT_CHANNELS_UPDATED |
                                                    EVENT_SHORTS_DETECTED |
                                                    EVENT_ENABLE)
@@ -141,7 +141,6 @@ class DropbotService(HasTraits):
 
     def capacitance_updated_wrapper(self, signal: dict[str, str]):
         capacitance = self.format_significant_digits(signal['new_value'], 4)
-        print(capacitance)
         voltage = str(round(float(signal['V_a']), 2))
         publish_message(topic='dropbot/signals/capacitance_updated',
                         message=json.dumps({'capacitance': capacitance, 'voltage': voltage}))
@@ -160,7 +159,7 @@ class DropbotService(HasTraits):
                     self.monitor_scheduler.resume()
                     logger.info("Resumed DropBot monitor")
             else:
-                print("Proxy is None")
+                logger.info("Proxy is None")
         else:
             logger.info("Dropbot already disconnected")
 
@@ -206,7 +205,6 @@ class DropbotService(HasTraits):
     def format_significant_digits(self, number_str, significant_digits):
         # Convert the string to a float
         number = float(number_str)
-        print(number)
         # Format the number to keep a specified number of significant digits without scientific notation
         if number == 0:
             return '0.' + '0' * (significant_digits - 1)  # Handle the case where number is zero

@@ -168,7 +168,6 @@ class DropBotControlWidget(QWidget):
         publish_message("Detect shorts button triggered", "dropbot/ui/notifications/detect_shorts_triggered")
 
     def detect_shorts_response(self, shorts_dict):
-        print(shorts_dict)
         shorts_list = json.loads(shorts_dict).get('Shorts_detected', [])
         self.show_shorts_popup(shorts_list)
 
