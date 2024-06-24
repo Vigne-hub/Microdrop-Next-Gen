@@ -189,7 +189,6 @@ class DropbotService(HasTraits):
 
             if topic[-1] == "detect_shorts_triggered":
                 self.detect_shorts()
-                self.proxy.halt()
 
         return dropbot_backend_listener
 
