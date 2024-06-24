@@ -108,60 +108,56 @@ class DropBotControlWidget(QWidget):
         self.layout.addWidget(self.detect_shorts_button)
 
         self.signal_received.connect(self.signal_handler)
-
-        self.setup_halted_popup()
-
-    def setup_halted_popup(self):
-        self.halted_popup_layout = QVBoxLayout()
-
-        self.halted_popup = QMessageBox()
-        self.halted_popup.setText("Please Unplug USB and Power Cables and Plug the Power then the USB Cable Back In")
-
-        self.halted_image = QLabel()
-        self.halted_popup_layout.addWidget(self.halted_image)
-
-        self.button = QPushButton('Next')
-        self.button.clicked.connect(self.next_image)
-        self.halted_popup_layout.addWidget(self.button)
-
-        # Automatically find all images in the images directory
         self.image_dir = os.path.join(os.path.dirname(__file__), "images")
-        self.images = [os.path.join(self.image_dir, f) for f in os.listdir(self.image_dir) if f.endswith('.png') and 'power' in f]
-        self.current_image = 0
-
-        # Load the first image
-        self.update_image()
-        self.halted_popup.setLayout(self.halted_popup_layout)
-
-    def update_image(self):
-        pixmap = QPixmap(self.images[self.current_image])
-        self.halted_image.setPixmap(pixmap.scaled(320, 320, Qt.AspectRatioMode.KeepAspectRatio))
-
-    def next_image(self):
-        if self.current_image < len(self.images) - 1:
-            self.current_image += 1
-            self.update_image()
-            if self.current_image == len(self.images) - 1:
-                self.button.setText('Exit')
-        else:
-            self.halted_popup.close()
 
     def show_halted_popup(self):
+        self.halted_popup = QMessageBox()
+        self.halted_popup.setWindowTitle("ERROR: DropBot Halted")
+        self.halted_popup.setButtonText(QMessageBox.StandardButton.Ok, "Close")
+        self.halted_popup.setText("DropBot has been halted because output current was exceeded."
+                                  "\n\n"
+                                  "All channels have been disabled and high voltage has been turned off until "
+                                  "the DropBot is restarted (e.g. unplug all cables and plug back in)")
+
         self.halted_popup.exec()
 
     def show_shorts_popup(self, shorts):
-        self.shorts_popup_layout = QVBoxLayout()
         self.shorts_popup = QMessageBox()
         self.shorts_popup.setFixedSize(300, 200)
-        self.shorts_popup.setWindowTitle("Shorts Detected")
-        self.shorts_popup.setLayout(self.shorts_popup_layout)
+        self.shorts_popup.setWindowTitle("ERROR: Shorts Detected")
+        self.shorts_popup.setButtonText(QMessageBox.StandardButton.Ok, "Close")
         if len(shorts) > 0:
             shorts_str = str(shorts).strip('[]')
-            self.shorts_popup.setText(f"Electrodes: {shorts_str}")
+            self.shorts_popup.setText(f"Shorts were detected on the following channels: \n \n"
+                                      f"[{shorts_str}] \n \n"
+                                      f"You may continue using the DropBot, but the affected channels have "
+                                      f"been disabled until the DropBot is restarted (e.g. unplug all cabled and plug back in).")
         else:
-            self.shorts_popup.setText("None")
+            self.shorts_popup.setWindowTitle("Short Detection Complete")
+            self.shorts_popup.setText("No shorts were detected.")
 
         self.shorts_popup.exec()
+
+    def show_no_power_popup(self):
+        self.power_image = os.path.join(self.image_dir, "dropbot-power.png")
+        self.usb_image = os.path.join(self.image_dir, "dropbot-power-usb.png")
+
+        self.no_power_popup = QMessageBox()
+        self.no_power_popup.setStandardButtons(QMessageBox.StandardButton.Ok)
+        self.no_power_popup.setButtonText(QMessageBox.StandardButton.Ok, "Close")
+        self.no_power_popup.setWindowTitle("ERROR: No Power")
+        print(f"Power image: {self.power_image}")
+        print(f"USB image path: {self.usb_image}")
+        html_content = f"""
+        DropBot currently has no power supply connected. <br><br>
+        Please unplug all cables. <br>
+        Plug cables in this order:<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;1. <b>plug in power supply cable</b> <img src='file:///{self.power_image}'><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;2. <b>plug in USB cable</b> <img src='file:///{self.usb_image}'>
+        """
+
+        self.no_power_popup.setText(html_content)
+        self.no_power_popup.exec()
 
     def detect_shorts_triggered(self):
         logger.info("Detecting shorts...")
@@ -188,7 +184,7 @@ class DropBotControlWidget(QWidget):
         elif "chip_not_inserted" in topic:
             self.status_label.update_chip_status('chip_removed')
         elif "no_power" in topic:
-            self.show_warning('WARNING: no_power', f'{body}')
+            self.show_no_power_popup()
         elif "no_dropbot_available" in topic:
             self.show_warning('WARNING: no_dropbot_available', f'{body}')
         elif "shorts_detected" in topic:
