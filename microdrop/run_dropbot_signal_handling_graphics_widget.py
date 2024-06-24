@@ -3,6 +3,7 @@ from PySide6.QtWidgets import QApplication
 from dramatiq import get_broker, Worker
 
 from microdrop_utils.dramatiq_pub_sub_helpers import MessageRouterActor
+from microdrop_utils.rmq_purger import RmqPurger
 
 
 def main():
@@ -19,8 +20,8 @@ def main():
     app = QApplication(sys.argv)
 
     # instantiate the classes
-    dropbot_service = DropbotService()
     dropbot_control_widget = DropBotControlWidget()
+    dropbot_service = DropbotService()
 
     # assign topics to actors
     # initialize pubsub actor
@@ -38,8 +39,8 @@ def main():
     # show the window
     dropbot_control_widget.show()
 
-    # start dropbot search
-    dropbot_service.scheduler.start()
+    purger = RmqPurger()
+    app.aboutToQuit.connect(purger.purge_all_queues)
 
     sys.exit(app.exec())
 
@@ -53,7 +54,6 @@ if __name__ == "__main__":
             BROKER.middleware.remove(el)
 
     worker = Worker(broker=BROKER)
-
 
     BROKER.flush_all()
     worker.start()
