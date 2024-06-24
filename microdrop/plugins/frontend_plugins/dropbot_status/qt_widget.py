@@ -1,7 +1,8 @@
 import json
 import os
-from PySide6.QtWidgets import QApplication, QLabel, QWidget, QVBoxLayout, QPushButton, QMessageBox, QHBoxLayout, QDialog
-from PySide6.QtCore import Qt, Signal, QTimer
+from PySide6.QtWidgets import QApplication, QLabel, QWidget, QVBoxLayout, QPushButton, QMessageBox, QHBoxLayout, \
+    QDialog, QTextBrowser
+from PySide6.QtCore import Qt, Signal, QTimer, QFile, QTextStream, QIODevice
 from PySide6.QtGui import QPixmap
 import sys
 import dramatiq
@@ -139,25 +140,17 @@ class DropBotControlWidget(QWidget):
         self.shorts_popup.exec()
 
     def show_no_power_popup(self):
-        self.power_image = os.path.join(self.image_dir, "dropbot-power.png")
-        self.usb_image = os.path.join(self.image_dir, "dropbot-power-usb.png")
+        self.no_power_dialog = QDialog()
+        self.no_power_dialog.setWindowTitle("ERROR: No Power")
+        self.no_power_dialog.setFixedSize(370, 380)
+        layout = QVBoxLayout()
+        self.no_power_dialog.setLayout(layout)
 
-        self.no_power_popup = QMessageBox()
-        self.no_power_popup.setStandardButtons(QMessageBox.StandardButton.Ok)
-        self.no_power_popup.setButtonText(QMessageBox.StandardButton.Ok, "Close")
-        self.no_power_popup.setWindowTitle("ERROR: No Power")
-        print(f"Power image: {self.power_image}")
-        print(f"USB image path: {self.usb_image}")
-        html_content = f"""
-        DropBot currently has no power supply connected. <br><br>
-        Please unplug all cables. <br>
-        Plug cables in this order:<br>
-        &nbsp;&nbsp;&nbsp;&nbsp;1. <b>plug in power supply cable</b> <img src='file:///{self.power_image}'><br>
-        &nbsp;&nbsp;&nbsp;&nbsp;2. <b>plug in USB cable</b> <img src='file:///{self.usb_image}'>
-        """
+        self.browser = QTextBrowser(self)
+        self.load_html(r"C:\Users\mjkwe\PycharmProjects\Microdrop-Next-Gen\microdrop\plugins\frontend_plugins\dropbot_status\html_files\no_power.html")
 
-        self.no_power_popup.setText(html_content)
-        self.no_power_popup.exec()
+        layout.addWidget(self.browser)
+        self.no_power_dialog.exec()
 
     def detect_shorts_triggered(self):
         logger.info("Detecting shorts...")
@@ -209,6 +202,13 @@ class DropBotControlWidget(QWidget):
                 self.signal_received.emit(f"{topic}, {message}")
 
         return dropbot_status_listener
+
+    def load_html(self, file_path):
+        file = QFile(file_path)
+        if file.open(QFile.OpenModeFlag.ReadOnly | QFile.OpenModeFlag.Text):
+            stream = QTextStream(file)
+            self.browser.setHtml(stream.readAll())
+        file.close()
 
 
 if __name__ == "__main__":
