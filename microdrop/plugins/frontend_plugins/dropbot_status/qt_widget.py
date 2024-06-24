@@ -142,19 +142,29 @@ class DropBotControlWidget(QWidget):
     def show_no_power_popup(self):
         self.no_power_dialog = QDialog()
         self.no_power_dialog.setWindowTitle("ERROR: No Power")
-        self.no_power_dialog.setFixedSize(370, 380)
+        self.no_power_dialog.setFixedSize(370, 250)
         layout = QVBoxLayout()
         self.no_power_dialog.setLayout(layout)
 
         self.browser = QTextBrowser(self)
-        self.load_html(r"C:\Users\mjkwe\PycharmProjects\Microdrop-Next-Gen\microdrop\plugins\frontend_plugins\dropbot_status\html_files\no_power.html")
+        self.load_html(
+            r"C:\Users\mjkwe\PycharmProjects\Microdrop-Next-Gen\microdrop\plugins\frontend_plugins\dropbot_status\html_files\no_power.html")
+
+        self.no_power_retry_button = QPushButton("Retry")
+        self.no_power_retry_button.clicked.connect(self.signal_retry_connect)
 
         layout.addWidget(self.browser)
+        layout.addWidget(self.no_power_retry_button)
         self.no_power_dialog.exec()
 
     def detect_shorts_triggered(self):
         logger.info("Detecting shorts...")
         publish_message("Detect shorts button triggered", "dropbot/ui/notifications/detect_shorts_triggered")
+
+    def signal_retry_connect(self):
+        logger.info("Retrying connection...")
+        publish_message("Retry connection button triggered", "dropbot/ui/notifications/retry_connection_triggered")
+        self.no_power_dialog.close()
 
     def detect_shorts_response(self, shorts_dict):
         shorts_list = json.loads(shorts_dict).get('Shorts_detected', [])
@@ -198,7 +208,6 @@ class DropBotControlWidget(QWidget):
             topic_elements = topic.split("/")
             if topic_elements[-1] in ['connected', 'disconnected', 'chip_inserted', 'chip_not_inserted', 'no_power',
                                       'no_dropbot_available', 'shorts_detected', 'halted', 'capacitance_updated']:
-
                 self.signal_received.emit(f"{topic}, {message}")
 
         return dropbot_status_listener

@@ -30,9 +30,8 @@ logger = get_logger(__name__)
 class DropbotService(HasTraits):
 
     def __init__(self):
-        self.connected = False
+        self.no_power = True
         self.chip_inserted = False
-        self.power_in = False
         self.realtime_enabled = True
 
         # actor_topics
@@ -72,9 +71,9 @@ class DropbotService(HasTraits):
         logger.info("DropBot port found")
         self.monitor_scheduler.pause()
         logger.info("Paused DropBot monitor")
-        port_name = str(event.retval)
-        logger.info('Attempting to connect to DropBot on port: %s', port_name)
-        self.connect_to_dropbot(port_name)
+        self.port_name = str(event.retval)
+        logger.info('Attempting to connect to DropBot on port: %s', self.port_name)
+        self.connect_to_dropbot(port_name=self.port_name)
 
     def connect_to_dropbot(self, port_name):
         """
@@ -88,40 +87,54 @@ class DropbotService(HasTraits):
         - No power to DropBot - power supply not connected
         """
 
-        if not self.connected:
+        if self.proxy is None or getattr(self, 'proxy.monitor', None) is None:
+
             logger.info("Dropbot not connected. Attempting to connect")
+
+            ############################### Attempt to make a proxy object #############################
+
             try:
                 logger.info(f"Attempting to create DropBot serial proxy on port {port_name}")
                 self.proxy = DropbotSerialProxy(port=port_name)
-                self.connected = True
-                logger.info(f"Connected to DropBot on port {port_name}")
-                logger.info(f"Checking if chip is inserted AND connecting DropBot BLINKER signals to handlers")
-                self.setup_dropbot()  # Setup the DropBot especially blinker signal trigger follow-up methods
-
-                # Initial Proxy State Update
-                self.proxy.update_state(capacitance_update_interval_ms=1000,
-                                        hv_output_selected=True,
-                                        hv_output_enabled=True,
-                                        voltage=75,
-                                        event_mask=EVENT_CHANNELS_UPDATED |
-                                                   EVENT_SHORTS_DETECTED |
-                                                   EVENT_ENABLE)
-                if self.halted_check_scheduler.running:
-                    self.halted_check_scheduler.resume()
-                else:
-                    self.halted_check_scheduler.start()
+                # this will send out a connected signal to the message router is successful
 
             except (IOError, AttributeError):
-                self.connected = False
+
                 publish_message(topic='dropbot/signals/connection/warnings/no_dropbot_available',
                                 message='No DropBot available for connection')
                 logger.error("FAILED DROPBOT CONNECTION: No DropBot available for connection")
+
             except dropbot.proxy.NoPower:
-                self.connected = False
-                publish_message(topic='dropbot/signals/connection/warnings/no_power', message='No power to DropBot')
-                logger.error("FAILED DROPBOT CONNECTION: No power to DropBot")
+                self.on_no_power()
+
+            ################################# Post connection steps ###################################
+
+            self.no_power = False
+            logger.info(f"Connected to DropBot on port {port_name}")
+            logger.info(f"Checking if chip is inserted AND connecting DropBot BLINKER signals to handlers")
+            self.setup_dropbot()  # Setup the DropBot especially blinker signal trigger follow-up methods
+
+            # Initial Proxy State Update
+            self.proxy.update_state(capacitance_update_interval_ms=1000,
+                                    hv_output_selected=True,
+                                    hv_output_enabled=True,
+                                    voltage=75,
+                                    event_mask=EVENT_CHANNELS_UPDATED |
+                                               EVENT_SHORTS_DETECTED |
+                                               EVENT_ENABLE)
+
+            if self.halted_check_scheduler.running:
+                self.halted_check_scheduler.resume()
+            else:
+                self.halted_check_scheduler.start()
+
+        # if the dropbot is already connected
         else:
             logger.info("Dropbot already connected on port %s", port_name)
+
+    def on_no_power(self):
+        publish_message(topic='dropbot/signals/connection/warnings/no_power', message='No power to DropBot')
+        logger.error("FAILED DROPBOT CONNECTION: No power to DropBot")
 
     def setup_dropbot(self):
         OUTPUT_ENABLE_PIN = 22
@@ -157,20 +170,14 @@ class DropbotService(HasTraits):
     def on_disconnected(self):
         logger.info(
             "DropBot disconnected \n Attempting to terminate proxy and resume monitoring to find DropBot again.")
-        if self.connected:
-            if self.proxy is not None:
-                if self.proxy.monitor is not None:
-                    self.connected = False
-                    self.proxy.terminate()
-                    logger.info("Proxy terminated")
-                    self.proxy.monitor = None
 
-                    self.monitor_scheduler.resume()
-                    logger.info("Resumed DropBot monitor")
-            else:
-                logger.info("Proxy is None")
-        else:
-            logger.info("Dropbot already disconnected")
+        if self.proxy is not None:
+            if self.proxy.monitor is not None:
+                self.proxy.terminate()
+                logger.info("Proxy terminated")
+                self.proxy.monitor = None
+                self.monitor_scheduler.resume()
+                logger.info("Resumed DropBot monitor")
 
     def create_dropbot_backend_listener_actor(self):
         """
@@ -194,10 +201,14 @@ class DropbotService(HasTraits):
             topic = topic.split("/")
 
             if topic[-1] == "disconnected":
-                self.on_disconnected()
+                if not self.no_power:
+                    self.on_disconnected()
 
             if topic[-1] == "detect_shorts_triggered":
                 self.detect_shorts()
+
+            if topic[-1] == "retry_connection_triggered":
+                self.monitor_scheduler.resume()
 
         return dropbot_backend_listener
 
@@ -225,6 +236,7 @@ class DropbotService(HasTraits):
 
     def check_halted(self):
         if self.proxy is not None:
+            # the dropbot is halted if the high voltage output is not enabled and the realtime is enabled
             if not self.proxy.hv_output_enabled and self.realtime_enabled:
                 publish_message(topic='dropbot/signals/halted', message='DropBot halted')
                 self.halted_check_scheduler.pause()
