@@ -62,8 +62,6 @@ class MainWindowController:
         self.dropbot_job_submitted = False # used to check if job is already submitted
         scheduler = BackgroundScheduler()
 
-        # not used rn
-        self.dropbot_search_submitted = False
         # Add a job to the scheduler with the specific argument
         hwids_to_check = ["VID:PID=16C0:"]  # the teensy id (the dropbot device)
         scheduler.add_job(
