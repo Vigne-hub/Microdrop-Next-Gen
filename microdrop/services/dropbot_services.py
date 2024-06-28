@@ -22,15 +22,18 @@ from microdrop.services.dropbot_service_helpers import check_dropbot_devices_ava
 from microdrop_utils.dramatiq_pub_sub_helpers import publish_message, MessageRouterActor
 from microdrop_utils._logger import get_logger
 from microdrop_utils.pub_sub_serial_proxy import DropbotSerialProxy
+from dropbot import move
+
+from pint import UnitRegistry
 
 logger = get_logger(__name__)
 
 
 @provides(IDropbotControllerService)
 class DropbotService(HasTraits):
+    ureg = UnitRegistry()
 
     def __init__(self):
-        self.last_state: NDArray[Shape['*, 1'], UInt8] = np.zeros(128, dtype='uint8')
         self.no_power = True
         self.chip_inserted = False
         self.realtime_enabled = True
@@ -163,10 +166,12 @@ class DropbotService(HasTraits):
         publish_message(topic='dropbot/signals/halted', message='DropBot halted')
 
     def capacitance_updated_wrapper(self, signal: dict[str, str]):
-        capacitance = self.format_significant_digits(signal['new_value'], 4)
-        voltage = str(round(float(signal['V_a']), 2))
+        capacitance = float(signal['new_value']) * self.ureg.farad
+        capacitance_formatted = f"{capacitance.to(self.ureg.picofarad):.2g~P}"
+        voltage = float(signal['V_a']) * self.ureg.volt
+        voltage_formatted = f"{voltage:.2g~P}"
         publish_message(topic='dropbot/signals/capacitance_updated',
-                        message=json.dumps({'capacitance': capacitance, 'voltage': voltage}))
+                        message=json.dumps({'capacitance': capacitance_formatted, 'voltage': voltage_formatted}))
 
     def on_disconnected(self):
         logger.info(
@@ -225,19 +230,6 @@ class DropbotService(HasTraits):
 
     ##############################################################################
 
-    def format_significant_digits(self, number_str, significant_digits):
-        # Convert the string to a float
-        number = float(number_str)
-        # Format the number to keep a specified number of significant digits without scientific notation
-        if number == 0:
-            return '0.' + '0' * (significant_digits - 1)  # Handle the case where number is zero
-        else:
-            formatted_num = f"{number:.{significant_digits}g}"
-            formatted_num = formatted_num[:-4]
-            while len(formatted_num) < significant_digits + 1:
-                formatted_num += '0'
-            return formatted_num
-
     def check_halted(self):
         if self.proxy is not None:
             # the dropbot is halted if the high voltage output is not enabled and the realtime is enabled
@@ -249,19 +241,24 @@ class DropbotService(HasTraits):
         else:
             pass
 
-    def test_step_actuate(self, message):
+    def actuate(self, message):
+        """
+        Receives a message including an array of channels and a voltage value and frequency value to
+        actuate on the DropBot.
+
+        Use DropBot.Move.Actuate to actuate on the DropBot and send out a completion signal on completion callback.
+        """
         message = json.loads(message)
-        channels_to_change = message['channels']
-        for i in range(len(channels_to_change)):
-            channels_to_change[i] = int(channels_to_change[i])
+
+        channels = message['channels']
+        for i in range(len(channels)):
+            channels[i] = int(channels[i])
+
         voltage = float(message['voltage'])
         frequency = float(message['frequency'])
         self.proxy.frequency = frequency
         self.proxy.voltage = voltage
-        channels = np.array(self.proxy.state_of_channels)
-        for channel in channels_to_change:
-            channels[channel] = 1 if channels[channel] == 0 else 0
-        self.proxy.state_of_channels = np.array(channels)
 
-        publish_message(topic='dropbot/signals/actuation_complete', message='Actuation complete')
+        dropbot.move.actuate(self.proxy, channels, publish_message(topic='dropbot/signals/actuation_complete',
+                                                                   message='Actuation complete'))
 
