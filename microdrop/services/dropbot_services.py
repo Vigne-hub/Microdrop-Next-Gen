@@ -262,3 +262,15 @@ class DropbotService(HasTraits):
         dropbot.move.actuate(self.proxy, channels, publish_message(topic='dropbot/signals/actuation_complete',
                                                                    message='Actuation complete'))
 
+    def droplet_search(self, current_state, threshold: float = 0):
+        if self.proxy is not None:
+            # Disable all electrodes
+            self.actuate(np.zeros_like(current_state))
+
+            drops = list(current_state)
+            for drop in self.proxy.get_drops(capacitance_threshold=threshold):
+                for electrode in drop:
+                    drops[electrode] = True
+
+            return drops
+
