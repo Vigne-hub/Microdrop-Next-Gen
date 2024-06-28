@@ -3,6 +3,7 @@ from envisage.plugin import Plugin
 from traits.api import List
 import dramatiq
 from dramatiq.brokers.rabbitmq import RabbitmqBroker
+from traits.trait_types import Instance
 
 from microdrop_utils._logger import get_logger
 from ...interfaces.i_dropbot_controller_service import IDropbotControllerService
@@ -26,22 +27,24 @@ class DropbotControllerPlugin(Plugin):
 
     def start(self):
         super().start()
-        self._register_services()
-        self._start_worker()
-        self._start_actor()
-
-    def _register_services(self):
         self.dropbot_service = self._create_service()
-        self.application.register_service(IDropbotControllerService, self.dropbot_service)
-
-    def _service_offers_default(self):
-        return [
-            ServiceOffer(protocol=IDropbotControllerService, factory=self._create_service)
-        ]
+        self.register_subscribers()
+        self._start_worker()
 
     def _create_service(self):
         from microdrop.services.dropbot_services import DropbotService
-        return DropbotService(self.application)
+        return DropbotService()
+
+    def register_subscribers(self):
+        self.message_router = Instance(IMessageRouter)
+        for actor_name, topics_list in self.dropbot_service.actor_topics_dict.items():
+            for topic in topics_list:
+                # figure out how to set up message router plugin
+                self.message_router.message_router_data.add_subscriber_to_topic(topic, actor_name)
+
+    def disable_plugin(self):
+        # TODO Method to be implemented on disabling the plugin which should stop this plugin and associated cleanup
+        raise NotImplementedError
 
     def _start_worker(self):
         import threading
@@ -51,31 +54,3 @@ class DropbotControllerPlugin(Plugin):
         worker_thread = threading.Thread(target=worker.start())
         worker_thread.daemon = True
         worker_thread.start()
-
-    def _start_actor(self):
-        @staticmethod
-        @dramatiq.actor(queue_name='dropbot_actions')
-        def process_task(task):
-            method_name = task.get("task_name")
-            task_args = task.get("args")
-            task_kwargs = task.get("kwargs")
-            logger.info(f"Processing task: {task}")
-
-            # Map task names to DropbotController methods
-            task_map = {
-                "poll_voltage": lambda: self.dropbot_service.poll_voltage(),
-                "set_voltage": lambda: self.dropbot_service.set_voltage(*task_args, **task_kwargs),
-                "set_frequency": lambda: self.dropbot_service.set_frequency(*task_args, **task_kwargs),
-                "set_hv": lambda: self.dropbot_service.set_hv(*task_args, **task_kwargs),
-                "get_channels": lambda: self.dropbot_service.get_channels(),
-                "set_channels": lambda: self.dropbot_service.set_channels(*task_args, **task_kwargs),
-                "set_channel_single": lambda: self.dropbot_service.set_channel_single(*task_args, **task_kwargs),
-                "droplet_search": lambda: self.dropbot_service.droplet_search(*task_args, **task_kwargs),
-            }
-
-            if method_name in task_map:
-                result = task_map[method_name]()
-                logger.info(f"Task {method_name} completed with result: {result}")
-                return result
-            else:
-                logger.error(f"Unknown task name: {method_name}")

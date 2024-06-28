@@ -32,21 +32,17 @@ logger = get_logger(__name__)
 @provides(IDropbotControllerService)
 class DropbotService(HasTraits):
     ureg = UnitRegistry()
+    no_power = True
+    chip_inserted = False
+    realtime_enabled = True
+    actor_topics_dict = {
+        "dropbot_backend_listener": ["dropbot/ui/notifications/#",
+                                     "dropbot/signals/disconnected",
+                                     "dropbot/signals/halted"]}
+    proxy: Union[DropbotSerialProxy, None] = None
 
     def __init__(self):
-        self.no_power = True
-        self.chip_inserted = False
-        self.realtime_enabled = True
-
-        # actor_topics
-        self.actor_topics_dict = {
-            "dropbot_backend_listener": ["dropbot/ui/notifications/#",
-                                         "dropbot/signals/disconnected",
-                                         "dropbot/signals/halted"]}
-
-        self.proxy: Union[DropbotSerialProxy, None] = None
         self.create_actor_wrappers()
-
         logger.info("Attempting to start DropBot monitoring")
         self.start_device_monitoring(hwids_to_check=["VID:PID=16C0:"])
 
