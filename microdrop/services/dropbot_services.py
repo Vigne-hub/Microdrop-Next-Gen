@@ -30,6 +30,7 @@ logger = get_logger(__name__)
 class DropbotService(HasTraits):
 
     def __init__(self):
+        self.last_state: NDArray[Shape['*, 1'], UInt8] = np.zeros(128, dtype='uint8')
         self.no_power = True
         self.chip_inserted = False
         self.realtime_enabled = True
@@ -210,6 +211,9 @@ class DropbotService(HasTraits):
             if topic[-1] == "retry_connection_triggered":
                 self.monitor_scheduler.resume()
 
+            if topic[-1] == "test_step_triggered":
+                self.test_step_actuate(message)
+
         return dropbot_backend_listener
 
     ####### Follow Up Methods to Signals Sent Outside of Dropbot Services #######
@@ -244,3 +248,20 @@ class DropbotService(HasTraits):
                 pass
         else:
             pass
+
+    def test_step_actuate(self, message):
+        message = json.loads(message)
+        channels_to_change = message['channels']
+        for i in range(len(channels_to_change)):
+            channels_to_change[i] = int(channels_to_change[i])
+        voltage = float(message['voltage'])
+        frequency = float(message['frequency'])
+        self.proxy.frequency = frequency
+        self.proxy.voltage = voltage
+        channels = np.array(self.proxy.state_of_channels)
+        for channel in channels_to_change:
+            channels[channel] = 1 if channels[channel] == 0 else 0
+        self.proxy.state_of_channels = np.array(channels)
+
+        publish_message(topic='dropbot/signals/actuation_complete', message='Actuation complete')
+

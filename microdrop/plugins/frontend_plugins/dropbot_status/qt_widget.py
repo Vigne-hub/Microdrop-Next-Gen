@@ -1,7 +1,7 @@
 import json
 import os
 from PySide6.QtWidgets import QApplication, QLabel, QWidget, QVBoxLayout, QPushButton, QMessageBox, QHBoxLayout, \
-    QDialog, QTextBrowser
+    QDialog, QTextBrowser, QLineEdit
 from PySide6.QtCore import Qt, Signal, QTimer, QFile, QTextStream, QIODevice
 from PySide6.QtGui import QPixmap
 import sys
@@ -218,6 +218,41 @@ class DropBotControlWidget(QWidget):
             stream = QTextStream(file)
             self.browser.setHtml(stream.readAll())
         file.close()
+
+    def create_test_step_command_box(self):
+        self.volt_line = QHBoxLayout()
+        self.volt_label = QLabel("Voltage: ")
+        self.volt_textbox = QLineEdit()
+        self.volt_line.addWidget(self.volt_label)
+        self.volt_line.addWidget(self.volt_textbox)
+
+        self.freq_line = QHBoxLayout()
+        self.freq_label = QLabel("Frequency: ")
+        self.freq_textbox = QLineEdit()
+        self.freq_line.addWidget(self.freq_label)
+        self.freq_line.addWidget(self.freq_textbox)
+
+        self.channels_line = QHBoxLayout()
+        self.channels_label = QLabel("Channels: ")
+        self.channels_textbox = QLineEdit()
+        self.channels_line.addWidget(self.channels_label)
+        self.channels_line.addWidget(self.channels_textbox)
+
+        self.layout.addLayout(self.volt_line)
+        self.layout.addLayout(self.freq_line)
+        self.layout.addLayout(self.channels_line)
+
+        self.test_step_button = QPushButton("Test Step")
+        self.test_step_button.clicked.connect(self.test_step_triggered)
+        self.layout.addWidget(self.test_step_button)
+
+    def test_step_triggered(self):
+        volt = float(self.volt_textbox.text())
+        freq = float(self.freq_textbox.text())
+        channels = self.channels_textbox.text().replace(' ', '').split(',')
+
+        logger.info(f"Test step triggered with: {volt}, {freq}, {channels}")
+        publish_message(json.dumps({"voltage": volt, "frequency": freq, "channels": channels}), "dropbot/ui/notifications/test_step_triggered")
 
 
 if __name__ == "__main__":
