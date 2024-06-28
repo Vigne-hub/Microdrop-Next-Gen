@@ -4,35 +4,47 @@ from traits.api import Interface
 
 class IDropbotControllerService(Interface):
 
+    def create_actor_wrappers(self):
+        pass
 
-    @dramatiq.actor
-    def poll_voltage(self):
-        """ Poll the voltage from the Dropbot """
+    def start_device_monitoring(self, hwids_to_check):
+        pass
 
-    @dramatiq.actor
-    def set_voltage(self, voltage: int):
-        """ Set the voltage of the Dropbot """
+    def on_dropbot_port_found(self, event):
+        pass
 
-    @dramatiq.actor
-    def set_frequency(self, frequency: int):
-        """ Set the frequency of the Dropbot """
+    def connect_to_dropbot(self, port_name):
+        pass
 
-    @dramatiq.actor
-    def set_hv(self, on: bool):
-        """ Enable or disable the high voltage output of the Dropbot """
+    def on_no_power(self):
+        pass
 
-    @dramatiq.actor
-    def get_channels(self):
-        """ Get the current state of all channels from the Dropbot """
+    def setup_dropbot(self):
+        pass
 
-    @dramatiq.actor
-    def set_channels(self, channels):
-        """ Set the state of all channels on the Dropbot """
+    def output_state_changed_wrapper(self, signal: dict[str, str]):
+        pass
 
-    @dramatiq.actor
-    def set_channel_single(self, channel: int, state: bool):
-        """ Set the state of a single channel on the Dropbot """
+    def halted_event_wrapper(self):
+        pass
 
-    @dramatiq.actor
-    def droplet_search(self, threshold: float = 0):
-        """ Search for droplets on the Dropbot """
+    def capacitance_updated_wrapper(self, signal: dict[str, str]):
+        pass
+
+    def on_disconnected(self):
+        pass
+
+    def create_dropbot_backend_listener_actor(self):
+        pass
+
+    def detect_shorts(self):
+        pass
+
+    def check_halted(self):
+        pass
+
+    def actuate(self, message):
+        pass
+
+    def droplet_search(self, current_state, threshold: float = 0):
+        pass
