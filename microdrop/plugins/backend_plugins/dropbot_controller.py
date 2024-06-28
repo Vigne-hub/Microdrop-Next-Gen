@@ -23,7 +23,6 @@ for el in dramatiq.get_broker().middleware:
 class DropbotControllerPlugin(Plugin):
     id = 'app.dropbot_controller'
     name = 'Dropbot Plugin'
-    service_offers = List(contributes_to='envisage.service_offers')
 
     def start(self):
         super().start()
