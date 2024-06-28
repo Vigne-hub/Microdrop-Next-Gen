@@ -212,8 +212,8 @@ class DropbotService(HasTraits):
             if topic[-1] == "retry_connection_triggered":
                 self.monitor_scheduler.resume()
 
-            if topic[-1] == "test_step_triggered":
-                self.test_step_actuate(message)
+            if topic[-1] == "actuate":
+                self.actuate(message)
 
         return dropbot_backend_listener
 
