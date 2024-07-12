@@ -6,7 +6,7 @@ from dramatiq.brokers.rabbitmq import RabbitmqBroker
 from traits.trait_types import Instance
 
 from microdrop_utils._logger import get_logger
-from ...interfaces.i_dropbot_controller_service import IDropbotControllerService
+from microdrop_utils.dramatiq_pub_sub_helpers import MessageRouterActor
 
 # Initialize logger
 logger = get_logger(__name__)
@@ -25,21 +25,27 @@ class DropbotControllerPlugin(Plugin):
     name = 'Dropbot Plugin'
 
     def start(self):
-        super().start()
-        self.dropbot_service = self._create_service()
-        self.register_subscribers()
-        self._start_worker()
+        super().start() # starts plugin service
+        self.dropbot_service = self._create_service() # gets services
+        self.register_subscribers() # registers subscribers
+        self._start_worker() # starts worker for
 
     def _create_service(self):
         from microdrop.services.dropbot_services import DropbotService
         return DropbotService()
 
     def register_subscribers(self):
-        self.message_router = Instance(IMessageRouter)
-        for actor_name, topics_list in self.dropbot_service.actor_topics_dict.items():
-            for topic in topics_list:
-                # figure out how to set up message router plugin
-                self.message_router.message_router_data.add_subscriber_to_topic(topic, actor_name)
+        self.message_router = self.application.get_service(MessageRouterActor)
+        if self.message_router is not None:
+            # Use the message_router_actor instance as needed
+            print("MessageRouterActor service accessed successfully.")
+            for actor_name, topics_list in self.dropbot_service.actor_topics_dict.items():
+                for topic in topics_list:
+                    # figure out how to set up message router plugin
+                    self.message_router.message_router_data.add_subscriber_to_topic(topic, actor_name)
+        else:
+            print("MessageRouterActor service not found.")
+            return
 
     def disable_plugin(self):
         # TODO Method to be implemented on disabling the plugin which should stop this plugin and associated cleanup
