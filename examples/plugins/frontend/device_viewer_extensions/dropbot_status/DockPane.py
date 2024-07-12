@@ -2,7 +2,7 @@
 from pyface.tasks.dock_pane import DockPane
 
 # local imports
-from microdrop.plugins.frontend_plugins.dropbot_status.qt_widget import DropBotControlWidget
+from microdrop.plugins.frontend_plugins.dropbot_status.dropbot_status_widget import DropBotControlWidget
 
 # This module's package.
 PKG = '.'.join(__name__.split('.')[:-1])
