@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from functools import partial
 from PySide6.QtWidgets import QApplication
 import sys
-from examples.plugins.frontend.device_viewer.views.device_viewer_qt import DeviceViewerWidget
+from examples.plugins.frontend.device_viewer.views.device_viewer_widget import DeviceViewerWidget
 from examples.plugins.frontend.device_viewer.models.electrodes import Electrodes
 from examples.tests.common import TEST_PATH
 
