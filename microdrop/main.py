@@ -22,8 +22,8 @@ def main():
     plugins = [CorePlugin(),
                TasksPlugin(),
                DeviceViewerPlugin(),
-               #DropbotStatusPlugin(),
-               #DropbotControllerPlugin(),
+               DropbotStatusPlugin(),
+               DropbotControllerPlugin(),
                ProtocolGridBackendPlugin(),
                ProtocolGridControllerPlugin()
                ]
