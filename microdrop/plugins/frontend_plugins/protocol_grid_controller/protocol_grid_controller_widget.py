@@ -65,6 +65,7 @@ class PGCWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.pgc_ui_listener = self.create_PGC_UI_listener_actor()
+        self.register_into_messagerouter()
         # create View
         self.tree = QTreeView()
         self.tree.setSelectionMode(QTreeView.SelectionMode.SingleSelection)
@@ -170,31 +171,8 @@ class PGCWidget(QWidget):
 
         self.layout.addLayout(self.hbox_control_flow)
 
-    def flatten_tree(self):
-        """Flatten the tree and return a list of (item, index) tuples."""
-        flattened_items = []
-
-        def recurse(parent_item, index=0):
-            for row in range(parent_item.rowCount()):
-                item = parent_item.child(row)
-                flattened_items.append((item, index))
-                index += 1
-                if item.hasChildren():
-                    index = recurse(item, index)
-            return index
-
-        root_item = self.model.invisibleRootItem()
-        recurse(root_item)
-        return flattened_items
-
     def send_request_to_update_device_view(self):
-        # occurs on protocol step selection change or loading a protocol to clear
-        current_index = self.tree.selectionModel().currentIndex()
-        if current_index.isValid():
-            item = self.model.itemFromIndex(current_index)
-            flattened_items = self.flatten_tree()
-            flattened_index = next((index for it, index in flattened_items if it == item), -1)
-            print(f"Most recently selected item: {item.text()}, Flattened index: {flattened_index}")
+        pass
 
     def goto_first(self):
         pass
@@ -344,7 +322,7 @@ class PGCWidget(QWidget):
         for i in range(root_item.rowCount()):
             process_item(root_item.child(i), protocol)
 
-        publish_message(message=protocol, topic="pgc_ui/protocol_data/on_cell_changed")
+        publish_message(message=protocol, topic="pgc_ui/protocol_data/cell_changed")
 
     def create_PGC_UI_listener_actor(self):
         """

@@ -22,6 +22,7 @@ class ProtocolGridStructureService(HasTraits):
     electrodes_on = Dict(key_trait=Str(), value_trait=List(Str))
     file_save_dir = Str()
     file_name = Str()
+    selected_step = 0
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -32,7 +33,7 @@ class ProtocolGridStructureService(HasTraits):
         self.file_name = ""
 
         self.pgc_backend_listener = self.create_pgc_backend_listener_actor()
-        self.actor_topics_dict = {"pgc_backend_listener": ["device_view/#", "pgc_frontend/#"]}
+        self.actor_topics_dict = {"pgc_backend_listener": ["device_view/signal/#", "pgc_frontend/#"]}
 
     def add_step(self, step: str, electrodes_on: list[str]):
         self.steps.append(step)
@@ -173,27 +174,46 @@ class ProtocolGridStructureService(HasTraits):
             logger.info(f"UI_LISTENER: Received message: {message} from topic: {topic}")
             topic_elements = topic.split("/")
             if topic_elements[-1] == "electrode_clicked":
+                # if electrode clicked
                 self.on_electrode_clicked(message)
-            elif topic_elements[-1] == "step_changed_request":
-                self.on_step_changed_request(message)
             elif topic_elements[-1] == "cell_changed":
                 self.on_cell_changed(message)
 
         return pgc_backend_listener
 
 
-
 if __name__ == '__main__':
     example_protocol = OrderedDict([
-        ("Step 1", {"Description": "Monkas1", "Duration": 2, "Voltage": 15, "Frequency": 10000}),
+        ("Step 1", {"Description": "Monkas1",
+                    "Duration": 2,
+                    "Voltage": 15,
+                    "Frequency": 10000,
+                    "electrode_channels_on": [1, 2, 3]}),
         ("Step-Group[2-4]", {
             "Type": "Group",
             "Repetitions": 5,
-            "Step 2": {"Description": "Monkas2", "Duration": 4, "Voltage": 25, "Frequency": 20000},
-            "Step 3": {"Description": "Monkas3", "Duration": 6, "Voltage": 35, "Frequency": 30000},
-            "Step 4": {"Description": "Monkas4", "Duration": 8, "Voltage": 45, "Frequency": 40000}
+            "Step 2": {"Description": "Monkas2",
+                       "Duration": 4,
+                       "Voltage": 25,
+                       "Frequency": 20000,
+                       "electrode_channels_on": [1, 2, 3]},
+            "Step 3": {"Description": "Monkas3",
+                       "Duration": 6,
+                       "Voltage": 35,
+                       "Frequency": 30000,
+                       "electrode_channels_on": [1, 2, 3]},
+            "Step 4": {"Description": "Monkas4",
+                       "Duration": 8,
+                       "Voltage": 45,
+                       "Frequency": 40000,
+                       "electrode_channels_on": [1, 2, 3]}
         }),
-        ("Step 5", {"Description": "Monkas5", "Duration": 10, "Voltage": 55, "Frequency": 50000})
+        ("Step 5", {"Description": "Monkas5",
+                    "Duration": 10,
+                    "Voltage": 55,
+                    "Frequency": 50000,
+                    "electrode_channels_on": [1, 2, 3]})
+
     ])
 
     filename = "test_protocol.h5"
@@ -203,5 +223,3 @@ if __name__ == '__main__':
     order = ProtocolGridStructureService.generate_steps_list(protocol)
     print(f"Step List: {order}")
     ProtocolGridStructureService().execute_protocol(protocol)
-
-    
