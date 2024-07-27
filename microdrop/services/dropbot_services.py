@@ -22,27 +22,28 @@ from microdrop.services.dropbot_service_helpers import check_dropbot_devices_ava
 from microdrop_utils.dramatiq_pub_sub_helpers import publish_message, MessageRouterActor
 from microdrop_utils._logger import get_logger
 from microdrop_utils.pub_sub_serial_proxy import DropbotSerialProxy
+from dropbot import move
+
+from pint import UnitRegistry
 
 logger = get_logger(__name__)
 
 
 @provides(IDropbotControllerService)
 class DropbotService(HasTraits):
+  
+    ureg = UnitRegistry()
+    no_power = True
+    chip_inserted = False
+    realtime_enabled = True
+    actor_topics_dict = {
+        "dropbot_backend_listener": ["dropbot/ui/notifications/#",
+                                     "dropbot/signals/disconnected",
+                                     "dropbot/signals/halted"]}
+    proxy: Union[DropbotSerialProxy, None] = None
 
     def __init__(self):
-        self.no_power = True
-        self.chip_inserted = False
-        self.realtime_enabled = True
-
-        # actor_topics
-        self.actor_topics_dict = {
-            "dropbot_backend_listener": ["dropbot/ui/notifications/#",
-                                         "dropbot/signals/disconnected",
-                                         "dropbot/signals/halted"]}
-
-        self.proxy: Union[DropbotSerialProxy, None] = None
         self.create_actor_wrappers()
-
         logger.info("Attempting to start DropBot monitoring")
         self.start_device_monitoring(hwids_to_check=["VID:PID=16C0:"])
 
@@ -162,10 +163,12 @@ class DropbotService(HasTraits):
         publish_message(topic='dropbot/signals/halted', message='DropBot halted')
 
     def capacitance_updated_wrapper(self, signal: dict[str, str]):
-        capacitance = self.format_significant_digits(signal['new_value'], 4)
-        voltage = str(round(float(signal['V_a']), 2))
+        capacitance = float(signal['new_value']) * self.ureg.farad
+        capacitance_formatted = f"{capacitance.to(self.ureg.picofarad):.2g~P}"
+        voltage = float(signal['V_a']) * self.ureg.volt
+        voltage_formatted = f"{voltage:.2g~P}"
         publish_message(topic='dropbot/signals/capacitance_updated',
-                        message=json.dumps({'capacitance': capacitance, 'voltage': voltage}))
+                        message=json.dumps({'capacitance': capacitance_formatted, 'voltage': voltage_formatted}))
 
     def on_disconnected(self):
         logger.info(
@@ -210,6 +213,9 @@ class DropbotService(HasTraits):
             if topic[-1] == "retry_connection_triggered":
                 self.monitor_scheduler.resume()
 
+            if topic[-1] == "actuate":
+                self.actuate(message)
+
         return dropbot_backend_listener
 
     ####### Follow Up Methods to Signals Sent Outside of Dropbot Services #######
@@ -221,19 +227,6 @@ class DropbotService(HasTraits):
 
     ##############################################################################
 
-    def format_significant_digits(self, number_str, significant_digits):
-        # Convert the string to a float
-        number = float(number_str)
-        # Format the number to keep a specified number of significant digits without scientific notation
-        if number == 0:
-            return '0.' + '0' * (significant_digits - 1)  # Handle the case where number is zero
-        else:
-            formatted_num = f"{number:.{significant_digits}g}"
-            formatted_num = formatted_num[:-4]
-            while len(formatted_num) < significant_digits + 1:
-                formatted_num += '0'
-            return formatted_num
-
     def check_halted(self):
         if self.proxy is not None:
             # the dropbot is halted if the high voltage output is not enabled and the realtime is enabled
@@ -244,3 +237,36 @@ class DropbotService(HasTraits):
                 pass
         else:
             pass
+
+    def actuate(self, message):
+        """
+        Receives a message including an array of channels and a voltage value and frequency value to
+        actuate on the DropBot.
+
+        Use DropBot.Move.Actuate to actuate on the DropBot and send out a completion signal on completion callback.
+        """
+        message = json.loads(message)
+
+        channels = message['channels']
+        for i in range(len(channels)):
+            channels[i] = int(channels[i])
+
+        voltage = float(message['voltage'])
+        frequency = float(message['frequency'])
+        self.proxy.frequency = frequency
+        self.proxy.voltage = voltage
+
+        dropbot.move.actuate(self.proxy, channels, publish_message(topic='dropbot/signals/actuation_complete',
+                                                                   message='Actuation complete'))
+
+    def droplet_search(self, current_state, threshold: float = 0):
+        if self.proxy is not None:
+            # Disable all electrodes
+            self.actuate(np.zeros_like(current_state))
+
+            drops = list(current_state)
+            for drop in self.proxy.get_drops(capacitance_threshold=threshold):
+                for electrode in drop:
+                    drops[electrode] = True
+
+            return drops

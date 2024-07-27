@@ -11,7 +11,9 @@ def main():
 
     # this is the mainwindow test widget wjich will listen for messages from the dropbot connection
     # this will be packaged into a task extension to the device viewer.
-    from microdrop.plugins.frontend_plugins.dropbot_status.qt_widget import DropBotControlWidget
+
+    from microdrop.plugins.frontend_plugins.dropbot_status.dropbot_status_widget import DropBotControlWidget
+
 
     # this is the dropbot backend services which will hold the dropbot serial proxy connection
     from microdrop.services.dropbot_services import DropbotService
