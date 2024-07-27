@@ -4,6 +4,7 @@ from PySide6.QtWidgets import QApplication
 from envisage.api import Application, CorePlugin
 from envisage.ui.tasks.api import TasksPlugin
 
+
 from .plugins.frontend_plugins.protocol_grid_controller.protocol_grid_controller_plugin import \
     ProtocolGridControllerPlugin
 from .plugins.backend_plugins.protocol_grid_controller import ProtocolGridBackendPlugin
@@ -18,6 +19,7 @@ import atexit
 def main():
     purger = RmqPurger()
     message_router = MessageRouterActor()
+
 
     plugins = [CorePlugin(),
                TasksPlugin(),

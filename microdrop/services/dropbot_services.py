@@ -31,6 +31,7 @@ logger = get_logger(__name__)
 
 @provides(IDropbotControllerService)
 class DropbotService(HasTraits):
+  
     ureg = UnitRegistry()
     no_power = True
     chip_inserted = False
@@ -269,4 +270,3 @@ class DropbotService(HasTraits):
                     drops[electrode] = True
 
             return drops
-
