@@ -9,7 +9,7 @@ from microdrop_utils.rmq_purger import RmqPurger
 def main():
     # import the MainWindow and MainWindowController classes
 
-    # this is the mainwindow test widget wjich will listen for messages from the dropbot connection
+    # this is the mainwindow test widget which will listen for messages from the dropbot connection
     # this will be packaged into a task extension to the device viewer.
 
     from microdrop.plugins.frontend_plugins.dropbot_status.dropbot_status_widget import DropBotControlWidget
