@@ -147,8 +147,7 @@ class DropBotControlWidget(QWidget):
         self.no_power_dialog.setLayout(layout)
 
         self.browser = QTextBrowser(self)
-        self.load_html(
-            r"C:\Users\mjkwe\PycharmProjects\Microdrop-Next-Gen\microdrop\plugins\frontend_plugins\dropbot_status\html_files\no_power.html")
+        self.load_html(f"{os.path.dirname(__file__)}{os.sep}html_files{os.sep}no_power.html")
 
         self.no_power_retry_button = QPushButton("Retry")
         self.no_power_retry_button.clicked.connect(self.signal_retry_connect)
