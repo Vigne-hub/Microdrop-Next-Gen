@@ -1,9 +1,10 @@
 import sys
+
+import dramatiq
 from PySide6.QtWidgets import QApplication
 from dramatiq import get_broker, Worker
-
 from microdrop_utils.dramatiq_pub_sub_helpers import MessageRouterActor
-from microdrop_utils.rmq_purger import RmqPurger
+from microdrop_utils.broker_server_helpers import start_redis_server, stop_redis_server
 
 
 def main():
@@ -13,8 +14,6 @@ def main():
     # this will be packaged into a task extension to the device viewer.
 
     from microdrop.plugins.frontend_plugins.dropbot_status.dropbot_status_widget import DropBotControlWidget
-
-
     # this is the dropbot backend services which will hold the dropbot serial proxy connection
     from microdrop.services.dropbot_services import DropbotService
 
@@ -41,14 +40,18 @@ def main():
     # show the window
     dropbot_control_widget.show()
 
-    purger = RmqPurger()
-    app.aboutToQuit.connect(purger.purge_all_queues)
+    def cleanup():
+        dramatiq.get_broker().flush_all()
+        stop_redis_server()
+
+    app.aboutToQuit.connect(cleanup)
 
     sys.exit(app.exec())
 
 
 if __name__ == "__main__":
 
+    start_redis_server()
     BROKER = get_broker()
 
     for el in BROKER.middleware:
