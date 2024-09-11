@@ -2,7 +2,8 @@
 from pyface.tasks.dock_pane import DockPane
 
 # local imports
-from microdrop.plugins.frontend_plugins.dropbot_status.dropbot_status_widget import DropBotControlWidget
+
+from dropbot_status.dropbot_status_widget import DropBotControlWidget
 
 # This module's package.
 PKG = '.'.join(__name__.split('.')[:-1])
@@ -14,8 +15,8 @@ class DropbotStatusDockPane(DockPane):
     """
     #### 'ITaskPane' interface ################################################
 
-    id = PKG + ".dropbot_status"
-    name = "Dropbot Status"
+    id = PKG + ".pane"
+    name = "Dropbot Status Dock Pane"
 
     #### 'ManualControlsPane' interface ##########################################
 
