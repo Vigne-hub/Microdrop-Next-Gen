@@ -1,8 +1,10 @@
 import json
 import os
+
+from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWidgets import QApplication, QLabel, QWidget, QVBoxLayout, QPushButton, QMessageBox, QHBoxLayout, \
     QDialog, QTextBrowser, QLineEdit
-from PySide6.QtCore import Qt, Signal, QTimer, QFile, QTextStream, QIODevice
+from PySide6.QtCore import Qt, Signal, QTimer, QFile, QTextStream, QIODevice, QUrl
 from PySide6.QtGui import QPixmap
 import sys
 import dramatiq
@@ -107,9 +109,10 @@ class DropBotControlWidget(QWidget):
         self.detect_shorts_button = QPushButton("Detect Shorts")
         self.detect_shorts_button.clicked.connect(self.detect_shorts_triggered)
         self.layout.addWidget(self.detect_shorts_button)
-
         self.signal_received.connect(self.signal_handler)
-        self.image_dir = os.path.join(os.path.dirname(__file__), "images")
+
+        # Create a QWebEngineView widget
+        self.browser = QWebEngineView()
 
     def show_halted_popup(self):
         self.halted_popup = QMessageBox()
@@ -140,21 +143,45 @@ class DropBotControlWidget(QWidget):
         self.shorts_popup.exec()
 
     def show_no_power_popup(self):
+        # Initialize the dialog
         self.no_power_dialog = QDialog()
         self.no_power_dialog.setWindowTitle("ERROR: No Power")
         self.no_power_dialog.setFixedSize(370, 250)
+
+        # Create the layout
         layout = QVBoxLayout()
         self.no_power_dialog.setLayout(layout)
 
-        self.browser = QTextBrowser(self)
-        self.load_html(f"{os.path.dirname(__file__)}{os.sep}html_files{os.sep}no_power.html")
+        # Create the web engine view for displaying HTML
+        self.browser = QWebEngineView()
+        html_path = f"{os.path.dirname(__file__)}{os.sep}html_files{os.sep}no_power.html"
 
+        # Load the HTML file into the browser
+        self.load_html(html_path)
+
+        # Create the retry button and connect its signal
         self.no_power_retry_button = QPushButton("Retry")
         self.no_power_retry_button.clicked.connect(self.signal_retry_connect)
 
+        # Add widgets to the layout
         layout.addWidget(self.browser)
         layout.addWidget(self.no_power_retry_button)
+
+        # Show the dialog
         self.no_power_dialog.exec()
+
+    def load_html(self, file_path):
+        # Open and read the HTML file content
+        file = QFile(file_path)
+        if file.open(QFile.OpenModeFlag.ReadOnly | QFile.OpenModeFlag.Text):
+            stream = QTextStream(file)
+            html_content = stream.readAll()
+
+            # Set base URL to the directory of the HTML file
+            base_url = QUrl.fromLocalFile(os.path.dirname(file_path) + os.sep)
+            self.browser.setHtml(html_content, base_url)
+
+        file.close()
 
     def detect_shorts_triggered(self):
         logger.info("Detecting shorts...")
@@ -210,13 +237,6 @@ class DropBotControlWidget(QWidget):
                 self.signal_received.emit(f"{topic}, {message}")
 
         return dropbot_status_listener
-
-    def load_html(self, file_path):
-        file = QFile(file_path)
-        if file.open(QFile.OpenModeFlag.ReadOnly | QFile.OpenModeFlag.Text):
-            stream = QTextStream(file)
-            self.browser.setHtml(stream.readAll())
-        file.close()
 
     def create_test_step_command_box(self):
         self.volt_line = QHBoxLayout()
