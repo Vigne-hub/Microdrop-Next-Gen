@@ -12,7 +12,7 @@ from manual_controls.plugin import ManualControlsPlugin
 def main(args):
     """Run the application."""
 
-    plugins = [CorePlugin(), TasksPlugin(), RouterPlugin(), DeviceViewerPlugin(), DropbotStatusPlugin()]
+    plugins = [CorePlugin(), TasksPlugin(), DeviceViewerPlugin(), DropbotStatusPlugin()]
     app = DeviceViewerApplication(plugins=plugins)
     app.run()
 
