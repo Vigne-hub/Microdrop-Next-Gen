@@ -21,7 +21,7 @@ class AnalysisPlugin(Plugin):
                              "type": "dramatiq",
                              "id": "dramatiq_analysis_service",
 
-                         })
+                         }),
         ]
 
     def _create_service(self, *args, **kwargs):

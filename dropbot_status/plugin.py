@@ -9,7 +9,7 @@ PKG = '.'.join(__name__.split('.')[:-1])
 
 
 class DropbotStatusPlugin(Plugin):
-    """ Contributes UI actions on top of the IPython Kernel Plugin. """
+    """ Contributes a dropbot status UI view. """
 
     #### 'IPlugin' interface ##################################################
 
