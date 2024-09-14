@@ -2,7 +2,7 @@
 from envisage.api import CorePlugin
 from envisage.ui.tasks.api import TasksPlugin
 
-from examples.plugins.frontend import DeviceViewerPlugin
+from examples.toy_plugins.frontend import DeviceViewerPlugin
 from microdrop.plugins.frontend_plugins.protocol_grid_controller.protocol_grid_controller_plugin import \
     ProtocolGridControllerPlugin
 from microdrop.plugins.backend_plugins.protocol_grid_controller import ProtocolGridBackendPlugin

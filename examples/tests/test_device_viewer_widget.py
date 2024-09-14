@@ -14,9 +14,9 @@ correct_path_array = np.array(
 
 
 def test_electrode_creation_traits_check_fail():
-    from examples.plugins.frontend.device_viewer.models.electrodes import Electrode
 
     try:
+        from device_viewer.models.electrodes import Electrode
         Electrode(channel=1, path=[[1, 1], [2, 2], [3, 3]])
     except Exception as e:
         assert isinstance(e, TraitError)
@@ -28,16 +28,16 @@ def test_electrode_creation_traits_check_fail():
 
 
 def test_electrode_creation_traits_check_path_pass():
-    from examples.plugins.frontend.device_viewer.models.electrodes import Electrode
 
+    from device_viewer.models.electrodes import Electrode
     test_electrode = Electrode(channel=1, path=correct_path_array)
 
     assert test_electrode.channel == 1 and np.array_equal(test_electrode.path, correct_path_array)
 
 
 def test_electrodes_creation_traits_check_fail():
-    from examples.plugins.frontend.device_viewer.models.electrodes import Electrode, Electrodes
 
+    from device_viewer.models.electrodes import Electrode, Electrodes
     try:
         Electrodes(electrodes={"1": Electrode(channel=1, path=correct_path_array),
                                "2": Electrode(channel=2, path=[[1, 1], [2, 2], [3, 3]])})
@@ -52,7 +52,7 @@ def test_electrodes_creation_traits_check_fail():
 
 
 def test_electrodes_creation_traits_check_pass():
-    from examples.plugins.frontend.device_viewer.models.electrodes import Electrode, Electrodes
+    from device_viewer.models.electrodes import Electrode, Electrodes
 
     electrodes = Electrodes(electrodes={"1": Electrode(channel=1, path=correct_path_array),
                                         "2": Electrode(channel=2, path=correct_path_array)})

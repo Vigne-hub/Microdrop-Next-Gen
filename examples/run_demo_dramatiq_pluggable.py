@@ -12,7 +12,7 @@ class ExampleApp(Application):
 
 def demo():
 
-    from examples.plugins.frontend import UIPlugin, PlotViewPlugin, TableViewPlugin
+    from examples.toy_plugins.frontend import UIPlugin, PlotViewPlugin, TableViewPlugin
     from examples.broker import BROKER
 
     # Note that fully fledged unittests for enthought services is available via
@@ -36,9 +36,9 @@ def demo():
     print(f"Declared actors before: {BROKER.get_declared_actors()}\n")
 
     # importing plugin with an actor
-    from examples.plugins.backend import AnalysisPlugin
-    from examples.plugins.backend import LoggingPlugin
-    from examples.plugins.backend.toy_service_plugins.analysis.interfaces.i_analysis_service import IAnalysisService
+    from examples.toy_plugins.backend import AnalysisPlugin
+    from examples.toy_plugins.backend import LoggingPlugin
+    from examples.toy_plugins.backend.toy_service_plugins.analysis.interfaces.i_analysis_service import IAnalysisService
 
     # after...
     assert len(BROKER.get_declared_actors()) == 1
