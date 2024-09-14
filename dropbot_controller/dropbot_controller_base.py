@@ -18,7 +18,7 @@ class DropbotControllerBase(HasTraits):
     def traits_init(self):
         self.create_actor_wrappers()
         logger.info("Attempting to start DropBot monitoring")
-        self.start_device_monitoring(hwids_to_check=["VID:PID=16C0:"])
+        #self.on_start_device_monitoring_request(hwids_to_check=["VID:PID=16C0:"])
 
     def create_actor_wrappers(self):
         logger.debug("Creating actor wrappers")
@@ -45,14 +45,9 @@ class DropbotControllerBase(HasTraits):
 
             topic = topic.split("/")
 
-            if topic[-1] == "disconnected":
-                if not self.no_power:
-                    self.on_disconnected()
-
-            if topic[-1] == "detect_shorts_triggered":
-                self.detect_shorts()
-
-            if topic[-1] == "retry_connection_triggered":
-                self.monitor_scheduler.resume()
+            # Check if the method exists and call it
+            if hasattr(self, f"on_{topic[-1]}_request") and callable(getattr(self, f"on_{topic[-1]}_request")):
+                # Use getattr to get the method and call it
+                getattr(self, f"on_{topic[-1]}_request")(message)
 
         return dropbot_backend_listener

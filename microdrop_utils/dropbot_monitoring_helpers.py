@@ -1,6 +1,6 @@
 from serial.tools.list_ports import grep
 
-from dropbot_controller.pub_sub_topics import HALTED, CHIP_INSERTED, CHIP_NOT_INSERTED, NO_POWER
+from dropbot_controller.public_constants import HALTED, CHIP_INSERTED, CHIP_NOT_INSERTED, NO_POWER
 import re
 
 from microdrop_utils.dramatiq_pub_sub_helpers import publish_message

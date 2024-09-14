@@ -1,8 +1,5 @@
 from traits.api import HasTraits, Dict, Str, List
 import dramatiq
-
-import re
-
 from microdrop_utils._logger import get_logger
 
 logger = get_logger(__name__)

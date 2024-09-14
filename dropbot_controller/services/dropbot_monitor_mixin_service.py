@@ -14,7 +14,7 @@ from microdrop_utils.pub_sub_serial_proxy import DropbotSerialProxy
 from microdrop_utils.dropbot_monitoring_helpers import check_dropbot_devices_available
 from ..interfaces.i_dropbot_control_mixin_service import IDropbotControlMixinService
 
-from ..pub_sub_topics import NO_DROPBOT_AVAILABLE, CHIP_INSERTED, CHIP_NOT_INSERTED, HALTED, \
+from ..public_constants import NO_DROPBOT_AVAILABLE, CHIP_INSERTED, CHIP_NOT_INSERTED, HALTED, \
     CAPACITANCE_UPDATED, SHORTS_DETECTED, NO_POWER
 
 logger = get_logger(__name__)
@@ -30,7 +30,7 @@ class DropbotMonitorMixinService(HasTraits):
     name = 'Dropbot Monitor Mixin'
 
     ######################################## Methods to Expose #############################################
-    def start_device_monitoring(self, hwids_to_check):
+    def on_start_device_monitoring_request(self, hwid_to_check):
         """
         Method to start looking for dropbots connected using their hwids.
         """
@@ -39,7 +39,7 @@ class DropbotMonitorMixinService(HasTraits):
 
         scheduler = BackgroundScheduler()
         scheduler.add_job(
-            func=functools.partial(check_dropbot_devices_available, hwids_to_check),
+            func=functools.partial(check_dropbot_devices_available, hwid_to_check),
             trigger=IntervalTrigger(seconds=2),
         )
 
@@ -49,13 +49,13 @@ class DropbotMonitorMixinService(HasTraits):
         logger.info("Starting DropBot monitor")
         self.monitor_scheduler.start()
 
-    def detect_shorts(self):
+    def on_detect_shorts_request(self, message):
         if self.proxy is not None:
             shorts_list = self.proxy.detect_shorts()
             shorts_dict = {'Shorts_detected': shorts_list}
             publish_message(topic=SHORTS_DETECTED, message=json.dumps(shorts_dict))
 
-    def on_disconnected(self):
+    def on_disconnected_request(self, message):
         logger.info(
             "DropBot disconnected \n Attempting to terminate proxy and resume monitoring to find DropBot again.")
 
