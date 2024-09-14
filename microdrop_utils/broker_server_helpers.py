@@ -62,7 +62,6 @@ def init_broker_server(BROKER):
 
 
 def stop_broker_server(BROKER):
-    brokers = 2
 
     try:
         from dramatiq.brokers.redis import RedisBroker

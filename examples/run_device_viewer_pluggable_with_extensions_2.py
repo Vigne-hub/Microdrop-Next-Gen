@@ -1,17 +1,16 @@
 # Plugin imports.
-import os.path
 
 from envisage.api import CorePlugin
 from envisage.ui.tasks.api import TasksPlugin
 
+from device_viewer.application import DeviceViewerApplication
+from device_viewer.plugin import DeviceViewerPlugin
+from dropbot_status.plugin import DropbotStatusPlugin
+from manual_controls.plugin import ManualControlsPlugin
+
 
 def main(args):
     """Run the application."""
-
-    from plugins.frontend import DeviceViewerPlugin
-    from plugins.frontend import DeviceViewerApplication
-    from plugins.frontend.device_viewer_extensions.manual_controls.plugin import ManualControlsPlugin
-    from plugins.frontend.device_viewer_extensions.dropbot_status.plugin import DropbotStatusPlugin
 
     plugins = [CorePlugin(), TasksPlugin(), DeviceViewerPlugin(), ManualControlsPlugin(), DropbotStatusPlugin()]
     app = DeviceViewerApplication(plugins=plugins)

@@ -1,17 +1,15 @@
 # main.py
-import sys
-from PySide6.QtWidgets import QApplication
-from envisage.api import Application, CorePlugin
+from envisage.api import CorePlugin
 from envisage.ui.tasks.api import TasksPlugin
 
-from examples.plugins.frontend import DeviceViewerPlugin
+from examples.toy_plugins.frontend import DeviceViewerPlugin
 from microdrop.plugins.frontend_plugins.protocol_grid_controller.protocol_grid_controller_plugin import \
     ProtocolGridControllerPlugin
 from microdrop.plugins.backend_plugins.protocol_grid_controller import ProtocolGridBackendPlugin
 from microdrop_utils.dramatiq_pub_sub_helpers import MessageRouterActor
 from microdrop.plugins.backend_plugins.dropbot_controller import DropbotControllerPlugin
 from microdrop.app import MicroDropApplication
-from microdrop.plugins.frontend_plugins.dropbot_status.dropbot_status_plugin import DropbotStatusPlugin
+from dropbot_status import DropbotStatusPlugin
 from microdrop_utils.rmq_purger import RmqPurger
 import atexit
 

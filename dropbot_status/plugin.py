@@ -9,7 +9,7 @@ PKG = '.'.join(__name__.split('.')[:-1])
 
 
 class DropbotStatusPlugin(Plugin):
-    """ Contributes UI actions on top of the IPython Kernel Plugin. """
+    """ Contributes a dropbot status UI view. """
 
     #### 'IPlugin' interface ##################################################
 
@@ -26,11 +26,11 @@ class DropbotStatusPlugin(Plugin):
     #### Trait initializers ###################################################
 
     def _contributed_task_extensions_default(self):
-        from .dropbot_status_pane import DropbotStatusDockPane
+        from .dock_pane import DropbotStatusDockPane
 
         return [
             TaskExtension(
-                task_id="device_viewer.task",
+                task_id="device_viewer.task",  # specify which task id it has to add on to
                 dock_pane_factories=[DropbotStatusDockPane],
             )
         ]

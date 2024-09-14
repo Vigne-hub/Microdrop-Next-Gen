@@ -14,8 +14,8 @@ def results_file():
 
 @pytest.fixture
 def setup_app():
-    from examples.plugins.frontend import UIPlugin, PlotViewPlugin, TableViewPlugin
-    from examples.plugins.backend import LoggingPlugin, AnalysisPlugin
+    from examples.toy_plugins.frontend import UIPlugin, PlotViewPlugin, TableViewPlugin
+    from examples.toy_plugins.backend import LoggingPlugin, AnalysisPlugin
     from envisage.api import CorePlugin, Application
 
     class ExampleApp(Application):
@@ -38,7 +38,7 @@ def test_analysis_plugin_import(stub_broker):
     print(f"Declared actors before: {stub_broker.get_declared_actors()}\n")
 
     # importing plugin with an actor
-    from examples.plugins.backend import AnalysisPlugin
+    from examples.toy_plugins.backend import AnalysisPlugin
 
     # after...
     assert len(stub_broker.get_declared_actors()) == 1
@@ -59,7 +59,7 @@ def test_service_registry(setup_app):
 
 def test_service_properties_access_regular(setup_app):
 
-    from examples.plugins.backend.toy_service_plugins.analysis.interfaces.i_analysis_service import IAnalysisService
+    from examples.toy_plugins.backend.toy_service_plugins.analysis.interfaces.i_analysis_service import IAnalysisService
 
     app = setup_app
     regular_task = app.get_service(IAnalysisService, query="type=='regular'")
@@ -69,7 +69,7 @@ def test_service_properties_access_regular(setup_app):
 
 def test_service_properties_access_dramatiq(setup_app):
 
-    from examples.plugins.backend.toy_service_plugins.analysis.interfaces.i_analysis_service import IAnalysisService
+    from examples.toy_plugins.backend.toy_service_plugins.analysis.interfaces.i_analysis_service import IAnalysisService
 
     app = setup_app
     dramatiq_task = app.get_service(IAnalysisService, query="type=='dramatiq'")
@@ -86,7 +86,7 @@ def test_view_access(setup_app):
 
 def test_regular_task_processing(setup_app):
 
-    from examples.plugins.backend.toy_service_plugins.analysis.interfaces.i_analysis_service import IAnalysisService
+    from examples.toy_plugins.backend.toy_service_plugins.analysis.interfaces.i_analysis_service import IAnalysisService
 
     app = setup_app
     regular_task = app.get_service(IAnalysisService, query="type=='regular'")
@@ -101,7 +101,7 @@ def test_regular_task_processing(setup_app):
 @pytest.fixture
 def dramatiq_task_setup(setup_app):
 
-    from examples.plugins.backend.toy_service_plugins.analysis.interfaces.i_analysis_service import IAnalysisService
+    from examples.toy_plugins.backend.toy_service_plugins.analysis.interfaces.i_analysis_service import IAnalysisService
 
     app = setup_app
     dramatiq_task = app.get_service(IAnalysisService, query="type=='dramatiq'")

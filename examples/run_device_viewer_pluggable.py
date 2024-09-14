@@ -4,12 +4,12 @@ import sys
 from envisage.api import CorePlugin
 from envisage.ui.tasks.api import TasksPlugin
 
+from device_viewer.application import DeviceViewerApplication
+from device_viewer.plugin import DeviceViewerPlugin
+
 
 def main(args):
     """Run the application."""
-
-    from plugins.frontend import DeviceViewerPlugin
-    from plugins.frontend import DeviceViewerApplication
 
     plugins = [CorePlugin(), TasksPlugin(), DeviceViewerPlugin()]
     app = DeviceViewerApplication(plugins=plugins)

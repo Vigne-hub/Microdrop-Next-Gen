@@ -30,7 +30,7 @@ def svg_electrode_layer(svg_root):
 
 @pytest.fixture
 def SvgUtil():
-    from examples.plugins.frontend.device_viewer.utils.dmf_utils import SvgUtil
+    from device_viewer.utils.dmf_utils import SvgUtil
     return SvgUtil
 
 def test_svg_util(clean_svg, SvgUtil):
