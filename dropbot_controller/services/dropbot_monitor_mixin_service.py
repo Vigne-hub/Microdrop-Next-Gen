@@ -67,6 +67,13 @@ class DropbotMonitorMixinService(HasTraits):
                 self.monitor_scheduler.resume()
                 logger.info("Resumed DropBot monitor")
 
+    def on_retry_connection_request(self, message):
+        logger.info(
+            "Attempting to retry connecting with a dropbot"
+        )
+
+        self.monitor_scheduler.resume()
+
     ################################# Protected methods ######################################
     def _on_dropbot_port_found(self, event):
         """
