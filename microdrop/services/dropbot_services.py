@@ -138,7 +138,7 @@ class DropbotService(HasTraits):
     def setup_dropbot(self):
         OUTPUT_ENABLE_PIN = 22
         if self.proxy.digital_read(OUTPUT_ENABLE_PIN):
-            publish_message(topic='dropbot/signals/chip_not_inserted', message='Chip not inserted')
+            publish_message(topic='dropbot/signals/chip_not_inserted', message='Chip Not Inserted')
         else:
             publish_message(topic='dropbot/signals/chip_inserted', message='Chip inserted')
             self.detect_shorts()

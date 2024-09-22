@@ -147,7 +147,7 @@ class DropbotMonitorMixinService(HasTraits):
     def _setup_dropbot(self):
         OUTPUT_ENABLE_PIN = 22
         if self.proxy.digital_read(OUTPUT_ENABLE_PIN):
-            logger.info("Publishing Chip not inserted")
+            logger.info("Publishing Chip Not Inserted")
             publish_message(topic=CHIP_NOT_INSERTED, message='Chip not inserted')
         else:
             logger.info("Publishing Chip inserted")
@@ -189,7 +189,7 @@ class DropbotMonitorMixinService(HasTraits):
             logger.info("Publishing Chip Inserted")
             publish_message(topic=CHIP_INSERTED, message='Chip inserted')
         elif signal['event'] == 'output_disabled':
-            logger.info("Publishing Chip Disabled")
+            logger.info("Publishing Chip Not Inserted")
             publish_message(topic=CHIP_NOT_INSERTED, message='Chip not inserted')
         else:
             logger.warn(f"Unknown signal received: {signal}")

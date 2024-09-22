@@ -1,36 +1,13 @@
-import dramatiq
-from traits.api import Interface, Instance
-
+from traits.api import Instance, Bool
 from microdrop_utils.dramatiq_dropbot_serial_proxy import DramatiqDropbotSerialProxy
+from microdrop_utils.i_controller_base import IControllerBase
 
 
-class IDropbotControllerBase(Interface):
+class IDropbotControllerBase(IControllerBase):
     """
     Interface for the Dropbot Controller Service.
     Provides methods for controlling and monitoring a Dropbot device.
     """
 
-    # Define the dropbot proxy object as an instance of DramatiqDropbotSerialProxy
-    proxy = Instance(DramatiqDropbotSerialProxy)
-
-    def traits_init(self):
-        """
-        Initialize the controller. Start monitoring for dropbot existence etc.
-        """
-        pass
-
-    def create_actor_wrappers(self):
-        """
-        Create actor wrappers. For instance the dropbot backend listener actor.
-        """
-        pass
-
-    def create_listener_actor(self) -> dramatiq.Actor:
-        """
-        Create a Dramatiq actor for listening to dropbot control related messages. For example requests from ui to
-        affect dropbot in some way.
-
-        Returns:
-            dramatiq.Actor: The created Dramatiq actor.
-        """
-        pass
+    proxy = Instance(DramatiqDropbotSerialProxy, desc="The DramatiqDropbotSerialProxy object")
+    active_state = Bool(desc="specifies if the controller is actively listening to comma nds or not")

@@ -319,7 +319,7 @@ class MessageRouterActor:
             subscribing_actor_names = self.message_router_data.get_subscribers_for_topic(topic)
 
             for subscribing_actor_name in subscribing_actor_names:
-                logger.debug(f"MESSAGE_ROUTER: Publishing message: {message} to actor: {subscribing_actor_name}")
+                logger.info(f"MESSAGE_ROUTER: Publishing message: {message} to actor: {subscribing_actor_name}")
                 publish_message(message, topic, subscribing_actor_name)
 
             logger.debug(
