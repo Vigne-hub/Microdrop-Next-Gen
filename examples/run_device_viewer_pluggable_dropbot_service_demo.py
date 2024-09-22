@@ -9,6 +9,7 @@ from traits.api import provides, HasTraits, List, observe
 # plugin imports
 from dropbot_controller.interfaces.i_dropbot_control_mixin_service import IDropbotControlMixinService
 from dropbot_controller.plugin import DropbotControllerPlugin
+from dropbot_controller.consts import START_DEVICE_MONITORING
 from message_router.plugin import MessageRouterPlugin
 from message_router.public_constants import ACTOR_TOPIC_ROUTES
 
@@ -33,6 +34,7 @@ class DropbotDummyMixinService(HasTraits):
 
 class DummyDropbotServicePlugin(Plugin):
     id = 'dummy_dropbot_service.plugin'
+    name = 'Dummy Dropbot Service Plugin'
     service_offers = List(contributes_to=SERVICE_OFFERS)
 
     # This tells us that the plugin contributes the value of this trait to the
@@ -51,7 +53,8 @@ class DummyDropbotServicePlugin(Plugin):
 
     @observe('application:started')
     def _on_application_started(self, event):
-        publish_message(message="VID:PID=16C0:", topic="dropbot/requests/start_device_monitoring")
+        self.application.get_plugin("dropbot_controller.plugin").dropbot_controller.print_test()
+        publish_message(message="", topic=START_DEVICE_MONITORING)
 
     @observe('application:stopping')
     def _on_application_stopping(self, event):
