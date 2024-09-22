@@ -3,7 +3,7 @@ import dramatiq
 
 from dropbot_controller.interfaces.i_dropbot_controller_base import IDropbotControllerBase
 
-from traits.api import HasTraits, provides
+from traits.api import HasTraits, provides, Bool
 from microdrop_utils._logger import get_logger
 from microdrop_utils.pub_sub_serial_proxy import DropbotSerialProxy
 
@@ -15,10 +15,13 @@ class DropbotControllerBase(HasTraits):
     # dropbot proxy object
     proxy = Instance(DropbotSerialProxy)
 
+    active_state = Bool()
+
     def traits_init(self):
         self.create_actor_wrappers()
         logger.info("Attempting to start DropBot monitoring")
-        #self.on_start_device_monitoring_request(hwids_to_check=["VID:PID=16C0:"])
+        self.active_state = True
+        self.on_start_device_monitoring_request(hwid_to_check="VID:PID=16C0:")
 
     def create_actor_wrappers(self):
         logger.debug("Creating actor wrappers")
@@ -41,13 +44,19 @@ class DropbotControllerBase(HasTraits):
             message (str): The received message.
             topic (str): The topic of the message.
             """
-            logger.info(f"DROPBOT BACKEND LISTENER: Received message: {message} from topic: {topic}")
+            logger.debug(f"DROPBOT BACKEND LISTENER: Received message: {message} from topic: {topic}")
 
             topic = topic.split("/")
 
+            if "start_device_monitoring" == topic[-1] and self.active_state:
+                logger.info("Dropbot controller already started")
+
             # Check if the method exists and call it
-            if hasattr(self, f"on_{topic[-1]}_request") and callable(getattr(self, f"on_{topic[-1]}_request")):
+            elif hasattr(self, f"on_{topic[-1]}_request") and callable(getattr(self, f"on_{topic[-1]}_request")):
                 # Use getattr to get the method and call it
                 getattr(self, f"on_{topic[-1]}_request")(message)
+
+            else:
+                logger.warning(f"Method {topic[-1]} not found")
 
         return dropbot_backend_listener

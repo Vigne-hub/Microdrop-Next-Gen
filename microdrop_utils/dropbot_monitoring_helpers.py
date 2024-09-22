@@ -1,9 +1,5 @@
-from serial.tools.list_ports import grep
-
-from dropbot_controller.public_constants import HALTED, CHIP_INSERTED, CHIP_NOT_INSERTED, NO_POWER
 import re
-
-from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
+from serial.tools.list_ports import grep
 from microdrop_utils._logger import get_logger
 
 logger = get_logger(__name__)
