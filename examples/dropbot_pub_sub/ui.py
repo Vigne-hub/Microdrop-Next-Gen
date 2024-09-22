@@ -10,7 +10,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 
 from examples.dropbot_pub_sub.dropbot_searcher import check_dropbot_devices_available
 from microdrop_utils._logger import get_logger
-from microdrop_utils.pub_sub_serial_proxy import DropbotSerialProxy
+from microdrop_utils.dramatiq_dropbot_serial_proxy import DramatiqDropbotSerialProxy
 
 logger = get_logger(__name__)
 
@@ -56,7 +56,7 @@ class MainWindowController:
         self.window.connect_button.clicked.connect(self.connect_button_clicked)
 
         # needs proxy for communication, (port name not used rn)
-        self.proxy: DropbotSerialProxy = None
+        self.proxy: DramatiqDropbotSerialProxy = None
 
         # setup the scheduler for DropBot detection
         self.dropbot_job_submitted = False # used to check if job is already submitted
@@ -118,7 +118,7 @@ class MainWindowController:
         @dramatiq.actor
         def make_serial_proxy(port_name):
             try:
-                self.proxy = DropbotSerialProxy(port=port_name)
+                self.proxy = DramatiqDropbotSerialProxy(port=port_name)
                 logger.info(f"Connected to DropBot on port {port_name}")
 
             except (IOError, AttributeError):

@@ -12,16 +12,14 @@ import numpy as np
 from apscheduler.events import EVENT_JOB_EXECUTED
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
-from dramatiq import get_broker, Worker
 from dropbot import EVENT_CHANNELS_UPDATED, EVENT_SHORTS_DETECTED, EVENT_ENABLE
-from nptyping import NDArray, Shape, UInt8
 from traits.has_traits import HasTraits, provides
 
 from microdrop.interfaces import IDropbotControllerService
 from microdrop.services.dropbot_service_helpers import check_dropbot_devices_available
 from microdrop_utils.dramatiq_pub_sub_helpers import publish_message, MessageRouterActor
 from microdrop_utils._logger import get_logger
-from microdrop_utils.pub_sub_serial_proxy import DropbotSerialProxy
+from microdrop_utils.dramatiq_dropbot_serial_proxy import DramatiqDropbotSerialProxy
 from dropbot import move
 
 from pint import UnitRegistry
@@ -40,7 +38,7 @@ class DropbotService(HasTraits):
         "dropbot_backend_listener": ["dropbot/ui/notifications/#",
                                      "dropbot/signals/disconnected",
                                      "dropbot/signals/halted"]}
-    proxy: Union[DropbotSerialProxy, None] = None
+    proxy: Union[DramatiqDropbotSerialProxy, None] = None
 
     def __init__(self):
         self.create_actor_wrappers()
@@ -96,7 +94,7 @@ class DropbotService(HasTraits):
 
             try:
                 logger.info(f"Attempting to create DropBot serial proxy on port {port_name}")
-                self.proxy = DropbotSerialProxy(port=port_name)
+                self.proxy = DramatiqDropbotSerialProxy(port=port_name)
                 # this will send out a connected signal to the message router is successful
 
             except (IOError, AttributeError):

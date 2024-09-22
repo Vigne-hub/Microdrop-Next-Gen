@@ -5,7 +5,7 @@ from dropbot_controller.interfaces.i_dropbot_controller_base import IDropbotCont
 
 from traits.api import HasTraits, provides, Bool
 from microdrop_utils._logger import get_logger
-from microdrop_utils.pub_sub_serial_proxy import DropbotSerialProxy
+from microdrop_utils.dramatiq_dropbot_serial_proxy import DramatiqDropbotSerialProxy
 
 logger = get_logger(__name__)
 
@@ -13,7 +13,7 @@ logger = get_logger(__name__)
 @provides(IDropbotControllerBase)
 class DropbotControllerBase(HasTraits):
     # dropbot proxy object
-    proxy = Instance(DropbotSerialProxy)
+    proxy = Instance(DramatiqDropbotSerialProxy)
 
     active_state = Bool()
 

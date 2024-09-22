@@ -1,7 +1,7 @@
 import dramatiq
 from traits.api import Interface, Instance
 
-from microdrop_utils.pub_sub_serial_proxy import DropbotSerialProxy
+from microdrop_utils.dramatiq_dropbot_serial_proxy import DramatiqDropbotSerialProxy
 
 
 class IDropbotControllerBase(Interface):
@@ -10,8 +10,8 @@ class IDropbotControllerBase(Interface):
     Provides methods for controlling and monitoring a Dropbot device.
     """
 
-    # Define the dropbot proxy object as an instance of DropbotSerialProxy
-    proxy = Instance(DropbotSerialProxy)
+    # Define the dropbot proxy object as an instance of DramatiqDropbotSerialProxy
+    proxy = Instance(DramatiqDropbotSerialProxy)
 
     def traits_init(self):
         """

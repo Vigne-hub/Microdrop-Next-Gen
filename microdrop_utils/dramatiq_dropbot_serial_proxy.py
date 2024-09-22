@@ -4,7 +4,7 @@ import base_node_rpc as bnr
 import functools as ft
 
 
-class DropbotSerialProxy(SerialProxy):
+class DramatiqDropbotSerialProxy(SerialProxy):
 
     def connect(self):
         self.terminate()

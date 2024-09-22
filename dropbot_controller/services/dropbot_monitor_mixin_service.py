@@ -2,7 +2,7 @@ import functools
 import json
 
 import dropbot
-from traits.api import provides, HasTraits, Dict, Str
+from traits.api import provides, HasTraits
 from apscheduler.events import EVENT_JOB_EXECUTED
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
@@ -10,7 +10,7 @@ from dropbot import EVENT_CHANNELS_UPDATED, EVENT_SHORTS_DETECTED, EVENT_ENABLE
 
 from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
 from microdrop_utils._logger import get_logger
-from microdrop_utils.pub_sub_serial_proxy import DropbotSerialProxy
+from microdrop_utils.dramatiq_dropbot_serial_proxy import DramatiqDropbotSerialProxy
 from microdrop_utils.dropbot_monitoring_helpers import check_dropbot_devices_available
 from ..interfaces.i_dropbot_control_mixin_service import IDropbotControlMixinService
 
@@ -107,7 +107,7 @@ class DropbotMonitorMixinService(HasTraits):
 
             try:
                 logger.debug(f"Attempting to create DropBot serial proxy on port {port_name}")
-                self.proxy = DropbotSerialProxy(port=port_name)
+                self.proxy = DramatiqDropbotSerialProxy(port=port_name)
                 # this will send out a connected signal to the message router is successful
 
             except (IOError, AttributeError):
