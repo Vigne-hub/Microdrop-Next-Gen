@@ -22,9 +22,9 @@ class DropbotControllerBase(HasTraits):
 
     def create_actor_wrappers(self):
         logger.debug("Creating actor wrappers")
-        self.listener = self.create_dropbot_backend_listener_actor()
+        self.listener = self.create_listener_actor()
 
-    def create_dropbot_backend_listener_actor(self):
+    def create_listener_actor(self):
         """
         Create a Dramatiq actor for listening to UI-related messages.
 

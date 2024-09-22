@@ -25,7 +25,7 @@ class IDropbotControllerBase(Interface):
         """
         pass
 
-    def create_dropbot_backend_listener_actor(self) -> dramatiq.Actor:
+    def create_listener_actor(self) -> dramatiq.Actor:
         """
         Create a Dramatiq actor for listening to dropbot control related messages. For example requests from ui to
         affect dropbot in some way.
