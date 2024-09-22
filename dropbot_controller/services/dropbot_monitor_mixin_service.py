@@ -149,7 +149,7 @@ class DropbotMonitorMixinService(HasTraits):
             publish_message(topic=CHIP_INSERTED, message='Chip not inserted')
         else:
             publish_message(topic=CHIP_NOT_INSERTED, message='Chip inserted')
-            self.detect_shorts()
+            self.on_detect_shorts_request("")
 
         self.proxy.signals.signal('output_enabled').connect(self._output_state_changed_wrapper)
         self.proxy.signals.signal('output_disabled').connect(self._output_state_changed_wrapper)
