@@ -53,6 +53,7 @@ class DropbotMonitorMixinService(HasTraits):
         if self.proxy is not None:
             shorts_list = self.proxy.detect_shorts()
             shorts_dict = {'Shorts_detected': shorts_list}
+            logger.info(f"Detected shorts: {shorts_dict}")
             publish_message(topic=SHORTS_DETECTED, message=json.dumps(shorts_dict))
 
     def on_disconnected_request(self, message):
@@ -67,14 +68,21 @@ class DropbotMonitorMixinService(HasTraits):
                 self.monitor_scheduler.resume()
                 logger.info("Resumed DropBot monitor")
 
+    def on_retry_connection_request(self, message):
+        logger.info(
+            "Attempting to retry connecting with a dropbot"
+        )
+
+        self.monitor_scheduler.resume()
+
     ################################# Protected methods ######################################
     def _on_dropbot_port_found(self, event):
         """
         Method defining what to do when dropbot has been found on a port.
         """
-        logger.info("DropBot port found")
+        logger.debug("DropBot port found")
         self.monitor_scheduler.pause()
-        logger.info("Paused DropBot monitor")
+        logger.debug("Paused DropBot monitor")
         self.port_name = str(event.retval)
         logger.info('Attempting to connect to DropBot on port: %s', self.port_name)
         self._connect_to_dropbot(port_name=self.port_name)
@@ -93,12 +101,12 @@ class DropbotMonitorMixinService(HasTraits):
 
         if self.proxy is None or getattr(self, 'proxy.monitor', None) is None:
 
-            logger.info("Dropbot not connected. Attempting to connect")
+            logger.debug("Dropbot not connected. Attempting to connect")
 
             ############################### Attempt to make a proxy object #############################
 
             try:
-                logger.info(f"Attempting to create DropBot serial proxy on port {port_name}")
+                logger.debug(f"Attempting to create DropBot serial proxy on port {port_name}")
                 self.proxy = DropbotSerialProxy(port=port_name)
                 # this will send out a connected signal to the message router is successful
 
@@ -139,9 +147,11 @@ class DropbotMonitorMixinService(HasTraits):
     def _setup_dropbot(self):
         OUTPUT_ENABLE_PIN = 22
         if self.proxy.digital_read(OUTPUT_ENABLE_PIN):
-            publish_message(topic=CHIP_INSERTED, message='Chip not inserted')
+            logger.info("Publishing Chip not inserted")
+            publish_message(topic=CHIP_NOT_INSERTED, message='Chip not inserted')
         else:
-            publish_message(topic=CHIP_NOT_INSERTED, message='Chip inserted')
+            logger.info("Publishing Chip inserted")
+            publish_message(topic=CHIP_INSERTED, message='Chip inserted')
             self.on_detect_shorts_request("")
 
         self.proxy.signals.signal('output_enabled').connect(self._output_state_changed_wrapper)
@@ -176,8 +186,10 @@ class DropbotMonitorMixinService(HasTraits):
     @staticmethod
     def _output_state_changed_wrapper(signal: dict[str, str]):
         if signal['event'] == 'output_enabled':
+            logger.info("Publishing Chip Inserted")
             publish_message(topic=CHIP_INSERTED, message='Chip inserted')
         elif signal['event'] == 'output_disabled':
+            logger.info("Publishing Chip Disabled")
             publish_message(topic=CHIP_NOT_INSERTED, message='Chip not inserted')
         else:
             logger.warn(f"Unknown signal received: {signal}")
