@@ -13,7 +13,7 @@ from message_router.plugin import MessageRouterPlugin
 from message_router.public_constants import ACTOR_TOPIC_ROUTES
 
 # local helpers imports
-from microdrop_utils.broker_server_helpers import broker_context
+from microdrop_utils.broker_server_helpers import dramatiq_broker_context
 from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
 
 
@@ -63,12 +63,13 @@ class DummyDropbotServicePlugin(Plugin):
 def main(args):
     """Run the application."""
 
-    # we will be adding a sample dummy dropbot service mixin plugin that will provide a module.submodule"
+    # We will be adding a sample dummy dropbot service mixin plugin that will provide a module.submodule"
 
     plugins = [CorePlugin(), DropbotControllerPlugin(), DummyDropbotServicePlugin(), MessageRouterPlugin()]
     app = Application(plugins=plugins)
 
-    with broker_context():
+    # Need to run with a dramatiq broker context since app requires plugins that use dramatiq
+    with dramatiq_broker_context():
         app.run()
 
 

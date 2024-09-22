@@ -111,7 +111,7 @@ def shutdown_routine():
 
 
 @contextmanager
-def broker_context():
+def dramatiq_broker_context():
     """
     Context manager for apps that make use of dramatiq.
     Ensures proper startup and shutdown routines.
@@ -154,5 +154,5 @@ if __name__ == "__main__":
                 exit(0)
 
 
-    with broker_context():
+    with dramatiq_broker_context():
         example_app_routine()
