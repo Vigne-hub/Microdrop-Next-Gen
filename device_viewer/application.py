@@ -1,3 +1,6 @@
+# sys imports
+import os
+
 # Local imports.
 from .preferences import DeviceViewerPreferences
 
@@ -5,6 +8,8 @@ from .preferences import DeviceViewerPreferences
 from envisage.ui.tasks.api import TasksApplication
 from pyface.tasks.api import TaskWindowLayout
 from traits.api import Bool, Instance, List, Property
+from pyface.image_resource import ImageResource
+from pyface.splash_screen import SplashScreen
 
 
 class DeviceViewerApplication(TasksApplication):
@@ -16,19 +21,23 @@ class DeviceViewerApplication(TasksApplication):
     id = "device_viewer.app"
 
     # The application's user-visible name.
-    name = "Device Viewer App"
+    name = "Microdrop Next Gen"
 
     #### 'TasksApplication' interface #########################################
 
     # The default window-level layout for the application.
     default_layout = List(TaskWindowLayout)
 
-    # Whether to restore the previous application-level layout when the
-    # applicaton is started.
+    # Whether to restore the previous application-level layout when the applicaton is started.
     always_use_default_layout = Property(Bool)
-
     # above two traits are gotten from the preferences file
 
+    # branding
+    icon = ImageResource(f'{os.path.dirname(__file__)}{os.sep}microdrop.ico')
+    splash_screen = SplashScreen(
+        image=ImageResource(f'{os.path.dirname(__file__)}{os.sep}scibots.jpg'),
+        text="Microdrop-Next-Gen v.alpha"
+    )
     #### 'Application' interface ####################################
 
     preferences_helper = Instance(DeviceViewerPreferences)
