@@ -1,3 +1,6 @@
+# This module's package.
+PKG = '.'.join(__name__.split('.')[:-1])
+
 # publishers
 ACTOR_TOPIC_DICT = {
     "dropbot_backend_listener": [

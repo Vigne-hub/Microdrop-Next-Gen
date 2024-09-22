@@ -10,13 +10,15 @@ from dropbot_controller.services.dropbot_monitor_mixin_service import DropbotMon
 from message_router.public_constants import ACTOR_TOPIC_ROUTES
 from microdrop_utils._logger import get_logger
 
+from .public_constants import PKG
+
 # Initialize logger
 logger = get_logger(__name__)
 
 
 class DropbotControllerPlugin(Plugin):
-    id = 'dropbot_controller'
-    name = 'Dropbot Controller'
+    id = PKG + '.plugin'
+    name = 'Dropbot Controller Plugin'
 
     # this plugin contributes some service offers
     service_offers = List(contributes_to=SERVICE_OFFERS)
