@@ -1,8 +1,7 @@
 from envisage.api import ServiceOffer
 from envisage.ids import SERVICE_OFFERS
 from envisage.plugin import Plugin
-from traits.api import List, observe
-import dramatiq
+from traits.api import List
 
 from dropbot_controller.dropbot_controller_base import DropbotControllerBase
 from dropbot_controller.interfaces.i_dropbot_control_mixin_service import IDropbotControlMixinService
@@ -13,10 +12,6 @@ from microdrop_utils._logger import get_logger
 
 # Initialize logger
 logger = get_logger(__name__)
-# remove prometheus metrics for now
-for el in dramatiq.get_broker().middleware:
-    if el.__module__ == "dramatiq.middleware.prometheus":
-        dramatiq.get_broker().middleware.remove(el)
 
 
 class DropbotControllerPlugin(Plugin):
@@ -36,21 +31,17 @@ class DropbotControllerPlugin(Plugin):
         ]
 
     def _create_service(self, *args, **kwargs):
-        """Create an analysis service."""
+        """Returns a dropbot monitor mixin service with core functionality."""
         return DropbotMonitorMixinService
 
     def start(self):
         """ Initialize the dropbot on plugin start """
 
-        # Note that we always offer the service via its name, but look it up
-        # via the actual protocol.
+        # Note that we always offer the service via its name, but look it up via the actual protocol.
         from dropbot_controller.interfaces.i_dropbot_control_mixin_service import IDropbotControlMixinService
 
         # Lookup the dropbot controller related mixin class services and add to base class.
         services = self.application.get_services(IDropbotControlMixinService) + [DropbotControllerBase]
-        logger.info(f"The following dropbot services are going to be initialized: {services} ")
+        logger.debug(f"The following dropbot services are going to be initialized: {services} ")
 
-        # Combine the classes into a new dropbot controller class
-        DropbotController = type('DropbotController', tuple(services), {})
-
-        self.dropbot_controller = DropbotController()
+        self.dropbot_controller = type('DropbotController', tuple(services), {})()
