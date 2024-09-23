@@ -16,6 +16,9 @@ from message_router.public_constants import ACTOR_TOPIC_ROUTES
 # local helpers imports
 from microdrop_utils.broker_server_helpers import dramatiq_broker_context
 from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
+from microdrop_utils._logger import get_logger
+
+logger = get_logger(__name__)
 
 
 @provides(IDropbotControlMixinService)
@@ -60,8 +63,7 @@ class DummyDropbotServicePlugin(Plugin):
     def _on_application_stopping(self, event):
         # create event loop
         while True:
-            time.sleep(0.2)
-
+            time.sleep(1)
 
 def main(args):
     """Run the application."""

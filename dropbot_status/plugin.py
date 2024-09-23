@@ -1,11 +1,9 @@
 # enthought imports
-from pyface.action.schema.schema_addition import SchemaAddition
 from traits.api import List
 from envisage.api import Plugin, TASK_EXTENSIONS
 from envisage.ui.tasks.api import TaskExtension
 
-# This module's package.
-PKG = '.'.join(__name__.split('.')[:-1])
+from dropbot_status.consts import PKG
 
 
 class DropbotStatusPlugin(Plugin):
@@ -15,7 +13,6 @@ class DropbotStatusPlugin(Plugin):
 
     #: The plugin unique identifier.
     id = PKG + ".plugin"
-
     #: The plugin name (suitable for displaying to the user).
     name = "Dropbot Status Plugin"
 

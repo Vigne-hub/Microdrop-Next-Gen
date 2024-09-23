@@ -39,19 +39,16 @@ class DropbotMonitorMixinService(HasTraits):
         if not hwid_to_check:
             hwid_to_check = DROPBOT_DB3_120_HWID
 
-        self.halted_check_scheduler = BackgroundScheduler()
-        self.halted_check_scheduler.add_job(self._check_halted, trigger=IntervalTrigger(seconds=2))
-
         scheduler = BackgroundScheduler()
         scheduler.add_job(
             func=functools.partial(check_dropbot_devices_available, hwid_to_check),
             trigger=IntervalTrigger(seconds=2),
         )
-
         scheduler.add_listener(self._on_dropbot_port_found, EVENT_JOB_EXECUTED)
         self.monitor_scheduler = scheduler
-        logger.info("DropBot monitor created")
-        logger.info("Starting DropBot monitor")
+
+        logger.info("DropBot monitor created and started")
+
         self.monitor_scheduler.start()
 
     def on_detect_shorts_request(self, message):
@@ -72,8 +69,6 @@ class DropbotMonitorMixinService(HasTraits):
                     self.proxy.terminate()
                     logger.info("Proxy terminated")
                     self.proxy.monitor = None
-                    # Stop checking for halted signal. Will resume after dropbot connection established again
-                    self.halted_check_scheduler.pause()
                     self.monitor_scheduler.resume()
                     logger.info("Resumed DropBot monitor")
 
@@ -82,12 +77,10 @@ class DropbotMonitorMixinService(HasTraits):
         self.monitor_scheduler.resume()
 
     def on_halted_request(self, message):
-        self.halted_check_scheduler.pause()
-        logger.info("Dropbot Halted")
         self._no_power = True
-        logger.info("Proxy terminated")
         self.proxy.terminate()
         self.proxy.monitor = None
+        logger.error("Halted DropBot: Disconnect everything and reconnect")
 
     ################################# Protected methods ######################################
     def _on_dropbot_port_found(self, event):
@@ -153,11 +146,6 @@ class DropbotMonitorMixinService(HasTraits):
                                                    EVENT_SHORTS_DETECTED |
                                                    EVENT_ENABLE)
 
-                logger.info("halted signal monitor set to run")
-                if self.halted_check_scheduler.running:
-                    self.halted_check_scheduler.resume()
-                else:
-                    self.halted_check_scheduler.start()
             ###########################################################################################
 
             finally:
@@ -190,17 +178,6 @@ class DropbotMonitorMixinService(HasTraits):
         voltage_formatted = f"{voltage:.2g~P}"
         publish_message(topic=CAPACITANCE_UPDATED,
                         message=json.dumps({'capacitance': capacitance_formatted, 'voltage': voltage_formatted}))
-
-    def _check_halted(self):
-        if self.proxy is not None:
-            # the dropbot is halted if the high voltage output is not enabled and the realtime is enabled
-            try:
-                if not self.proxy.hv_output_enabled and self.realtime_enabled:
-                    publish_message(topic=HALTED, message='DropBot halted')
-
-            except Exception as e:
-                logger.error(str(e))
-                publish_message(topic=HALTED, message='DropBot halted')
 
     @staticmethod
     def _halted_event_wrapper():
