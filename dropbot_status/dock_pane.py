@@ -4,8 +4,7 @@ from pyface.tasks.dock_pane import DockPane
 # local imports
 from dropbot_status.widget import DropBotControlWidget
 
-# This module's package.
-PKG = '.'.join(__name__.split('.')[:-1])
+from .consts import PKG
 
 
 class DropbotStatusDockPane(DockPane):

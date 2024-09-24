@@ -3,7 +3,7 @@ from traits.api import List
 from envisage.api import Plugin, TASK_EXTENSIONS
 from envisage.ui.tasks.api import TaskExtension
 
-from dropbot_status.consts import PKG
+from .consts import PKG
 
 
 class DropbotStatusPlugin(Plugin):

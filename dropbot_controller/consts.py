@@ -4,6 +4,12 @@ PKG = '.'.join(__name__.split('.')[:-1])
 # dropbot DB3-120 hardware id
 DROPBOT_DB3_120_HWID = 'VID:PID=16C0:0483'
 
+# Chip may have been inserted before connecting, so `chip-inserted`
+# event may have been missed.
+# Explicitly check if chip is inserted by reading **active low**
+# `OUTPUT_ENABLE_PIN`.
+OUTPUT_ENABLE_PIN = 22
+
 # publishers
 ACTOR_TOPIC_DICT = {
     "dropbot_backend_listener": [

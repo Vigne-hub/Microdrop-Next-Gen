@@ -15,7 +15,7 @@ from microdrop_utils.dropbot_monitoring_helpers import check_dropbot_devices_ava
 from ..interfaces.i_dropbot_control_mixin_service import IDropbotControlMixinService
 
 from ..consts import NO_DROPBOT_AVAILABLE, CHIP_INSERTED, CHIP_NOT_INSERTED, HALTED, \
-    CAPACITANCE_UPDATED, SHORTS_DETECTED, NO_POWER, DROPBOT_DB3_120_HWID
+    CAPACITANCE_UPDATED, SHORTS_DETECTED, NO_POWER, DROPBOT_DB3_120_HWID, OUTPUT_ENABLE_PIN
 
 logger = get_logger(__name__)
 
@@ -157,7 +157,6 @@ class DropbotMonitorMixinService(HasTraits):
             logger.info("Dropbot already connected on port %s", port_name)
 
     def _setup_dropbot(self):
-        OUTPUT_ENABLE_PIN = 22
         if self.proxy.digital_read(OUTPUT_ENABLE_PIN):
             logger.info("Publishing Chip Not Inserted")
             publish_message(topic=CHIP_NOT_INSERTED, message='Chip not inserted')
@@ -168,7 +167,7 @@ class DropbotMonitorMixinService(HasTraits):
 
         self.proxy.signals.signal('output_enabled').connect(self._output_state_changed_wrapper)
         self.proxy.signals.signal('output_disabled').connect(self._output_state_changed_wrapper)
-        self.proxy.signals.signal('halted').connect(self._halted_event_wrapper)
+        self.proxy.signals.signal('halted').connect(self._halted_event_wrapper, weak=False)
         self.proxy.signals.signal('capacitance-updated').connect(self._capacitance_updated_wrapper)
 
     def _capacitance_updated_wrapper(self, signal: dict[str, str]):
