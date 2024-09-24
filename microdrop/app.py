@@ -1,5 +1,5 @@
 # Local imports.
-from .preferences import MicroDropPreferences
+from preferences import MicroDropPreferences
 
 # Enthought library imports.
 from envisage.ui.tasks.api import TasksApplication

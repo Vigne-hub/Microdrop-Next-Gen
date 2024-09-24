@@ -3,6 +3,7 @@ from pyface.action.schema.schema_addition import SchemaAddition
 from traits.api import List
 from envisage.api import Plugin, TASK_EXTENSIONS
 from envisage.ui.tasks.api import TaskExtension
+from microdrop_utils.dramatiq_pub_sub_helpers import MessageRouterActor
 
 # This module's package.
 PKG = '.'.join(__name__.split('.')[:-1])
