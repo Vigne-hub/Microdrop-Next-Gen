@@ -1,3 +1,12 @@
+"""
+Tests for dropbot methods.
+
+Notes:
+    - All tests will not pass twice in a row unless you unplug power and usb connection to dropbot and plug it back
+    due to halted test.
+    - The other tests can be redone.
+"""
+
 import time
 from dropbot import EVENT_SHORTS_DETECTED, EVENT_ENABLE, EVENT_CHANNELS_UPDATED
 import numpy as np
