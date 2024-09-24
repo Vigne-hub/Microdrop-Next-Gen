@@ -32,4 +32,3 @@ def stub_rate_limiter_backend():
 @pytest.fixture
 def stub_result_backend():
     return res_backends.StubBackend()
-
