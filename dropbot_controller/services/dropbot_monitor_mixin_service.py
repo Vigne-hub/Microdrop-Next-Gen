@@ -2,7 +2,7 @@ import functools
 import json
 
 import dropbot
-from traits.api import provides, HasTraits, Bool
+from traits.api import provides, HasTraits, Bool, Instance
 from apscheduler.events import EVENT_JOB_EXECUTED
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
@@ -29,6 +29,9 @@ class DropbotMonitorMixinService(HasTraits):
     id = "dropbot_monitor_mixin_service"
     name = 'Dropbot Monitor Mixin'
     realtime_mode = Bool(True)
+    monitor_scheduler = Instance(BackgroundScheduler,
+                                 desc="An AP scheduler job to periodically look for dropbot connected ports."
+                                 )
 
     ######################################## Methods to Expose #############################################
     def on_start_device_monitoring_request(self, hwid_to_check):
