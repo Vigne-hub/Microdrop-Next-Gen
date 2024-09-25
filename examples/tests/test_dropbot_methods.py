@@ -17,7 +17,7 @@ def proxy():
 
 
 def test_dropbot_capacitance_updated(proxy):
-    'Verify number of actuated channels against requested channels.'
+    'Verify dropbot capacitance updated signal'
 
     event = dict()
 
@@ -41,7 +41,7 @@ def test_dropbot_capacitance_updated(proxy):
 
 def test_actuations(proxy):
     """
-    Simple actuation test. See dropbot/threshold.py for a more failsafe method in the function actuate_channels.
+    Simple actuation test. See dropbot.py/threshold.py for a more failsafe method in the function actuate_channels.
     """
     n_channels = 10
 
