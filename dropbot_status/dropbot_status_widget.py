@@ -208,7 +208,6 @@ class DropBotControlWidget(QWidget):
             self.status_label.update_connection_status('disconnected')
         elif "connected" in topic:
             self.status_label.update_connection_status('connected')
-            self.show_no_power_popup()
         elif "chip_inserted" in topic:
             self.status_label.update_chip_status('chip_inserted')
         elif "chip_not_inserted" in topic:
