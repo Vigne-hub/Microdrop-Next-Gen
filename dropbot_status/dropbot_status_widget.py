@@ -1,10 +1,10 @@
 import json
 import os
 
-from PySide6.QtWebEngineWidgets import QWebEngineView
+# from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWidgets import QApplication, QLabel, QWidget, QVBoxLayout, QPushButton, QMessageBox, QHBoxLayout, \
     QDialog, QTextBrowser, QLineEdit
-from PySide6.QtCore import Qt, Signal, QTimer, QFile, QTextStream, QIODevice, QUrl
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QPixmap
 import sys
 import dramatiq
@@ -111,9 +111,6 @@ class DropBotControlWidget(QWidget):
         self.layout.addWidget(self.detect_shorts_button)
         self.signal_received.connect(self.signal_handler)
 
-        # Create a QWebEngineView widget
-        self.browser = QWebEngineView()
-
     def show_halted_popup(self):
         self.halted_popup = QMessageBox()
         self.halted_popup.setWindowTitle("ERROR: DropBot Halted")
@@ -153,11 +150,27 @@ class DropBotControlWidget(QWidget):
         self.no_power_dialog.setLayout(layout)
 
         # Create the web engine view for displaying HTML
-        self.browser = QWebEngineView()
-        html_path = f"{os.path.dirname(__file__)}{os.sep}html_files{os.sep}no_power.html"
+        self.browser = QTextBrowser()
 
-        # Load the HTML file into the browser
-        self.load_html(html_path)
+        html_content = f"""
+        
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERROR: No Power</title>
+</head>
+<body>
+    <h3>DropBot currently has no power supply connected.</h3>
+    <strong>Plug in power supply cable<br></strong> <img src='{os.path.dirname(__file__)}{os.sep}images{os.sep}dropbot-power.png' width="104" height="90">
+    <strong><br>Click the "Retry" button after plugging in the power cable to attempt reconnection</strong>
+</body>
+</html>
+        
+        """
+
+        self.browser.setHtml(html_content)
 
         # Create the retry button and connect its signal
         self.no_power_retry_button = QPushButton("Retry")
@@ -169,19 +182,6 @@ class DropBotControlWidget(QWidget):
 
         # Show the dialog
         self.no_power_dialog.exec()
-
-    def load_html(self, file_path):
-        # Open and read the HTML file content
-        file = QFile(file_path)
-        if file.open(QFile.OpenModeFlag.ReadOnly | QFile.OpenModeFlag.Text):
-            stream = QTextStream(file)
-            html_content = stream.readAll()
-
-            # Set base URL to the directory of the HTML file
-            base_url = QUrl.fromLocalFile(os.path.dirname(file_path) + os.sep)
-            self.browser.setHtml(html_content, base_url)
-
-        file.close()
 
     def detect_shorts_triggered(self):
         logger.info("Detecting shorts...")
@@ -208,6 +208,7 @@ class DropBotControlWidget(QWidget):
             self.status_label.update_connection_status('disconnected')
         elif "connected" in topic:
             self.status_label.update_connection_status('connected')
+            self.show_no_power_popup()
         elif "chip_inserted" in topic:
             self.status_label.update_chip_status('chip_inserted')
         elif "chip_not_inserted" in topic:
