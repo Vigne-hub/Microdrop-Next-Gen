@@ -1,3 +1,12 @@
+"""
+Tests for dropbot methods.
+
+Notes:
+    - All tests will not pass twice in a row unless you unplug power and usb connection to dropbot and plug it back
+    due to halted test.
+    - The other tests can be redone.
+"""
+
 import time
 from dropbot import EVENT_SHORTS_DETECTED, EVENT_ENABLE, EVENT_CHANNELS_UPDATED
 import numpy as np
@@ -17,7 +26,7 @@ def proxy():
 
 
 def test_dropbot_capacitance_updated(proxy):
-    'Verify dropbot capacitance updated signal'
+    'Verify number of actuated channels against requested channels.'
 
     event = dict()
 
@@ -41,7 +50,7 @@ def test_dropbot_capacitance_updated(proxy):
 
 def test_actuations(proxy):
     """
-    Simple actuation test. See dropbot.py/threshold.py for a more failsafe method in the function actuate_channels.
+    Simple actuation test. See dropbot/threshold.py for a more failsafe method in the function actuate_channels.
     """
     n_channels = 10
 

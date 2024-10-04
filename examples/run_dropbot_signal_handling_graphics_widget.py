@@ -17,8 +17,10 @@ def main():
     # this is the dropbot backend services which will hold the dropbot serial proxy connection
     from microdrop.services.dropbot_services import DropbotService
 
-    # create an instance of the qt app
-    app = QApplication(sys.argv)
+    if not QApplication.instance():
+        app = QApplication(sys.argv)
+    else:
+        app = QApplication.instance()
 
     # instantiate the classes
     dropbot_control_widget = DropBotControlWidget()
