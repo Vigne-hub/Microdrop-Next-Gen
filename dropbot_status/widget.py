@@ -1,28 +1,34 @@
+# sys imports
 import json
 import os
+import dramatiq
 
-# from PySide6.QtWebEngineWidgets import QWebEngineView
-from PySide6.QtWidgets import QApplication, QLabel, QWidget, QVBoxLayout, QPushButton, QMessageBox, QHBoxLayout, \
-    QDialog, QTextBrowser, QLineEdit
+# pyside imports
+from PySide6.QtWidgets import QLabel, QWidget, QVBoxLayout, QPushButton, QMessageBox, QHBoxLayout, QDialog, QTextBrowser
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QPixmap
-import sys
-import dramatiq
+
+# local imports
 from microdrop_utils._logger import get_logger
 from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
 
 logger = get_logger(__name__)
+from dropbot_controller.consts import DETECT_SHORTS, RETRY_CONNECTION
+
+from .consts import DROPBOT_IMAGE, DROPBOT_CHIP_INSERTED_IMAGE
+
+red = '#f15854'
+yellow = '#decf3f'
+green = '#60bd68'
 
 
 class DropBotStatusLabel(QLabel):
-    red = '#f15854'
-    yellow = '#decf3f'
-    green = '#60bd68'
-    status_color = None
+    """
+    Class providing some status visuals for when chip has been inserted or not. Or when dropbot has any errors.
+    """
 
     def __init__(self):
         super().__init__()
-        self.setFixedSize(500, 100)
 
         self.status_bar = QHBoxLayout()
 
@@ -31,10 +37,15 @@ class DropBotStatusLabel(QLabel):
         self.status_bar.addWidget(self.dropbot_icon)
 
         self.text_layout = QVBoxLayout()
+
+        # Default status to disconnected
         self.dropbot_connection_status = QLabel("Disconnected")
         self.dropbot_chip_status = QLabel("No chip inserted")
-        self.dropbot_capacitance_reading = QLabel("Capacitance: 0 pF")
-        self.dropbot_voltage_reading = QLabel("Voltage: 0 V")
+        self.update_status_icon('disconnected', red)
+
+        # report readings
+        self.dropbot_capacitance_reading = QLabel("Capacitance: 0")
+        self.dropbot_voltage_reading = QLabel("Voltage: 0")
 
         self.text_layout.addWidget(self.dropbot_connection_status)
         self.text_layout.addWidget(self.dropbot_chip_status)
@@ -45,21 +56,27 @@ class DropBotStatusLabel(QLabel):
 
         self.setLayout(self.status_bar)
 
-        self.update_status_icon('disconnected', self.red)  # Default to disconnected
+    def update_status_icon(self, dropbot_connected, chip_inserted):
+        """
+        Update status based on if device connected and chip inserted or not.
+        """
 
-    def update_status_icon(self, status, status_color):
-        images = {
-            'connected': 'dropbot-chip-inserted.png',
-            'disconnected': 'dropbot.png',
-            'chip_inserted': 'dropbot-chip-inserted.png',
-            'chip_removed': 'dropbot.png',
-            'no_power': 'dropbot.png',
-            'no_dropbot_available': 'dropbot.png'
-        }
+        if dropbot_connected:
 
-        current_file_path = __file__
-        current_folder_path = os.path.dirname(os.path.abspath(current_file_path))
-        img_path = os.path.join(current_folder_path, 'images', images[status])
+            if chip_inserted:
+                # dropbot ready to use: give greenlight and display chip.
+                img_path = DROPBOT_CHIP_INSERTED_IMAGE
+                status_color = green
+
+            # dropbot connected but no chip inside. Yellow signal.
+            else:
+                img_path = DROPBOT_IMAGE
+                status_color = yellow
+
+        else:
+            # dropbot not there. Red light.
+            img_path = DROPBOT_IMAGE
+            status_color = red
 
         pixmap = QPixmap(img_path)
         if pixmap.isNull():
@@ -68,38 +85,18 @@ class DropBotStatusLabel(QLabel):
         self.dropbot_icon.setPixmap(pixmap.scaled(100, 150, Qt.AspectRatioMode.KeepAspectRatio))
         self.dropbot_icon.setStyleSheet('QLabel { background-color : %s ; }' % status_color)
 
-    def update_connection_status(self, connection_status):
-        logger.info(f"Attempting to update connection status: {connection_status}")
-        if connection_status == 'connected':
-            self.update_status_icon('connected', self.green)
-        elif connection_status == 'disconnected':
-            self.update_status_icon('disconnected', self.red)
-        self.dropbot_connection_status.setText(connection_status.capitalize())
-
-    def update_chip_status(self, chip_status):
-        if chip_status == 'chip_inserted':
-            self.update_status_icon('chip_inserted', self.green)
-        elif chip_status == 'chip_removed':
-            self.update_status_icon('chip_removed', self.yellow)
-        self.dropbot_chip_status.setText(chip_status.capitalize())
-
     def update_capacitance_reading(self, capacitance):
-        self.dropbot_capacitance_reading.setText(f"Capacitance: {capacitance} F")
+        self.dropbot_capacitance_reading.setText(f"Capacitance: {capacitance} pF")
 
     def update_voltage_reading(self, voltage):
         self.dropbot_voltage_reading.setText(f"Voltage: {voltage} V")
 
 
-class DropBotControlWidget(QWidget):
-    signal_received = Signal(str)
+class DropBotStatusWidget(QWidget):
+    signal_received = Signal(tuple)
 
     def __init__(self):
         super().__init__()
-        # Subscribe to backend messages
-        self.actor_topics_dict = {"dropbot_status_listener": ["dropbot/signals/#"]}
-
-        # create listener actor:
-        self.dropbot_status_listener = self.create_dropbot_status_listener_actor()
 
         self.layout = QVBoxLayout(self)
 
@@ -107,22 +104,60 @@ class DropBotControlWidget(QWidget):
         self.layout.addWidget(self.status_label)
 
         self.detect_shorts_button = QPushButton("Detect Shorts")
-        self.detect_shorts_button.clicked.connect(self.detect_shorts_triggered)
+        self.detect_shorts_button.clicked.connect(self.request_detect_shorts)
         self.layout.addWidget(self.detect_shorts_button)
         self.signal_received.connect(self.signal_handler)
 
-    def show_halted_popup(self):
-        self.halted_popup = QMessageBox()
-        self.halted_popup.setWindowTitle("ERROR: DropBot Halted")
-        self.halted_popup.setButtonText(QMessageBox.StandardButton.Ok, "Close")
-        self.halted_popup.setText("DropBot has been halted because output current was exceeded."
-                                  "\n\n"
-                                  "All channels have been disabled and high voltage has been turned off until "
-                                  "the DropBot is restarted (e.g. unplug all cables and plug back in)")
+    ###################################################################################################################
+    # Publisher methods
+    ###################################################################################################################
+    def request_detect_shorts(self):
+        logger.info("Detecting shorts...")
+        publish_message("Detect shorts button triggered", DETECT_SHORTS)
 
-        self.halted_popup.exec()
+    def request_retry_connection(self):
+        logger.info("Retrying connection...")
+        publish_message("Retry connection button triggered", RETRY_CONNECTION)
+        self.no_power_dialog.close()
 
-    def show_shorts_popup(self, shorts):
+    ###################################################################################################################
+    # Subscriber methods
+    ###################################################################################################################
+
+    def signal_handler(self, signal):
+        """
+        Handle GUI action required for signal triggered by dropbot status listener.
+        """
+        topic, body = signal
+        head_topic = topic.split('/')[-1]
+        sub_topic = topic.split('/')[-2]
+        method = f"_on_{head_topic}_triggered"
+
+        if hasattr(self, method) and callable(getattr(self, method)):
+            logger.info(f"Method for {head_topic}, {method} getting called.")
+            getattr(self, method)(body)
+
+        # special topic warnings. Printed out to screen.
+        elif sub_topic == "warnings":
+            logger.info(f"Warning triggered. No special method for warning {head_topic}. Generic message produced")
+
+            title = head_topic.replace('_', ' ').title()
+
+            self._on_show_warning_triggered(json.dumps(
+
+                {'title': title,
+                 'message': body}
+            ))
+
+        else:
+            logger.warning(f"Method for {head_topic}, {method} not found.")
+
+    ######################################### Signal handler methods #############################################
+
+    ######## shorts found method ###########
+    def _on_shorts_detected_triggered(self, shorts_dict):
+        shorts = json.loads(shorts_dict).get('Shorts_detected', [])
+
         self.shorts_popup = QMessageBox()
         self.shorts_popup.setFixedSize(300, 200)
         self.shorts_popup.setWindowTitle("ERROR: Shorts Detected")
@@ -132,14 +167,50 @@ class DropBotControlWidget(QWidget):
             self.shorts_popup.setText(f"Shorts were detected on the following channels: \n \n"
                                       f"[{shorts_str}] \n \n"
                                       f"You may continue using the DropBot, but the affected channels have "
-                                      f"been disabled until the DropBot is restarted (e.g. unplug all cabled and plug back in).")
+                                      f"been disabled until the DropBot is restarted (e.g. unplug all cabled and plug "
+                                      f"back in).")
         else:
             self.shorts_popup.setWindowTitle("Short Detection Complete")
             self.shorts_popup.setText("No shorts were detected.")
 
         self.shorts_popup.exec()
 
-    def show_no_power_popup(self):
+    ################# Capcitance Voltage readings ##################
+    def _on_capacitance_updated_triggered(self, body):
+        capacitance = json.loads(body).get('capacitance', 0)
+        voltage = json.loads(body).get('voltage', 0)
+        self.status_label.update_capacitance_reading(capacitance)
+        self.status_label.update_voltage_reading(voltage)
+
+    ####### Dropbot Icon Image Control Methods ###########
+
+    def _on_disconnected_triggered(self, body):
+        self.status_label.update_status_icon(dropbot_connected=False, chip_inserted=False)
+
+    def _on_connected_triggered(self, body):
+        self.status_label.update_status_icon(dropbot_connected=True, chip_inserted=False)
+
+    def _on_chip_not_inserted_triggered(self, body):
+        self.status_label.update_status_icon(dropbot_connected=True, chip_inserted=False)
+
+    def _on_chip_inserted_triggered(self, body):
+        self.status_label.update_status_icon(dropbot_connected=True, chip_inserted=True)
+
+    ##################################################################################################
+
+    ########## Warning methods ################
+    def _on_show_warning_triggered(self, body):
+        body = json.loads(body)
+
+        title = body.get('title', ''),
+        message = body.get('message', '')
+
+        self.warning_popup = QMessageBox()
+        self.warning_popup.setWindowTitle(f"WARNING: {title}")
+        self.warning_popup.setText(str(message))
+        self.warning_popup.exec()
+
+    def _on_no_power_triggered(self):
         # Initialize the dialog
         self.no_power_dialog = QDialog()
         self.no_power_dialog.setWindowTitle("ERROR: No Power")
@@ -153,7 +224,7 @@ class DropBotControlWidget(QWidget):
         self.browser = QTextBrowser()
 
         html_content = f"""
-        
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -167,14 +238,14 @@ class DropBotControlWidget(QWidget):
     <strong><br>Click the "Retry" button after plugging in the power cable to attempt reconnection</strong>
 </body>
 </html>
-        
+
         """
 
         self.browser.setHtml(html_content)
 
         # Create the retry button and connect its signal
         self.no_power_retry_button = QPushButton("Retry")
-        self.no_power_retry_button.clicked.connect(self.signal_retry_connect)
+        self.no_power_retry_button.clicked.connect(self.request_retry_connection())
 
         # Add widgets to the layout
         layout.addWidget(self.browser)
@@ -183,99 +254,15 @@ class DropBotControlWidget(QWidget):
         # Show the dialog
         self.no_power_dialog.exec()
 
-    def detect_shorts_triggered(self):
-        logger.info("Detecting shorts...")
-        publish_message("Detect shorts button triggered", "dropbot/ui/notifications/detect_shorts_triggered")
+    def _on_halted_triggered(self):
+        self.halted_popup = QMessageBox()
+        self.halted_popup.setWindowTitle("ERROR: DropBot Halted")
+        self.halted_popup.setButtonText(QMessageBox.StandardButton.Ok, "Close")
+        self.halted_popup.setText("DropBot has been halted because output current was exceeded."
+                                  "\n\n"
+                                  "All channels have been disabled and high voltage has been turned off until "
+                                  "the DropBot is restarted (e.g. unplug all cables and plug back in)")
 
-    def signal_retry_connect(self):
-        logger.info("Retrying connection...")
-        publish_message("Retry connection button triggered", "dropbot/ui/notifications/retry_connection_triggered")
-        self.no_power_dialog.close()
+        self.halted_popup.exec()
 
-    def detect_shorts_response(self, shorts_dict):
-        shorts_list = json.loads(shorts_dict).get('Shorts_detected', [])
-        self.show_shorts_popup(shorts_list)
-
-    def show_warning(self, title, message):
-        self.warning_popup = QMessageBox()
-        self.warning_popup.setWindowTitle(title)
-        self.warning_popup.setText(message)
-        self.warning_popup.exec()
-
-    def signal_handler(self, message):
-        topic, body = message.split(", ", 1)
-        if "disconnected" in topic:
-            self.status_label.update_connection_status('disconnected')
-        elif "connected" in topic:
-            self.status_label.update_connection_status('connected')
-        elif "chip_inserted" in topic:
-            self.status_label.update_chip_status('chip_inserted')
-        elif "chip_not_inserted" in topic:
-            self.status_label.update_chip_status('chip_removed')
-        elif "no_power" in topic:
-            self.show_no_power_popup()
-        elif "no_dropbot_available" in topic:
-            self.show_warning('WARNING: no_dropbot_available', f'{body}')
-        elif "shorts_detected" in topic:
-            self.detect_shorts_response(body)
-        elif "halted" in topic:
-            self.show_halted_popup()
-        elif "capacitance_updated" in topic:
-            capacitance = json.loads(body).get('capacitance', 0)
-            voltage = json.loads(body).get('voltage', 0)
-            self.status_label.update_capacitance_reading(capacitance)
-            self.status_label.update_voltage_reading(voltage)
-
-    def create_dropbot_status_listener_actor(self):
-
-        @dramatiq.actor
-        def dropbot_status_listener(message, topic):
-            logger.info(f"UI_LISTENER: Received message: {message} from topic: {topic}")
-            topic_elements = topic.split("/")
-            if topic_elements[-1] in ['connected', 'disconnected', 'chip_inserted', 'chip_not_inserted', 'no_power',
-                                      'no_dropbot_available', 'shorts_detected', 'halted', 'capacitance_updated']:
-                self.signal_received.emit(f"{topic}, {message}")
-
-        return dropbot_status_listener
-
-    def create_test_step_command_box(self):
-        self.volt_line = QHBoxLayout()
-        self.volt_label = QLabel("Voltage: ")
-        self.volt_textbox = QLineEdit()
-        self.volt_line.addWidget(self.volt_label)
-        self.volt_line.addWidget(self.volt_textbox)
-
-        self.freq_line = QHBoxLayout()
-        self.freq_label = QLabel("Frequency: ")
-        self.freq_textbox = QLineEdit()
-        self.freq_line.addWidget(self.freq_label)
-        self.freq_line.addWidget(self.freq_textbox)
-
-        self.channels_line = QHBoxLayout()
-        self.channels_label = QLabel("Channels: ")
-        self.channels_textbox = QLineEdit()
-        self.channels_line.addWidget(self.channels_label)
-        self.channels_line.addWidget(self.channels_textbox)
-
-        self.layout.addLayout(self.volt_line)
-        self.layout.addLayout(self.freq_line)
-        self.layout.addLayout(self.channels_line)
-
-        self.test_step_button = QPushButton("Test Step")
-        self.test_step_button.clicked.connect(self.test_step_triggered)
-        self.layout.addWidget(self.test_step_button)
-
-    def test_step_triggered(self):
-        volt = float(self.volt_textbox.text())
-        freq = float(self.freq_textbox.text())
-        channels = self.channels_textbox.text().replace(' ', '').split(',')
-
-        logger.info(f"Test step triggered with: {volt}, {freq}, {channels}")
-        publish_message(json.dumps({"voltage": volt, "frequency": freq, "channels": channels}), "dropbot/ui/notifications/test_step_triggered")
-
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    dropbot_status = DropBotControlWidget()
-    dropbot_status.show()
-    sys.exit(app.exec())
+    ##################################################################################################
