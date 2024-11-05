@@ -28,7 +28,7 @@ class DropbotControllerBase(HasTraits):
         """
 
         @dramatiq.actor
-        def dropbot_backend_listener(message, topic):
+        def dropbot_controller_listener(message, topic):
             """
             A Dramatiq actor that listens to messages.
 
@@ -52,4 +52,4 @@ class DropbotControllerBase(HasTraits):
             else:
                 logger.warning(f"Method {topic[-1]} not found")
 
-        return dropbot_backend_listener
+        return dropbot_controller_listener
