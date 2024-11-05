@@ -11,7 +11,7 @@ from dropbot_controller.interfaces.i_dropbot_control_mixin_service import IDropb
 from dropbot_controller.plugin import DropbotControllerPlugin
 from dropbot_controller.consts import START_DEVICE_MONITORING
 from message_router.plugin import MessageRouterPlugin
-from message_router.public_constants import ACTOR_TOPIC_ROUTES
+from message_router.consts import ACTOR_TOPIC_ROUTES
 
 # local helpers imports
 from microdrop_utils.broker_server_helpers import dramatiq_broker_context
@@ -64,6 +64,7 @@ class DummyDropbotServicePlugin(Plugin):
         # create event loop
         while True:
             time.sleep(1)
+
 
 def main(args):
     """Run the application."""
