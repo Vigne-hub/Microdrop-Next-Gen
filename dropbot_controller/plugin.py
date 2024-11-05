@@ -7,7 +7,7 @@ from dropbot_controller.dropbot_controller_base import DropbotControllerBase
 from dropbot_controller.interfaces.i_dropbot_control_mixin_service import IDropbotControlMixinService
 from dropbot_controller.consts import ACTOR_TOPIC_DICT
 from dropbot_controller.services.dropbot_monitor_mixin_service import DropbotMonitorMixinService
-from message_router.public_constants import ACTOR_TOPIC_ROUTES
+from message_router.consts import ACTOR_TOPIC_ROUTES
 from microdrop_utils._logger import get_logger
 
 from .consts import PKG

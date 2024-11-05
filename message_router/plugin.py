@@ -2,7 +2,7 @@ from envisage.api import Plugin, ExtensionPoint
 from traits.api import List, Str, Dict, Instance
 import dramatiq
 
-from .public_constants import ACTOR_TOPIC_ROUTES
+from .consts import ACTOR_TOPIC_ROUTES
 from microdrop_utils._logger import get_logger
 from microdrop_utils.dramatiq_pub_sub_helpers import MessageRouterActor
 
