@@ -2,7 +2,7 @@
 from pyface.tasks.dock_pane import DockPane
 
 # local imports
-from dropbot_status.widget import DropBotStatusWidget
+from dropbot_status.widget import DramatiqDropbotStatusWidget
 
 from .consts import PKG
 
@@ -18,4 +18,4 @@ class DropbotStatusDockPane(DockPane):
 
     def create_contents(self, parent):
 
-        return DropBotStatusWidget()
+        return DramatiqDropbotStatusWidget()

@@ -93,7 +93,7 @@ class DropBotStatusLabel(QLabel):
 
 
 class DropBotStatusWidget(QWidget):
-    signal_received = Signal(tuple)
+    ui_action_signal = Signal(tuple)
 
     def __init__(self):
         super().__init__()
@@ -106,7 +106,7 @@ class DropBotStatusWidget(QWidget):
         self.detect_shorts_button = QPushButton("Detect Shorts")
         self.detect_shorts_button.clicked.connect(self.request_detect_shorts)
         self.layout.addWidget(self.detect_shorts_button)
-        self.signal_received.connect(self.signal_handler)
+        self.ui_action_signal.connect(self.signal_handler)
 
     ###################################################################################################################
     # Publisher methods
@@ -137,7 +137,8 @@ class DropBotStatusWidget(QWidget):
             logger.info(f"Method for {head_topic}, {method} getting called.")
             getattr(self, method)(body)
 
-        # special topic warnings. Printed out to screen.
+        # special topic warnings. Catch them all and print out to screen. Generic method for all warnings in case no
+        # specific implementations for them defined.
         elif sub_topic == "warnings":
             logger.info(f"Warning triggered. No special method for warning {head_topic}. Generic message produced")
 
@@ -266,3 +267,23 @@ class DropBotStatusWidget(QWidget):
         self.halted_popup.exec()
 
     ##################################################################################################
+
+
+class DramatiqDropbotStatusWidget(DropBotStatusWidget):
+    """Class to hook up the dropbot status widget signalling to a dramatiq system."""
+
+    def __init__(self):
+        super().__init__()
+        self.dropbot_status_listener = self.create_dropbot_status_listener_actor()
+
+    def create_dropbot_status_listener_actor(self):
+        """
+        Listen to Topics being triggered to affect UI and emit signal
+        """
+
+        @dramatiq.actor
+        def dropbot_status_listener(message, topic):
+            logger.info(f"UI_LISTENER: Received message: {message} from topic: {topic}. Triggering UI Signal")
+            self.ui_action_signal.emit((topic, message))
+
+        return dropbot_status_listener
