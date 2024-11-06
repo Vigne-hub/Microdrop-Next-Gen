@@ -274,9 +274,9 @@ class DramatiqDropbotStatusWidget(DropBotStatusWidget):
 
     def __init__(self):
         super().__init__()
-        self.dropbot_status_listener = self.create_dropbot_status_listener_actor()
+        self.listener = self.create_listener_actor()
 
-    def create_dropbot_status_listener_actor(self):
+    def create_listener_actor(self):
         """
         Listen to Topics being triggered to affect UI and emit signal
         """

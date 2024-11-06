@@ -19,8 +19,8 @@ ACTOR_TOPIC_DICT = {
     ]}
 
 # Topics published by this plugin
-NO_DROPBOT_AVAILABLE = 'dropbot/signals/connection/warnings/no_dropbot_available'
-NO_POWER = 'dropbot/signals/connection/warnings/no_power'
+NO_DROPBOT_AVAILABLE = 'dropbot/signals/warnings/no_dropbot_available'
+NO_POWER = 'dropbot/signals/warnings/no_power'
 HALTED = 'dropbot/signals/halted'
 
 CHIP_NOT_INSERTED = 'dropbot/signals/chip_not_inserted'
