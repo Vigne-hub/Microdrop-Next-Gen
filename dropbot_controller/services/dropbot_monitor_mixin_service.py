@@ -1,6 +1,10 @@
 import functools
 import json
 
+# unit handling
+from pint import UnitRegistry
+ureg = UnitRegistry()
+
 import dropbot
 from traits.api import provides, HasTraits, Bool, Instance
 from apscheduler.events import EVENT_JOB_EXECUTED
@@ -174,9 +178,9 @@ class DropbotMonitorMixinService(HasTraits):
         self.proxy.signals.signal('capacitance-updated').connect(self._capacitance_updated_wrapper)
 
     def _capacitance_updated_wrapper(self, signal: dict[str, str]):
-        capacitance = float(signal['new_value']) * self.ureg.farad
-        capacitance_formatted = f"{capacitance.to(self.ureg.picofarad):.2g~P}"
-        voltage = float(signal['V_a']) * self.ureg.volt
+        capacitance = float(signal.get('new_value', 0.0)) * ureg.farad
+        capacitance_formatted = f"{capacitance.to(ureg.picofarad):.2g~P}"
+        voltage = float(signal.get('V_a', 0.0)) * ureg.volt
         voltage_formatted = f"{voltage:.2g~P}"
         publish_message(topic=CAPACITANCE_UPDATED,
                         message=json.dumps({'capacitance': capacitance_formatted, 'voltage': voltage_formatted}))

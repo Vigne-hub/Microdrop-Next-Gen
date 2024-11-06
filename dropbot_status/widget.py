@@ -29,6 +29,7 @@ class DropBotStatusLabel(QLabel):
 
     def __init__(self):
         super().__init__()
+        self.setFixedSize(500, 100)
 
         self.status_bar = QHBoxLayout()
 
@@ -62,9 +63,11 @@ class DropBotStatusLabel(QLabel):
         """
 
         if dropbot_connected:
+            self.dropbot_connection_status = QLabel("Connected")
 
             if chip_inserted:
                 # dropbot ready to use: give greenlight and display chip.
+                self.dropbot_chip_status = QLabel("Chip inserted")
                 img_path = DROPBOT_CHIP_INSERTED_IMAGE
                 status_color = green
 
@@ -86,10 +89,10 @@ class DropBotStatusLabel(QLabel):
         self.dropbot_icon.setStyleSheet('QLabel { background-color : %s ; }' % status_color)
 
     def update_capacitance_reading(self, capacitance):
-        self.dropbot_capacitance_reading.setText(f"Capacitance: {capacitance} pF")
+        self.dropbot_capacitance_reading.setText(f"Capacitance: {capacitance}")
 
     def update_voltage_reading(self, voltage):
-        self.dropbot_voltage_reading.setText(f"Voltage: {voltage} V")
+        self.dropbot_voltage_reading.setText(f"Voltage: {voltage}")
 
 
 class DropBotStatusWidget(QWidget):
@@ -134,7 +137,7 @@ class DropBotStatusWidget(QWidget):
         method = f"_on_{head_topic}_triggered"
 
         if hasattr(self, method) and callable(getattr(self, method)):
-            logger.info(f"Method for {head_topic}, {method} getting called.")
+            logger.debug(f"Method for {head_topic}, {method} getting called.")
             getattr(self, method)(body)
 
         # special topic warnings. Catch them all and print out to screen. Generic method for all warnings in case no
@@ -178,8 +181,8 @@ class DropBotStatusWidget(QWidget):
 
     ################# Capcitance Voltage readings ##################
     def _on_capacitance_updated_triggered(self, body):
-        capacitance = json.loads(body).get('capacitance', 0)
-        voltage = json.loads(body).get('voltage', 0)
+        capacitance = json.loads(body).get('capacitance', '0 pF')
+        voltage = json.loads(body).get('voltage', '0 V')
         self.status_label.update_capacitance_reading(capacitance)
         self.status_label.update_voltage_reading(voltage)
 
@@ -283,7 +286,7 @@ class DramatiqDropbotStatusWidget(DropBotStatusWidget):
 
         @dramatiq.actor
         def dropbot_status_listener(message, topic):
-            logger.info(f"UI_LISTENER: Received message: {message} from topic: {topic}. Triggering UI Signal")
+            logger.debug(f"UI_LISTENER: Received message: {message} from topic: {topic}. Triggering UI Signal")
             self.ui_action_signal.emit((topic, message))
 
         return dropbot_status_listener
