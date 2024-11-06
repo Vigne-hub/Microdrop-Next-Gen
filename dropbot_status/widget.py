@@ -40,9 +40,9 @@ class DropBotStatusLabel(QLabel):
         self.text_layout = QVBoxLayout()
 
         # Default status to disconnected
-        self.dropbot_connection_status = QLabel("Disconnected")
-        self.dropbot_chip_status = QLabel("No chip inserted")
-        self.update_status_icon('disconnected', red)
+        self.dropbot_connection_status = QLabel()
+        self.dropbot_chip_status = QLabel()
+        self.update_status_icon(dropbot_connected=False, chip_inserted=False)
 
         # report readings
         self.dropbot_capacitance_reading = QLabel("Capacitance: 0")
@@ -63,16 +63,17 @@ class DropBotStatusLabel(QLabel):
         """
 
         if dropbot_connected:
-            self.dropbot_connection_status = QLabel("Connected")
+            self.dropbot_connection_status.setText("Connected")
 
             if chip_inserted:
                 # dropbot ready to use: give greenlight and display chip.
-                self.dropbot_chip_status = QLabel("Chip inserted")
+                self.dropbot_chip_status.setText("Chip inserted")
                 img_path = DROPBOT_CHIP_INSERTED_IMAGE
                 status_color = green
 
             # dropbot connected but no chip inside. Yellow signal.
             else:
+                self.dropbot_chip_status.setText("Chip not inserted")
                 img_path = DROPBOT_IMAGE
                 status_color = yellow
 
@@ -80,6 +81,8 @@ class DropBotStatusLabel(QLabel):
             # dropbot not there. Red light.
             img_path = DROPBOT_IMAGE
             status_color = red
+            self.dropbot_connection_status.setText("Disconnected")
+            self.dropbot_chip_status.setText("Chip not inserted")
 
         pixmap = QPixmap(img_path)
         if pixmap.isNull():

@@ -17,7 +17,7 @@ from microdrop_utils._logger import get_logger
 from .views.electrodes_view import ElectrodeView
 
 logger = get_logger(__name__)
-DEFAULT_SVG_FILE = os.path.dirname(__file__) + "\\2x3device.svg"
+DEFAULT_SVG_FILE = f"{os.path.dirname(__file__)}{os.sep}2x3device.svg"
 
 
 class DeviceViewerTask(Task):
