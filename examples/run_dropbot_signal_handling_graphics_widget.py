@@ -13,7 +13,7 @@ def main():
     # this is the mainwindow test widget which will listen for messages from the dropbot connection
     # this will be packaged into a task extension to the device viewer.
 
-    from dropbot_status.dropbot_status_widget import DropBotControlWidget
+    from dropbot_status.widget import DropBotStatusWidget
     # this is the dropbot backend services which will hold the dropbot serial proxy connection
     from microdrop.services.dropbot_services import DropbotService
 
@@ -23,7 +23,7 @@ def main():
         app = QApplication.instance()
 
     # instantiate the classes
-    dropbot_control_widget = DropBotControlWidget()
+    dropbot_control_widget = DropBotStatusWidget()
     dropbot_service = DropbotService()
 
     # assign topics to actors

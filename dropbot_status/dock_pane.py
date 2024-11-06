@@ -2,23 +2,20 @@
 from pyface.tasks.dock_pane import DockPane
 
 # local imports
+from dropbot_status.widget import DramatiqDropbotStatusWidget
 
-from dropbot_status.dropbot_status_widget import DropBotControlWidget
-
-# This module's package.
-PKG = '.'.join(__name__.split('.')[:-1])
+from .consts import PKG
 
 
 class DropbotStatusDockPane(DockPane):
     """
-    A dock pane to set the voltage and frequency of the dropbot device.
+    A dock pane to view the status of the dropbot.
     """
     #### 'ITaskPane' interface ################################################
 
     id = PKG + ".pane"
     name = "Dropbot Status Dock Pane"
 
-    #### 'ManualControlsPane' interface ##########################################
-
     def create_contents(self, parent):
-        return DropBotControlWidget()
+
+        return DramatiqDropbotStatusWidget()

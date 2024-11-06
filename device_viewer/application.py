@@ -1,13 +1,15 @@
 # sys imports
 import os
 
+from dropbot_controller.consts import START_DEVICE_MONITORING
+from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
 # Local imports.
 from .preferences import DeviceViewerPreferences
 
 # Enthought library imports.
 from envisage.ui.tasks.api import TasksApplication
 from pyface.tasks.api import TaskWindowLayout
-from traits.api import Bool, Instance, List, Property
+from traits.api import Bool, Instance, List, Property, observe
 from pyface.image_resource import ImageResource
 from pyface.splash_screen import SplashScreen
 
@@ -75,3 +77,7 @@ class DeviceViewerApplication(TasksApplication):
 
     def _get_always_use_default_layout(self):
         return self.preferences_helper.always_use_default_layout
+
+    @observe('started')
+    def _on_application_started(self, event):
+        publish_message(message="", topic=START_DEVICE_MONITORING)

@@ -9,12 +9,16 @@ from traits.api import provides, HasTraits, List, observe
 # plugin imports
 from dropbot_controller.interfaces.i_dropbot_control_mixin_service import IDropbotControlMixinService
 from dropbot_controller.plugin import DropbotControllerPlugin
+from dropbot_controller.consts import START_DEVICE_MONITORING
 from message_router.plugin import MessageRouterPlugin
-from message_router.public_constants import ACTOR_TOPIC_ROUTES
+from message_router.consts import ACTOR_TOPIC_ROUTES
 
 # local helpers imports
-from microdrop_utils.broker_server_helpers import broker_context
+from microdrop_utils.broker_server_helpers import dramatiq_broker_context
 from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
+from microdrop_utils._logger import get_logger
+
+logger = get_logger(__name__)
 
 
 @provides(IDropbotControlMixinService)
@@ -33,6 +37,7 @@ class DropbotDummyMixinService(HasTraits):
 
 class DummyDropbotServicePlugin(Plugin):
     id = 'dummy_dropbot_service.plugin'
+    name = 'Dummy Dropbot Service Plugin'
     service_offers = List(contributes_to=SERVICE_OFFERS)
 
     # This tells us that the plugin contributes the value of this trait to the
@@ -51,24 +56,26 @@ class DummyDropbotServicePlugin(Plugin):
 
     @observe('application:started')
     def _on_application_started(self, event):
-        publish_message(message="VID:PID=16C0:", topic="dropbot/requests/start_device_monitoring")
+        self.application.get_plugin("dropbot_controller.plugin").dropbot_controller.print_test()
+        publish_message(message="", topic=START_DEVICE_MONITORING)
 
     @observe('application:stopping')
     def _on_application_stopping(self, event):
         # create event loop
         while True:
-            time.sleep(0.2)
+            time.sleep(1)
 
 
 def main(args):
     """Run the application."""
 
-    # we will be adding a sample dummy dropbot service mixin plugin that will provide a module.submodule"
+    # We will be adding a sample dummy dropbot service mixin plugin that will provide a module.submodule"
 
     plugins = [CorePlugin(), DropbotControllerPlugin(), DummyDropbotServicePlugin(), MessageRouterPlugin()]
     app = Application(plugins=plugins)
 
-    with broker_context():
+    # Need to run with a dramatiq broker context since app requires plugins that use dramatiq
+    with dramatiq_broker_context():
         app.run()
 
 

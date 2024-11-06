@@ -1,8 +1,12 @@
 import functools
 import json
 
+# unit handling
+from pint import UnitRegistry
+ureg = UnitRegistry()
+
 import dropbot
-from traits.api import provides, HasTraits
+from traits.api import provides, HasTraits, Bool, Instance
 from apscheduler.events import EVENT_JOB_EXECUTED
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
@@ -14,8 +18,8 @@ from microdrop_utils.dramatiq_dropbot_serial_proxy import DramatiqDropbotSerialP
 from microdrop_utils.dropbot_monitoring_helpers import check_dropbot_devices_available
 from ..interfaces.i_dropbot_control_mixin_service import IDropbotControlMixinService
 
-from ..public_constants import NO_DROPBOT_AVAILABLE, CHIP_INSERTED, CHIP_NOT_INSERTED, HALTED, \
-    CAPACITANCE_UPDATED, SHORTS_DETECTED, NO_POWER
+from ..consts import NO_DROPBOT_AVAILABLE, CHIP_INSERTED, CHIP_NOT_INSERTED, HALTED, \
+    CAPACITANCE_UPDATED, SHORTS_DETECTED, NO_POWER, DROPBOT_DB3_120_HWID, OUTPUT_ENABLE_PIN
 
 logger = get_logger(__name__)
 
@@ -28,25 +32,30 @@ class DropbotMonitorMixinService(HasTraits):
 
     id = "dropbot_monitor_mixin_service"
     name = 'Dropbot Monitor Mixin'
+    realtime_mode = Bool(True)
+    monitor_scheduler = Instance(BackgroundScheduler,
+                                 desc="An AP scheduler job to periodically look for dropbot connected ports."
+                                 )
 
     ######################################## Methods to Expose #############################################
     def on_start_device_monitoring_request(self, hwid_to_check):
         """
         Method to start looking for dropbots connected using their hwids.
         """
-        self.halted_check_scheduler = BackgroundScheduler()
-        self.halted_check_scheduler.add_job(self._check_halted, trigger=IntervalTrigger(seconds=2))
+
+        if not hwid_to_check:
+            hwid_to_check = DROPBOT_DB3_120_HWID
 
         scheduler = BackgroundScheduler()
         scheduler.add_job(
             func=functools.partial(check_dropbot_devices_available, hwid_to_check),
             trigger=IntervalTrigger(seconds=2),
         )
-
         scheduler.add_listener(self._on_dropbot_port_found, EVENT_JOB_EXECUTED)
         self.monitor_scheduler = scheduler
-        logger.info("DropBot monitor created")
-        logger.info("Starting DropBot monitor")
+
+        logger.info("DropBot monitor created and started")
+
         self.monitor_scheduler.start()
 
     def on_detect_shorts_request(self, message):
@@ -57,23 +66,28 @@ class DropbotMonitorMixinService(HasTraits):
             publish_message(topic=SHORTS_DETECTED, message=json.dumps(shorts_dict))
 
     def on_disconnected_request(self, message):
-        logger.info(
-            "DropBot disconnected \n Attempting to terminate proxy and resume monitoring to find DropBot again.")
 
-        if self.proxy is not None:
-            if self.proxy.monitor is not None:
-                self.proxy.terminate()
-                logger.info("Proxy terminated")
-                self.proxy.monitor = None
-                self.monitor_scheduler.resume()
-                logger.info("Resumed DropBot monitor")
+        if not self._no_power:
+            logger.info(
+                "DropBot disconnected \n Attempting to terminate proxy and resume monitoring to find DropBot again.")
+
+            if self.proxy is not None:
+                if self.proxy.monitor is not None:
+                    self.proxy.terminate()
+                    logger.info("Proxy terminated")
+                    self.proxy.monitor = None
+                    self.monitor_scheduler.resume()
+                    logger.info("Resumed DropBot monitor")
 
     def on_retry_connection_request(self, message):
-        logger.info(
-            "Attempting to retry connecting with a dropbot"
-        )
-
+        logger.info("Attempting to retry connecting with a dropbot")
         self.monitor_scheduler.resume()
+
+    def on_halted_request(self, message):
+        self._no_power = True
+        self.proxy.terminate()
+        self.proxy.monitor = None
+        logger.error("Halted DropBot: Disconnect everything and reconnect")
 
     ################################# Protected methods ######################################
     def _on_dropbot_port_found(self, event):
@@ -98,6 +112,8 @@ class DropbotMonitorMixinService(HasTraits):
         - No DropBot available for connection - USB not connected
         - No power to DropBot - power supply not connected
         """
+        self._no_power = False
+        err = None
 
         if self.proxy is None or getattr(self, 'proxy.monitor', None) is None:
 
@@ -110,42 +126,44 @@ class DropbotMonitorMixinService(HasTraits):
                 self.proxy = DramatiqDropbotSerialProxy(port=port_name)
                 # this will send out a connected signal to the message router is successful
 
-            except (IOError, AttributeError):
+            except (IOError, AttributeError) as e:
+                publish_message(topic=NO_DROPBOT_AVAILABLE, message=str(e))
+                err = e
 
-                publish_message(topic=NO_DROPBOT_AVAILABLE,
-                                message='No DropBot available for connection')
-                logger.error("FAILED DROPBOT CONNECTION: No DropBot available for connection")
+            except dropbot.proxy.NoPower as e:
+                self._no_power = True
+                publish_message(topic=NO_POWER, message=str(e))
+                err = e
 
-            except dropbot.proxy.NoPower:
-                self._on_no_power()
+            except Exception as e:
+                err = e
 
-            ################################# Post connection steps ###################################
-
-            self.no_power = False
-            logger.info(f"Connected to DropBot on port {port_name}")
-            logger.info(f"Checking if chip is inserted AND connecting DropBot BLINKER signals to handlers")
-            self._setup_dropbot()  # Setup the DropBot especially blinker signal trigger follow-up methods
-
-            # Initial Proxy State Update
-            self.proxy.update_state(capacitance_update_interval_ms=1000,
-                                    hv_output_selected=True,
-                                    hv_output_enabled=True,
-                                    voltage=75,
-                                    event_mask=EVENT_CHANNELS_UPDATED |
-                                               EVENT_SHORTS_DETECTED |
-                                               EVENT_ENABLE)
-
-            if self.halted_check_scheduler.running:
-                self.halted_check_scheduler.resume()
             else:
-                self.halted_check_scheduler.start()
+            ################################# Post connection steps ###################################
+                logger.info(f"Connected to DropBot on port {port_name}")
+                logger.info(f"Checking if chip is inserted AND connecting DropBot BLINKER signals to handlers")
+                self._setup_dropbot()  # Setup the DropBot especially blinker signal trigger follow-up methods
+
+                # Initial Proxy State Update
+                self.proxy.update_state(capacitance_update_interval_ms=1000,
+                                        hv_output_selected=True,
+                                        hv_output_enabled=True,
+                                        voltage=75,
+                                        event_mask=EVENT_CHANNELS_UPDATED |
+                                                   EVENT_SHORTS_DETECTED |
+                                                   EVENT_ENABLE)
+
+            ###########################################################################################
+
+            finally:
+                if err:
+                    logger.error(err)
 
         # if the dropbot is already connected
         else:
             logger.info("Dropbot already connected on port %s", port_name)
 
     def _setup_dropbot(self):
-        OUTPUT_ENABLE_PIN = 22
         if self.proxy.digital_read(OUTPUT_ENABLE_PIN):
             logger.info("Publishing Chip Not Inserted")
             publish_message(topic=CHIP_NOT_INSERTED, message='Chip not inserted')
@@ -156,31 +174,19 @@ class DropbotMonitorMixinService(HasTraits):
 
         self.proxy.signals.signal('output_enabled').connect(self._output_state_changed_wrapper)
         self.proxy.signals.signal('output_disabled').connect(self._output_state_changed_wrapper)
-        self.proxy.signals.signal('halted').connect(self._halted_event_wrapper)
+        self.proxy.signals.signal('halted').connect(self._halted_event_wrapper, weak=False)
         self.proxy.signals.signal('capacitance-updated').connect(self._capacitance_updated_wrapper)
 
     def _capacitance_updated_wrapper(self, signal: dict[str, str]):
-        capacitance = float(signal['new_value']) * self.ureg.farad
-        capacitance_formatted = f"{capacitance.to(self.ureg.picofarad):.2g~P}"
-        voltage = float(signal['V_a']) * self.ureg.volt
+        capacitance = float(signal.get('new_value', 0.0)) * ureg.farad
+        capacitance_formatted = f"{capacitance.to(ureg.picofarad):.2g~P}"
+        voltage = float(signal.get('V_a', 0.0)) * ureg.volt
         voltage_formatted = f"{voltage:.2g~P}"
         publish_message(topic=CAPACITANCE_UPDATED,
                         message=json.dumps({'capacitance': capacitance_formatted, 'voltage': voltage_formatted}))
 
-    def _check_halted(self):
-        if self.proxy is not None:
-            # the dropbot is halted if the high voltage output is not enabled and the realtime is enabled
-            if not self.proxy.hv_output_enabled and self.realtime_enabled:
-                publish_message(topic=HALTED, message='DropBot halted')
-                self.halted_check_scheduler.pause()
-            else:
-                pass
-        else:
-            pass
-
     @staticmethod
     def _halted_event_wrapper():
-        print("DropBot halted")
         publish_message(topic=HALTED, message='DropBot halted')
 
     @staticmethod
@@ -193,8 +199,3 @@ class DropbotMonitorMixinService(HasTraits):
             publish_message(topic=CHIP_NOT_INSERTED, message='Chip not inserted')
         else:
             logger.warn(f"Unknown signal received: {signal}")
-
-    @staticmethod
-    def _on_no_power():
-        publish_message(topic=NO_POWER, message='No power to DropBot')
-        logger.error("FAILED DROPBOT CONNECTION: No power to DropBot")
