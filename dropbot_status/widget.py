@@ -101,6 +101,8 @@ class DropBotStatusWidget(QWidget):
     def __init__(self):
         super().__init__()
 
+        # flag for if no pwoer is true or not
+        self.no_power = None
         self.layout = QVBoxLayout(self)
 
         self.status_label = DropBotStatusLabel()
@@ -122,6 +124,7 @@ class DropBotStatusWidget(QWidget):
         logger.info("Retrying connection...")
         publish_message("Retry connection button triggered", RETRY_CONNECTION)
         self.no_power_dialog.close()
+        self.no_power = False
 
     ###################################################################################################################
     # Subscriber methods
@@ -214,7 +217,11 @@ class DropBotStatusWidget(QWidget):
         self.warning_popup.setText(str(message))
         self.warning_popup.exec()
 
-    def _on_no_power_triggered(self):
+    def _on_no_power_triggered(self, body):
+        if self.no_power:
+            return
+
+        self.no_power = True
         # Initialize the dialog
         self.no_power_dialog = QDialog()
         self.no_power_dialog.setWindowTitle("ERROR: No Power")
@@ -249,7 +256,7 @@ class DropBotStatusWidget(QWidget):
 
         # Create the retry button and connect its signal
         self.no_power_retry_button = QPushButton("Retry")
-        self.no_power_retry_button.clicked.connect(self.request_retry_connection())
+        self.no_power_retry_button.clicked.connect(self.request_retry_connection)
 
         # Add widgets to the layout
         layout.addWidget(self.browser)
