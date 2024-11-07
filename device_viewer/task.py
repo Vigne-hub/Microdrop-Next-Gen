@@ -28,21 +28,14 @@ class DeviceViewerTask(Task):
 
     menu_bar = SMenuBar(
 
-        # File menu
         SMenu(
-            TaskAction(
-                id="open_svg_file",
-                name='&Open SVG File',
-                method='open_file_dialog',
-                accelerator='Ctrl+O'),
-            id="File",
-            name="&File"),
+            TaskAction(id="open_svg_file", name='&Open SVG File', method='open_file_dialog', accelerator='Ctrl+O'),
+            id="File", name="&File"
+        ),
 
-        # View Menu
-        SMenu(
-            TaskToggleGroup(),
-            id="View",
-            name="&View")
+        SMenu(id="Edit", name="&Edit"),
+
+        SMenu(TaskToggleGroup(), id="View", name="&View")
     )
 
     #### 'DeviceViewerTask' interface ##########################################

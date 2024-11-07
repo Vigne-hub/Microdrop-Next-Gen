@@ -7,7 +7,7 @@ from envisage.ui.tasks.api import PreferencesPane
 
 
 class DeviceViewerPreferences(PreferencesHelper):
-    """The preferences helper for the Attractors application."""
+    """The preferences helper, inspired by envisage one for the Attractors application."""
 
     #### 'PreferencesHelper' interface ########################################
 
@@ -34,21 +34,11 @@ class DeviceViewerPreferencesPane(PreferencesPane):
 
     #### 'AttractorsPreferencesPane' interface ################################
 
-    task_map = Dict(Str, Str)
-
     view = View(
         VGroup(
             HGroup(
                 Item("always_use_default_layout"),
                 Label("Always use the default active task on startup"),
-                show_labels=False,
-            ),
-            HGroup(
-                Label("Default active task:"),
-                Item(
-                    "default_task", editor=EnumEditor(name="handler.task_map")
-                ),
-                enabled_when="always_use_default_layout",
                 show_labels=False,
             ),
             label="Application startup",
@@ -59,9 +49,3 @@ class DeviceViewerPreferencesPane(PreferencesPane):
     ###########################################################################
     # Private interface.
     ###########################################################################
-
-    def _task_map_default(self):
-        return dict(
-            (factory.id, factory.name)
-            for factory in self.dialog.application.task_factories
-        )
