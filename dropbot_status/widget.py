@@ -99,7 +99,7 @@ class DropBotStatusLabel(QLabel):
 
 
 class DropBotStatusWidget(QWidget):
-    ui_action_signal = Signal(tuple)
+    ui_action_signal = Signal(str)
 
     def __init__(self):
         super().__init__()
@@ -137,14 +137,16 @@ class DropBotStatusWidget(QWidget):
         """
         Handle GUI action required for signal triggered by dropbot status listener.
         """
-        topic, body = signal
+        signal = json.loads(signal)
+        topic = signal.get("topic", "")
+        message = signal.get("message", "")
         head_topic = topic.split('/')[-1]
         sub_topic = topic.split('/')[-2]
         method = f"_on_{head_topic}_triggered"
 
         if hasattr(self, method) and callable(getattr(self, method)):
             logger.debug(f"Method for {head_topic}, {method} getting called.")
-            getattr(self, method)(body)
+            getattr(self, method)(message)
 
         # special topic warnings. Catch them all and print out to screen. Generic method for all warnings in case no
         # specific implementations for them defined.
@@ -156,7 +158,7 @@ class DropBotStatusWidget(QWidget):
             self._on_show_warning_triggered(json.dumps(
 
                 {'title': title,
-                 'message': body}
+                 'message': message}
             ))
 
         else:
@@ -297,6 +299,6 @@ class DramatiqDropbotStatusWidget(DropBotStatusWidget):
         @dramatiq.actor
         def dropbot_status_listener(message, topic):
             logger.debug(f"UI_LISTENER: Received message: {message} from topic: {topic}. Triggering UI Signal")
-            self.ui_action_signal.emit((topic, message))
+            self.ui_action_signal.emit(json.dumps({'message': message, 'topic': topic}))
 
         return dropbot_status_listener
