@@ -10,4 +10,4 @@ class IDropbotControllerBase(IControllerBase):
     """
 
     proxy = Instance(DramatiqDropbotSerialProxy, desc="The DramatiqDropbotSerialProxy object")
-    active_state = Bool(desc="specifies if the controller is actively listening to comma nds or not")
+    active_state = Bool(desc="specifies if the controller is actively listening to commands or not")
