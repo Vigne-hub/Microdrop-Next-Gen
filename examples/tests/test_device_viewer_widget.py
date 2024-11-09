@@ -95,12 +95,9 @@ def test_get_channels_electrode_ids_map(valid_electrodes_model_from_svg):
         valid_electrodes_model = json.load(f)
 
     #: check electrodes_states_map
-    assert (
+    for channel in valid_electrodes_model.keys():
         #: since json loading, this will have string keys
-        valid_electrodes_model[channel] == valid_electrodes_model_from_svg.channels_electrode_ids_map[int(channel)]
-
-        for channel in valid_electrodes_model.keys()
-    )
+        assert valid_electrodes_model[channel] == valid_electrodes_model_from_svg.channels_electrode_ids_map[int(channel)]
 
 
 def test_get_electrodes_states_map(valid_electrodes_model_from_svg):
@@ -114,10 +111,25 @@ def test_get_electrodes_states_map(valid_electrodes_model_from_svg):
     with open(sample_svg_valid_channels_states_map) as f:
         valid_electrodes_model = json.load(f)
 
-    #: check electrodes_states_map
-    assert (
-        #: since json loading, this will have string keys
-        valid_electrodes_model[channel] == valid_electrodes_model_from_svg.channels_states_map[int(channel)]
+    # obtain channels_states_map
+    channels_states_map = valid_electrodes_model_from_svg.get_channels_states_map()
 
-        for channel in valid_electrodes_model.keys()
-    )
+    #: check electrodes_states_map
+    for channel in valid_electrodes_model.keys():
+        #: since json loading, this will have string keys
+        assert valid_electrodes_model[channel] == channels_states_map[int(channel)]
+
+    # check if traits listening works. so upon setting state of one of the channels, the channels states map should
+    # update accordingly
+
+    change_key = list(valid_electrodes_model_from_svg.electrodes.keys())[0]
+    change_electrode = valid_electrodes_model_from_svg[change_key]
+    change_electrode.state = not change_electrode.state
+
+    # obtain new channels_states_map
+    new_channels_states_map = valid_electrodes_model_from_svg.get_channels_states_map()
+
+    assert new_channels_states_map[change_electrode.channel] == True
+
+
+

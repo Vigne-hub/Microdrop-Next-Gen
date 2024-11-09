@@ -56,14 +56,8 @@ class Electrodes(HasTraits):
 
     svg_model = Instance(SvgUtil, allow_none=True, desc="Model for the SVG file if given")
 
-    channels = Property(List(Int), depends_on='_electrodes')
-    states = Property(List(Int), depends_on='_electrodes')
-
     #: Map of the unique channels found amongst the electrodes, and various electrode ids associated with them
     channels_electrode_ids_map = Property(Dict(Int, List(Str)), depends_on='_electrodes')
-
-    #: Map of the unique channels and their states, True means actuated.
-    channels_states_map = Property(Dict(Int, Int), depends_on='_electrodes')
 
     # -------------------Magic methods ----------------------------------------------------------------------
     def __getitem__(self, item: Str) -> Electrode:
@@ -71,6 +65,7 @@ class Electrodes(HasTraits):
 
     def __setitem__(self, key, value):
         self._electrodes[key] = value
+
 
     def __iter__(self):
         return iter(self._electrodes.values())
@@ -84,18 +79,6 @@ class Electrodes(HasTraits):
 
     def _set_electrodes(self, electrodes: Dict(Str, Electrode)):
         self._electrodes = electrodes
-
-    @cached_property
-    def _get_channels(self) -> List(Int):
-        return [electrode.channel for electrode in self._electrodes.values()]
-
-    @cached_property
-    def _get_states(self) -> List(Int):
-        return [electrode.state for electrode in self._electrodes.values()]
-
-    @cached_property
-    def _get_channels_states_map(self):
-        return {self.channels: self.states}
 
     @cached_property
     def _get_channels_electrode_ids_map(self):
@@ -122,3 +105,13 @@ class Electrodes(HasTraits):
 
         self.svg_model = SvgUtil(svg_file)
         logger.debug(f"Setting electrodes from SVG file: {svg_file}")
+
+    # ---------- Methods to view containing electrode object information ------------
+    def get_electrode_channels(self) -> List(Int):
+        return [electrode.channel for electrode in self._electrodes.values()]
+
+    def get_electrode_states(self) -> List(Int):
+        return [electrode.state for electrode in self._electrodes.values()]
+
+    def get_channels_states_map(self) -> Dict(Int, Bool):
+        return dict(zip(self.get_electrode_channels(), self.get_electrode_states()))
