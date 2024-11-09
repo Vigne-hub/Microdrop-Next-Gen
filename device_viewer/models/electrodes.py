@@ -1,11 +1,12 @@
 # Imports:
+from collections import defaultdict
 
 # local
 from ..utils.dmf_utils import SvgUtil
 from microdrop_utils._logger import get_logger
 
 # enthought
-from traits.api import HasTraits, Int, Bool, Array, Float, Any, Dict, Str, Instance, Property, File
+from traits.api import HasTraits, Int, Bool, Array, Float, Any, Dict, Str, Instance, Property, File, cached_property, List
 
 logger = get_logger(__name__)
 
@@ -30,8 +31,7 @@ class Electrode(HasTraits):
     #: Property for state
     state = Property(Bool, depends_on='_state')
 
-    #: Property for metastate
-    metastate = Property(Any, depends_on='_metastate')
+    # -------------- trait setting handlers ----------------------
 
     def _get_state(self) -> Bool:
         return self._state
@@ -41,13 +41,6 @@ class Electrode(HasTraits):
             self._state = state
             logger.debug("State changed to %s for %s", self.state, self.channel)
 
-    def _get_metastate(self) -> object:
-        return self._metastate
-
-    def _set_metastate(self, metastate: object):
-        if metastate != self._metastate:
-            self._metastate = metastate
-
 
 class Electrodes(HasTraits):
 
@@ -55,13 +48,22 @@ class Electrodes(HasTraits):
     Electrodes class for managing multiple electrodes
     """
 
-    #: "Dictionary of electrodes with keys being an electrode id and values being the electrode object"
+    #: Dictionary of electrodes with keys being an electrode id and values being the electrode object
     _electrodes = Dict(Str, Electrode, desc="Dictionary of electrodes with keys being an electrode id and values "
                                             "being the electrode object")
 
     electrodes = Property(Dict(Str, Electrode), depends_on='_electrodes')
 
     svg_model = Instance(SvgUtil, allow_none=True, desc="Model for the SVG file if given")
+
+    channels = Property(List(Int), depends_on='_electrodes')
+    states = Property(List(Int), depends_on='_electrodes')
+
+    #: Map of the unique channels found amongst the electrodes, and various electrode ids associated with them
+    channels_electrode_ids_map = Property(Dict(Int, List(Str)), depends_on='_electrodes')
+
+    #: Map of the unique channels and their states, True means actuated.
+    channels_states_map = Property(Dict(Int, Int), depends_on='_electrodes')
 
     # -------------------Magic methods ----------------------------------------------------------------------
     def __getitem__(self, item: Str) -> Electrode:
@@ -70,12 +72,38 @@ class Electrodes(HasTraits):
     def __setitem__(self, key, value):
         self._electrodes[key] = value
 
+    def __iter__(self):
+        return iter(self._electrodes.values())
+
+    def __len__(self):
+        return len(self._electrodes)
+
     # -------------------Trait Property getters and setters --------------------------------------------------
     def _get_electrodes(self) -> Dict(Str, Electrode):
         return self._electrodes
 
     def _set_electrodes(self, electrodes: Dict(Str, Electrode)):
         self._electrodes = electrodes
+
+    @cached_property
+    def _get_channels(self) -> List(Int):
+        return [electrode.channel for electrode in self._electrodes.values()]
+
+    @cached_property
+    def _get_states(self) -> List(Int):
+        return [electrode.state for electrode in self._electrodes.values()]
+
+    @cached_property
+    def _get_channels_states_map(self):
+        return {self.channels: self.states}
+
+    @cached_property
+    def _get_channels_electrode_ids_map(self):
+        channel_to_electrode_ids_map = defaultdict(list)
+        for electrode_id, electrode in self.electrodes.items():
+            channel_to_electrode_ids_map[electrode.channel].append(electrode_id)
+
+        return channel_to_electrode_ids_map
 
     # -------------------Trait change handlers --------------------------------------------------
     def _svg_model_changed(self, new_model: SvgUtil):
