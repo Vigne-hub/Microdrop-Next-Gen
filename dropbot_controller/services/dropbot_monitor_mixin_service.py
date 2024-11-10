@@ -162,7 +162,7 @@ class DropbotMonitorMixinService(HasTraits):
 
         # if the dropbot is already connected
         else:
-            logger.info("Dropbot already connected on port %s", port_name)
+            logger.info(f"Dropbot already connected on port {port_name}")
 
     def _setup_dropbot(self):
         if self.proxy.digital_read(OUTPUT_ENABLE_PIN):
