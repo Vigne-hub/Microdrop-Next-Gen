@@ -11,18 +11,6 @@ class ElectrodeStateChangeRequestMessageModel(HasTraits):
     boolean values.
 
     The input message will be stored in pythonized dict form. The channels will be converted to ints from string.
-
-    >>> model = ElectrodeStateChangeRequestMessageModel(message='{"1": true, "2": false, "3": true}')
-    >>> print("Valid message:", model.json_message)
-    Valid message: {1: True, 2: False, 3: True}
-
-    Example usage with invalid data (wrong key type and value type):
-
-    >>> try:
-    ...     model = ElectrodeStateChangeRequestMessageModel(message='{"1": true, "2": "false"}')
-    ... except TraitError as e:
-    ...     print("Validation error:", e)
-    Validation error: "Message should be a dictionary with string representation of integer (numeric string) keys and Boolean values."
     """
     _json_message = Dict(Int, Bool, desc="Dict mapping integer channel ids to boolean states of each. The states "
                                          "should specify its current actuation state.")
@@ -30,6 +18,7 @@ class ElectrodeStateChangeRequestMessageModel(HasTraits):
     # We should get integer keys and Boolean values in the JSON message.
     json_message = Property(Str, observe="_json_message")
 
+    # optional in case the boolean mask is needed.
     num_available_channels = Int(desc="Number of available channels at maximum on the dropbot.")
 
     channels_states_boolean_mask = Property(Array, observe="_json_message", desc="boolean mask representing which channels on/off.")
@@ -66,7 +55,7 @@ class ElectrodeStateChangeRequestMessageModel(HasTraits):
         mask = np.zeros(self.num_available_channels, dtype=bool)
 
         # obtain the channel nums where the state is True which means it is currently ON.
-        channels_on_now = [channel for channel, state in self.json_message if state]
+        channels_on_now = [channel for channel, state in self.json_message.items() if state]
 
         # Set specified indices to True
         mask[channels_on_now] = True
