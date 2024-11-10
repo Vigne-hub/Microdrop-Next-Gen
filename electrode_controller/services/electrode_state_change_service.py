@@ -1,21 +1,21 @@
-import functools
-import json
-
-from collections.abc import Iterable
-
+# library imports
+from traits.api import provides, HasTraits
 
 # unit handling
 from pint import UnitRegistry
 
-from dropbot_controller.interfaces.i_dropbot_control_mixin_service import IDropbotControlMixinService
-
 ureg = UnitRegistry()
 
-from traits.api import provides, HasTraits
+# interface imports from microdrop plugins
+from dropbot_controller.interfaces.i_dropbot_control_mixin_service import IDropbotControlMixinService
 
 # microdrop utils imports
 from microdrop_utils._logger import get_logger
+
 logger = get_logger(__name__)
+
+# local imports
+from ..models import ElectrodeStateChangeRequestMessageModel
 
 
 @provides(IDropbotControlMixinService)
@@ -31,12 +31,15 @@ class ElectrodeStateChangeMixinService(HasTraits):
     name = 'Electrode state change Mixin'
 
     ######################################## Methods to Expose #############################################
-    def on_electrode_state_change_request(self, message):
+    def on_electrodes_state_change_request(self, message):
         """
         Method following the simple example in examples/tests/test_dropbot_methods to actuate electrodes on dropbot
-        given the states and channels pairs in the JSON message as per model ChannelELectrodePairs.
+        given the states and channels pairs in the JSON message as per ElectrodeStateChangeRequestMessageModel.
         """
-        message = json.loads(message)
-        channels_states = message.get("channel_states", None)
+        channel_states_map_model = ElectrodeStateChangeRequestMessageModel(json_message=message,
+                                                                           num_available_channels=self.proxy.number_of_channels)
+
         # do actuation
-        self.proxy.state_of_channels = channels_states
+        self.proxy.state_of_channels = channel_states_map_model.channels_states_boolean_mask
+
+        logger.info(f"{self.proxy.state_of_channels.sum()} number of channels actuated now")
