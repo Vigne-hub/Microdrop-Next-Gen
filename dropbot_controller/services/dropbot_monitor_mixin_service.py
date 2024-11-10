@@ -152,6 +152,7 @@ class DropbotMonitorMixinService(HasTraits):
                                         event_mask=EVENT_CHANNELS_UPDATED |
                                                    EVENT_SHORTS_DETECTED |
                                                    EVENT_ENABLE)
+                self.proxy.turn_off_all_channels()
 
             ###########################################################################################
 
