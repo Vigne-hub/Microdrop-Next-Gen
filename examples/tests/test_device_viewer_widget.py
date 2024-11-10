@@ -100,24 +100,21 @@ def test_get_channels_electrode_ids_map(valid_electrodes_model_from_svg):
         assert valid_electrodes_model[channel] == valid_electrodes_model_from_svg.channels_electrode_ids_map[int(channel)]
 
 
-def test_get_electrodes_states_map(valid_electrodes_model_from_svg):
+def test_electrodes_states_map(valid_electrodes_model_from_svg):
     """
-    Test method to get map of electrodes actuation states from model.
-    If this method works then the individual electrodes and states property getters should work too since this is a
-    composite of those methods.
+    Test getting map of electrodes actuation states from model as a property.
+    If this property is accurate then the individual electrodes and states properties should be ok too since this is a
+    composite of those two.
     """
 
     #: get valid json file
     with open(sample_svg_valid_channels_states_map) as f:
         valid_electrodes_model = json.load(f)
 
-    # obtain channels_states_map
-    channels_states_map = valid_electrodes_model_from_svg.get_channels_states_map()
-
     #: check electrodes_states_map
     for channel in valid_electrodes_model.keys():
         #: since json loading, this will have string keys
-        assert valid_electrodes_model[channel] == channels_states_map[int(channel)]
+        assert valid_electrodes_model[channel] == valid_electrodes_model_from_svg.channels_states_map[int(channel)]
 
     # check if traits listening works. so upon setting state of one of the channels, the channels states map should
     # update accordingly
@@ -127,9 +124,6 @@ def test_get_electrodes_states_map(valid_electrodes_model_from_svg):
     change_electrode.state = not change_electrode.state
 
     # obtain new channels_states_map
-    new_channels_states_map = valid_electrodes_model_from_svg.get_channels_states_map()
+    new_channels_states_map = valid_electrodes_model_from_svg.channels_states_map
 
     assert new_channels_states_map[change_electrode.channel] == True
-
-
-

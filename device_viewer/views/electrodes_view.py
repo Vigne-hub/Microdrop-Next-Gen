@@ -81,10 +81,14 @@ class ElectrodeView(QGraphicsPathItem):
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsFocusable, True)
 
     def mousePressEvent(self, event):
-        self.on_clicked()
-        super().mousePressEvent(event)  # Call the superclass method to ensure proper event handling
+        # Check if left mouse button was clicked
+        if event.button() == Qt.MouseButton.LeftButton:
+            # Emit the rightClicked signal with arguments
+            self.on_leftClicked()
 
-    def on_clicked(self):
+        super().mousePressEvent(event)
+
+    def on_leftClicked(self):
         """
         Method to be implemented by Controller. Whatever needs to be done on a click routine.
         """
