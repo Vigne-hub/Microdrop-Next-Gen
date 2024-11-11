@@ -2,7 +2,7 @@
 from pyface.tasks.dock_pane import DockPane
 
 # local imports
-from dropbot_status.widget import DramatiqDropbotStatusWidget
+from .widget import DropBotStatusWidget
 
 from .consts import PKG
 
@@ -15,6 +15,14 @@ class DropbotStatusDockPane(DockPane):
 
     id = PKG + ".pane"
     name = "Dropbot Status Dock Pane"
+
+    #### 'IDockPane' interface ################################################
+
+    #: Make sure pane is currently detached from the main window.
+    floating = True
+
+    #: Make sure the pane is currently visible.
+    visible = True
 
     def create_contents(self, parent):
 

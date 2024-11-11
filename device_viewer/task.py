@@ -86,6 +86,8 @@ class DeviceViewerTask(Task):
         self.__handle_electrode_layer_events()
         logger.debug(f"setting up handlers for new layer for new electrodes model {new_model}")
 
+        publish_message(topic=ELECTRODES_STATE_CHANGE, message=json.dumps(self.electrodes_model.channels_states_map))
+
 
     ###########################################################################
     # Menu actions.
