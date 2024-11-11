@@ -181,9 +181,6 @@ class DeviceViewerTask(Task):
 
         self.electrodes_model = _electrodes
 
-    def initialize(self):
-        publish_message(topic=ELECTRODES_STATE_CHANGE, message=json.dumps(self.electrodes_model.channels_states_map))
-
     ##########################################################
     # Public interface.
     ##########################################################
