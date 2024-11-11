@@ -1,9 +1,9 @@
 from traits.api import Instance, Bool
 from microdrop_utils.dramatiq_dropbot_serial_proxy import DramatiqDropbotSerialProxy
-from microdrop_utils.i_controller_base import IControllerBase
+from microdrop_utils.i_dramatiq_controller_base import IDramatiqControllerBase
 
 
-class IDropbotControllerBase(IControllerBase):
+class IDropbotControllerBase(IDramatiqControllerBase):
     """
     Interface for the Dropbot Controller Service.
     Provides methods for controlling and monitoring a Dropbot device.

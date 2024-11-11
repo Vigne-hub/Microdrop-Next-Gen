@@ -13,20 +13,31 @@ logger = get_logger(__name__)
 @provides(IDropbotControllerBase)
 class DropbotControllerBase(HasTraits):
     proxy = Instance(DramatiqDropbotSerialProxy)
+    listener = Instance(dramatiq.Actor, desc="Listener actor listens to messages sent to request dropbot backend services.")
     active_state = Bool(False)
-    listener = Instance(dramatiq.Actor)
 
     def traits_init(self):
-        self.listener = self.create_listener_actor()
+        """
+        This function needs to be here to let the listener be initialized to the default value automatically.
+        We just do it manually here to make the code clearer.
+        We can also do other initialization routines here if needed.
 
-    def create_listener_actor(self):
+        This is equivalent to doing:
+
+        def __init__(self, **traits):
+            super().__init__(**traits)
+
+        """
+        logger.info("Starting DropbotControllerBase")
+        self.listener = self._listener_default()
+
+    def _listener_default(self) -> dramatiq.Actor:
         """
         Create a Dramatiq actor for listening to UI-related messages.
 
         Returns:
         dramatiq.Actor: The created Dramatiq actor.
         """
-
         @dramatiq.actor
         def dropbot_controller_listener(message, topic):
             """

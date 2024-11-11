@@ -1,4 +1,4 @@
-from traits.api import Interface, Str, Dict
+from traits.api import Interface, Str
 
 
 class IDropbotControlMixinService(Interface):
