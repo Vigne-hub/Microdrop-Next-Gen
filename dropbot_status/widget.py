@@ -114,7 +114,7 @@ class DropBotStatusWidget(QWidget):
         self.detect_shorts_button = QPushButton("Detect Shorts")
         self.detect_shorts_button.clicked.connect(self.request_detect_shorts)
         self.layout.addWidget(self.detect_shorts_button)
-        self.ui_action_signal.connect(self.signal_handler)
+        self.ui_action_signal.connect(self.ui_action_signal_handler)
 
     ###################################################################################################################
     # Publisher methods
@@ -133,7 +133,7 @@ class DropBotStatusWidget(QWidget):
     # Subscriber methods
     ###################################################################################################################
 
-    def signal_handler(self, signal):
+    def ui_action_signal_handler(self, signal):
         """
         Handle GUI action required for signal triggered by dropbot status listener.
         """
@@ -280,25 +280,3 @@ class DropBotStatusWidget(QWidget):
                                   "the DropBot is restarted (e.g. unplug all cables and plug back in)")
 
         self.halted_popup.exec()
-
-    ##################################################################################################
-
-
-class DramatiqDropbotStatusWidget(DropBotStatusWidget):
-    """Class to hook up the dropbot status widget signalling to a dramatiq system."""
-
-    def __init__(self):
-        super().__init__()
-        self.listener = self.create_listener_actor()
-
-    def create_listener_actor(self):
-        """
-        Listen to Topics being triggered to affect UI and emit signal
-        """
-
-        @dramatiq.actor
-        def dropbot_status_listener(message, topic):
-            logger.debug(f"UI_LISTENER: Received message: {message} from topic: {topic}. Triggering UI Signal")
-            self.ui_action_signal.emit(json.dumps({'message': message, 'topic': topic}))
-
-        return dropbot_status_listener
