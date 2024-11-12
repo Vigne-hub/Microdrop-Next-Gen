@@ -23,6 +23,10 @@ logger = get_logger(__name__)
 
 @provides(IDropbotControllerBase)
 class DropbotControllerBase(HasTraits):
+    """
+    This class provides some methods for handling signals from the proxy. But mainly provides a dramatiq listener
+    that captures appropriate signals and calls the methods needed.
+    """
     proxy = Instance(DramatiqDropbotSerialProxy)
     listener = Instance(dramatiq.Actor,
                         desc="Listener actor listens to messages sent to request dropbot backend services.")
@@ -126,19 +130,21 @@ class DropbotControllerBase(HasTraits):
                         message=json.dumps({'capacitance': capacitance_formatted, 'voltage': voltage_formatted}))
 
     @staticmethod
-    def _halted_event_wrapper(sender, **message):
+    def _halted_event_wrapper(signal):
+
         reason = ''
 
-        if 'error' in message:
-            error = message['error']
-            if error.get('name') == 'output-current-exceeded':
-                reason = ' because output current was exceeded'
-            elif error.get('name') == 'chip-load-saturated':
-                reason = ' because chip load feedback exceeded allowable range'
+        if signal['error']['name'] == 'output-current-exceeded':
+            reason = 'because output current was exceeded'
+        elif signal['error']['name'] == 'chip-load-saturated':
+            reason = 'because chip load feedback exceeded allowable range'
 
         # send out signal to all interested parties that the dropbot has been halted and request the HALT method
-        publish_message(topic=HALTED, message=f'DropBot halted due to {reason}')
+        publish_message(topic=HALTED, message=reason)
         publish_message(topic=HALT, message="")
+
+        logger.error(f'DropBot halted due to {reason}')
+
 
     @staticmethod
     def _output_state_changed_wrapper(signal: dict[str, str]):

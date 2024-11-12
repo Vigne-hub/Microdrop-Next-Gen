@@ -66,9 +66,10 @@ class DropbotMonitorMixinService(HasTraits):
         self.monitor_scheduler.resume()
 
     def on_halt_request(self, message):
-        self._no_power = True
-        self.proxy.terminate()
-        self.proxy.monitor = None
+        self.proxy.turn_off_all_channels()
+        self.proxy.update_state(hv_output_selected=False,
+                                hv_output_enabled=False,
+                                voltage=0)
         logger.error("Halted DropBot: Disconnect everything and reconnect")
 
     ############################################################
@@ -88,7 +89,7 @@ class DropbotMonitorMixinService(HasTraits):
                     self.proxy.monitor = None
                     self.monitor_scheduler.resume()
                     logger.info("Sending Signal to Resumed DropBot monitor")
-                    publish_message(topic=RETRY_CONNECTION, message="")
+                    self.on_retry_connection_request(message="")
 
     ################################# Protected methods ######################################
     def _on_dropbot_port_found(self, event):
@@ -176,19 +177,10 @@ class DropbotMonitorMixinService(HasTraits):
         self.proxy.signals.signal('halted').connect(self._halted_event_wrapper, weak=False)
         self.proxy.signals.signal('capacitance-updated').connect(self._capacitance_updated_wrapper)
 
-        # Initial Proxy State Update
         self.proxy.update_state(capacitance_update_interval_ms=1000,
-                                event_mask=EVENT_CHANNELS_UPDATED |
-                                           EVENT_SHORTS_DETECTED |
-                                           EVENT_ENABLE)
-        # If the feedback capacitor is < 300nF, disable the chip load
-        # saturation check to prevent false positive triggers.
-        if self.proxy.config.C16 < 0.3e-6:
-            self.proxy.update_state(chip_load_range_margin=-1)
-
-        self.proxy.update_state(hv_output_selected=True,
-                                hv_output_enabled=True,
-                                voltage=75,
-                                )
-
-        self.proxy.turn_off_all_channels()
+                           hv_output_selected=True,
+                           hv_output_enabled=True,
+                           voltage=75,
+                           event_mask=EVENT_CHANNELS_UPDATED |
+                                      EVENT_SHORTS_DETECTED |
+                                      EVENT_ENABLE)
