@@ -2,28 +2,34 @@
 import json
 from functools import partial
 import os
+import dramatiq
 
 # Enthought library imports.
 from pyface.tasks.action.api import SMenu, SMenuBar, TaskToggleGroup, TaskAction
 from pyface.tasks.api import Task, TaskLayout, Tabbed
 from pyface.api import FileDialog, OK
-from traits.api import Instance, Str
+from traits.api import Instance, Str, provides
+
+# Local imports.
+from .models.electrodes import Electrodes
+from .views.device_view_pane import DeviceViewerPane
+from .views.electrodes_view import ElectrodeLayer
+from .consts import ELECTRODES_STATE_CHANGE
 
 from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
-from .consts import ELECTRODES_STATE_CHANGE
-# Local imports.
-from .models.electrodes import Electrodes, Electrode
-from .views.device_view_pane import DeviceViewerPane
-
 from microdrop_utils._logger import get_logger
-
-from .views.electrodes_view import ElectrodeLayer
+from microdrop_utils.i_dramatiq_controller_base import IDramatiqControllerBase
 
 logger = get_logger(__name__)
 DEFAULT_SVG_FILE = f"{os.path.dirname(__file__)}{os.sep}2x3device.svg"
 
 
+@provides(IDramatiqControllerBase)
 class DeviceViewerTask(Task):
+
+    #### 'IDramatuqControllerBase' interface #####
+    listener = Instance(dramatiq.Actor)
+
     #### 'Task' interface #####################################################
 
     id = "device_viewer.task"
@@ -41,14 +47,6 @@ class DeviceViewerTask(Task):
         SMenu(TaskToggleGroup(), id="View", name="&View")
     )
 
-    #### 'DeviceViewerTask' interface ##########################################
-
-    electrodes_model = Instance(Electrodes)
-
-    ###########################################################################
-    # 'Task' interface.
-    ###########################################################################
-
     def create_central_pane(self):
         """Create the central pane with the device viewer widget with a default view.
         """
@@ -59,6 +57,18 @@ class DeviceViewerTask(Task):
         """Create any dock panes needed for the task."""
         return [
         ]
+
+    def activated(self):
+        """Called when the task is activated."""
+        logger.debug(f"Device Viewer Task activated. Setting default view with {DEFAULT_SVG_FILE}...")
+        _electrodes = Electrodes()
+        _electrodes.set_electrodes_from_svg_file(DEFAULT_SVG_FILE)
+
+        self.electrodes_model = _electrodes
+
+    #### 'DeviceViewerTask' interface ##########################################
+
+    electrodes_model = Instance(Electrodes)
 
     ###########################################################################
     # Protected interface.
@@ -72,7 +82,6 @@ class DeviceViewerTask(Task):
             )
 
         )
-
     # --------------- Trait change handlers ----------------------------------------------
 
     def _electrodes_model_changed(self, new_model):
@@ -85,9 +94,7 @@ class DeviceViewerTask(Task):
         # setup event handlers for the new electrode layer
         self.__handle_electrode_layer_events()
         logger.debug(f"setting up handlers for new layer for new electrodes model {new_model}")
-
         publish_message(topic=ELECTRODES_STATE_CHANGE, message=json.dumps(self.electrodes_model.channels_states_map))
-
 
     ###########################################################################
     # Menu actions.
@@ -108,7 +115,7 @@ class DeviceViewerTask(Task):
             logger.info(f"Electrodes model set to {new_model}")
 
     ###########################################################################
-    # Controller interface.
+    # UI Controller interface.
     ###########################################################################
 
     def __handle_electrode_layer_events(self):
@@ -117,9 +124,8 @@ class DeviceViewerTask(Task):
         ################### Handler Method Connections ####################################
 
         for electrode_id, electrode_view in self.window.central_pane.current_electrode_layer.electrode_views.items():
-
             electrode_view.on_leftClicked = partial(
-                self.on_electrode_leftClicked, # handler method
+                self.on_electrode_leftClicked,  # handler method
                 electrode_id, self.electrodes_model, self.window.central_pane.current_electrode_layer  # args
             )
 
@@ -128,7 +134,8 @@ class DeviceViewerTask(Task):
     # TODO: maybe make these methods set from services or a task extension.
 
     @staticmethod
-    def on_electrode_leftClicked(_electrode_id: Str, _electrodes_model: Electrodes, _electrode_view_layer: ElectrodeLayer):
+    def on_electrode_leftClicked(_electrode_id: Str, _electrodes_model: Electrodes,
+                                 _electrode_view_layer: ElectrodeLayer):
         """
         Handle the event when an electrode is clicked.
 
@@ -173,13 +180,59 @@ class DeviceViewerTask(Task):
         # to be actuated / unactuated.
         publish_message(topic=ELECTRODES_STATE_CHANGE, message=json.dumps(updated_channels_states_map))
 
-    def activated(self):
-        """Called when the task is activated."""
-        logger.debug(f"Device Viewer Task activated. Setting default view with {DEFAULT_SVG_FILE}...")
-        _electrodes = Electrodes()
-        _electrodes.set_electrodes_from_svg_file(DEFAULT_SVG_FILE)
+    ##########################################################
+    # 'IDramatiqControllerBase' interface.
+    ##########################################################
+    def traits_init(self):
+        """
+        This function needs to be here to let the listener be initialized to the default value automatically.
+        We just do it manually here to make the code clearer.
+        We can also do other initialization routines here if needed.
 
-        self.electrodes_model = _electrodes
+        This is equivalent to doing:
+
+        def __init__(self, **traits):
+            super().__init__(**traits)
+
+        """
+        logger.info("Starting DeviceViewer listener")
+        self.listener = self._listener_default()
+
+    def _listener_default(self) -> dramatiq.Actor:
+        """
+        Create a Dramatiq actor for listening to UI-related messages.
+
+        Returns:
+        dramatiq.Actor: The created Dramatiq actor.
+        """
+
+        @dramatiq.actor
+        def device_viewer_listener(message, topic):
+            """
+            A Dramatiq actor that listens to messages.
+
+            Parameters:
+            message (str): The received message.
+            topic (str): The topic of the message.
+
+            """
+            logger.info(f"DEVICE VIEWER LISTENER: Received message: {message} from topic: {topic}")
+
+            topic = topic.split("/")
+            method_name = f"_on_{topic[-1]}_triggered"
+            # Check if the method exists and call it
+            if hasattr(self, method_name) and getattr(self, method_name):
+                # Use getattr to get the method and call it
+                getattr(self, str(method_name))(message)
+
+            else:
+                logger.warning(f"Method for {topic[-1]} not found")
+
+        return device_viewer_listener
+
+    ####### handlers for dramatiq listener topics ##########
+    def _on_chip_inserted_triggered(self, message):
+        publish_message(topic=ELECTRODES_STATE_CHANGE, message=json.dumps(self.electrodes_model.channels_states_map))
 
     ##########################################################
     # Public interface.
@@ -187,4 +240,5 @@ class DeviceViewerTask(Task):
     def show_help(self):
         """Show the help dialog."""
         logger.info("Showing help dialog.")
+
 

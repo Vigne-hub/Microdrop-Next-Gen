@@ -10,4 +10,13 @@ class IDropbotControllerBase(IDramatiqControllerBase):
     """
 
     proxy = Instance(DramatiqDropbotSerialProxy, desc="The DramatiqDropbotSerialProxy object")
-    active_state = Bool(desc="specifies if the controller is actively listening to commands or not")
+    dropbot_connection_active = Bool(
+        desc="Specifies if the controller is actively listening to commands or not. So if the dropbot "
+             "connection is not there, no commands will be processed except searching for a dropbot "
+             "connection"
+    )
+
+    def on_dropbot_signal(self, *args, **kwargs):
+        """define some dropbot signal handlers:
+        some signals are connected, disconnected, halted
+        """

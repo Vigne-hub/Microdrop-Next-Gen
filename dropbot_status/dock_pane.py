@@ -13,14 +13,6 @@ class DropbotStatusDockPane(DockPane):
     id = PKG + ".pane"
     name = "Dropbot Status Dock Pane"
 
-    #### 'IDockPane' interface ################################################
-
-    #: Make sure pane is currently detached from the main window.
-    floating = True
-
-    #: Make sure the pane is currently visible.
-    visible = True
-
     def create_contents(self, parent):
         from .dramatiq_dropbot_status_controller import DramatiqDropbotStatusController
         from .widget import DropBotStatusWidget

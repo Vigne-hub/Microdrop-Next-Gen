@@ -110,9 +110,9 @@ class DropBotStatusWidget(QWidget):
         self.status_label = DropBotStatusLabel()
         self.layout.addWidget(self.status_label)
 
-        self.detect_shorts_button = QPushButton("Detect Shorts")
-        self.detect_shorts_button.clicked.connect(self.request_detect_shorts)
-        self.layout.addWidget(self.detect_shorts_button)
+        # self.detect_shorts_button = QPushButton("Detect Shorts")
+        # self.detect_shorts_button.clicked.connect(self.request_detect_shorts)
+        # self.layout.addWidget(self.detect_shorts_button)
 
         self.controller = None
 
