@@ -1,7 +1,6 @@
 # sys imports
 import json
 import os
-import dramatiq
 
 # pyside imports
 from PySide6.QtWidgets import QLabel, QWidget, QVBoxLayout, QPushButton, QMessageBox, QHBoxLayout, QDialog, QTextBrowser
@@ -99,22 +98,37 @@ class DropBotStatusLabel(QLabel):
 
 
 class DropBotStatusWidget(QWidget):
-    ui_action_signal = Signal(str)
-
+    controller_signal = Signal(str)
     def __init__(self):
         super().__init__()
 
         # flag for if no pwoer is true or not
+        self.no_power_dialog = None
         self.no_power = None
         self.layout = QVBoxLayout(self)
 
         self.status_label = DropBotStatusLabel()
         self.layout.addWidget(self.status_label)
 
-        self.detect_shorts_button = QPushButton("Detect Shorts")
-        self.detect_shorts_button.clicked.connect(self.request_detect_shorts)
-        self.layout.addWidget(self.detect_shorts_button)
-        self.ui_action_signal.connect(self.signal_handler)
+        # self.detect_shorts_button = QPushButton("Detect Shorts")
+        # self.detect_shorts_button.clicked.connect(self.request_detect_shorts)
+        # self.layout.addWidget(self.detect_shorts_button)
+
+        self.controller = None
+
+    # ---- controller setter method ------------
+
+    def setController(self, controller_factory: callable):
+        """
+        Function to set the controller for this view
+
+        Params:
+        controller_factory (callable): Function to return a controller for this view. Should take the self view itself
+        as an argument.  Should implement a handler for the controller_signal called controller_signal_handler
+        """
+        # this is likely going to provide a dramatiq listener.
+        self.controller = controller_factory(view=self)
+        self.controller_signal.connect(self.controller.controller_signal_handler)
 
     ###################################################################################################################
     # Publisher methods
@@ -126,45 +140,18 @@ class DropBotStatusWidget(QWidget):
     def request_retry_connection(self):
         logger.info("Retrying connection...")
         publish_message("Retry connection button triggered", RETRY_CONNECTION)
-        self.no_power_dialog.close()
+
+        if self.no_power_dialog:
+            self.no_power_dialog.close()
+
         self.no_power = False
+        self.no_power_dialog = None
 
     ###################################################################################################################
     # Subscriber methods
     ###################################################################################################################
 
-    def signal_handler(self, signal):
-        """
-        Handle GUI action required for signal triggered by dropbot status listener.
-        """
-        signal = json.loads(signal)
-        topic = signal.get("topic", "")
-        message = signal.get("message", "")
-        head_topic = topic.split('/')[-1]
-        sub_topic = topic.split('/')[-2]
-        method = f"_on_{head_topic}_triggered"
-
-        if hasattr(self, method) and callable(getattr(self, method)):
-            logger.debug(f"Method for {head_topic}, {method} getting called.")
-            getattr(self, method)(message)
-
-        # special topic warnings. Catch them all and print out to screen. Generic method for all warnings in case no
-        # specific implementations for them defined.
-        elif sub_topic == "warnings":
-            logger.info(f"Warning triggered. No special method for warning {head_topic}. Generic message produced")
-
-            title = head_topic.replace('_', ' ').title()
-
-            self._on_show_warning_triggered(json.dumps(
-
-                {'title': title,
-                 'message': message}
-            ))
-
-        else:
-            logger.warning(f"Method for {head_topic}, {method} not found.")
-
-    ######################################### Signal handler methods #############################################
+    ######################################### Handler methods #############################################
 
     ######## shorts found method ###########
     def _on_shorts_detected_triggered(self, shorts_dict):
@@ -281,24 +268,3 @@ class DropBotStatusWidget(QWidget):
 
         self.halted_popup.exec()
 
-    ##################################################################################################
-
-
-class DramatiqDropbotStatusWidget(DropBotStatusWidget):
-    """Class to hook up the dropbot status widget signalling to a dramatiq system."""
-
-    def __init__(self):
-        super().__init__()
-        self.listener = self.create_listener_actor()
-
-    def create_listener_actor(self):
-        """
-        Listen to Topics being triggered to affect UI and emit signal
-        """
-
-        @dramatiq.actor
-        def dropbot_status_listener(message, topic):
-            logger.debug(f"UI_LISTENER: Received message: {message} from topic: {topic}. Triggering UI Signal")
-            self.ui_action_signal.emit(json.dumps({'message': message, 'topic': topic}))
-
-        return dropbot_status_listener

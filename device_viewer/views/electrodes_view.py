@@ -81,12 +81,16 @@ class ElectrodeView(QGraphicsPathItem):
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsFocusable, True)
 
     def mousePressEvent(self, event):
-        self.on_clicked()
-        super().mousePressEvent(event)  # Call the superclass method to ensure proper event handling
+        # Check if left mouse button was clicked
+        if event.button() == Qt.MouseButton.LeftButton:
+            # Emit the rightClicked signal with arguments
+            self.on_leftClicked()
 
-    def on_clicked(self):
+        super().mousePressEvent(event)
+
+    def on_leftClicked(self):
         """
-        Method to be implemented by Controller
+        Method to be implemented by Controller. Whatever needs to be done on a click routine.
         """
         pass
 
@@ -141,24 +145,6 @@ class ElectrodeView(QGraphicsPathItem):
         self.setBrush(QBrush(self.color))
         self.update()
 
-    def update_alpha(self, line=False, fill=False, text=False, global_alpha=False):
-        """
-        Method to update the alpha of the electrode view
-        """
-        if line or global_alpha:
-            self.pen_color.setAlphaF(self.alphas['line'])
-            self.setPen(QPen(self.pen_color, 1))
-
-        if fill or global_alpha:
-            self.color.setAlphaF(self.alphas['fill'])
-            self.setBrush(QBrush(self.color))
-
-        if text or global_alpha:
-            self.text_color.setAlphaF(self.alphas['text'])
-            self.text_path.setDefaultTextColor(self.text_color)
-
-        self.update()
-
 
 class ElectrodeLayer(QGraphicsItemGroup):
     """
@@ -190,32 +176,12 @@ class ElectrodeLayer(QGraphicsItemGroup):
 
             self.addToGroup(self.electrode_views[electrode_id])
 
-        self._electrodes = electrodes
-
         # Create the connections between the electrodes
         self.connections = [con * modifier for con in svg.connections]
         # Create the connection items
         self.connection_items = []
         # Draw the connections
         self.draw_connections()
-
-    def change_alphas(self, alpha: float, **kwargs):
-        """
-        Method to change the alpha of the electrode views in the layer
-        """
-        if kwargs.get('path'):
-            self.update_connection_alpha(alpha)
-            kwargs.pop('path')
-        for name, e in self._electrodes.items():
-            for k in kwargs.keys():
-                if k in ['line', 'fill', 'text']:
-                    self.electrode_views[name].alphas[k] = alpha
-                if k == 'global_alpha':
-                    self.electrode_views[name].alphas['line'] = alpha
-                    self.electrode_views[name].alphas['fill'] = alpha
-                    self.electrode_views[name].alphas['text'] = alpha
-
-            self.electrode_views[name].update_alpha(**kwargs)
 
     def draw_connections(self):
         """
@@ -232,13 +198,3 @@ class ElectrodeLayer(QGraphicsItemGroup):
             color.setAlphaF(1.0)
             connection_item.setPen(QPen(color, 1))
             self.connection_items.append(connection_item)
-
-    def update_connection_alpha(self, alpha: float):
-        """
-        Method to update the alpha of the connections in the layer
-        """
-        for item in self.connection_items:
-            color = item.pen().color()
-            color.setAlphaF(alpha)
-            item.setPen(QPen(color, 1))
-            item.update()

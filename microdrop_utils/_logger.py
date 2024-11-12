@@ -4,9 +4,10 @@ import logging
 from pathlib import Path
 
 LOGFILE = f"application_logs{os.sep}application.log.{time.strftime('%Y-%m-%d_%H-%M-%S')}"
+LOGLEVEL = "INFO"
 
 
-def get_logger(name, level="INFO", log_file_path=LOGFILE):
+def get_logger(name, level=LOGLEVEL, log_file_path=LOGFILE):
   
     levels = {
         "DEBUG": logging.DEBUG,

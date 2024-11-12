@@ -1,9 +1,6 @@
 # enthought imports
 from pyface.tasks.dock_pane import DockPane
 
-# local imports
-from dropbot_status.widget import DramatiqDropbotStatusWidget
-
 from .consts import PKG
 
 
@@ -17,5 +14,10 @@ class DropbotStatusDockPane(DockPane):
     name = "Dropbot Status Dock Pane"
 
     def create_contents(self, parent):
+        from .dramatiq_dropbot_status_controller import DramatiqDropbotStatusController
+        from .widget import DropBotStatusWidget
 
-        return DramatiqDropbotStatusWidget()
+        view = DropBotStatusWidget()
+        view.setController(DramatiqDropbotStatusController)
+
+        return view
