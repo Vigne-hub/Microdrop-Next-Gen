@@ -231,7 +231,7 @@ class DeviceViewerTask(Task):
         return device_viewer_listener
 
     ####### handlers for dramatiq listener topics ##########
-    def _on_chip_inserted_triggered(self, message):
+    def _on_setup_success_triggered(self, message):
         publish_message(topic=ELECTRODES_STATE_CHANGE, message=json.dumps(self.electrodes_model.channels_states_map))
 
     ##########################################################

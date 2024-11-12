@@ -25,6 +25,7 @@ CHIP_NOT_INSERTED = 'dropbot/signals/chip_not_inserted'
 CHIP_INSERTED = 'dropbot/signals/chip_inserted'
 SHORTS_DETECTED = 'dropbot/signals/shorts_detected'
 CAPACITANCE_UPDATED = 'dropbot/signals/capacitance_updated'
+DROPBOT_SETUP_SUCCESS = 'dropbot/signals/setup_success'
 
 # Dropbot Services Topics -- Offered by default from the dropbot monitor mixin in this package
 START_DEVICE_MONITORING = "dropbot/requests/start_device_monitoring"

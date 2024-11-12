@@ -15,7 +15,7 @@ from microdrop_utils.dropbot_monitoring_helpers import check_dropbot_devices_ava
 from ..interfaces.i_dropbot_control_mixin_service import IDropbotControlMixinService
 
 from ..consts import NO_DROPBOT_AVAILABLE, SHORTS_DETECTED, NO_POWER, DROPBOT_DB3_120_HWID, RETRY_CONNECTION, \
-    OUTPUT_ENABLE_PIN, CHIP_NOT_INSERTED, CHIP_INSERTED
+    OUTPUT_ENABLE_PIN, CHIP_NOT_INSERTED, CHIP_INSERTED, DROPBOT_SETUP_SUCCESS
 
 logger = get_logger(__name__)
 
@@ -149,6 +149,8 @@ class DropbotMonitorMixinService(HasTraits):
                 # once dropbot setup, set connection to active
                 self.dropbot_connection_active = True
 
+                publish_message(topic=DROPBOT_SETUP_SUCCESS, message="")
+
             ###########################################################################################
 
             finally:
@@ -160,6 +162,7 @@ class DropbotMonitorMixinService(HasTraits):
             logger.info(f"Dropbot already connected on port {port_name}")
 
     def _on_dropbot_proxy_connected(self):
+        # do initial check on if chip inserted or not
         if self.proxy.digital_read(OUTPUT_ENABLE_PIN):
             logger.info("Publishing Chip Not Inserted")
             publish_message(topic=CHIP_NOT_INSERTED, message='Chip not inserted')
