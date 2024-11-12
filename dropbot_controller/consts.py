@@ -31,4 +31,4 @@ DROPBOT_SETUP_SUCCESS = 'dropbot/signals/setup_success'
 START_DEVICE_MONITORING = "dropbot/requests/start_device_monitoring"
 DETECT_SHORTS = "dropbot/requests/detect_shorts"
 RETRY_CONNECTION = "dropbot/requests/retry_connection"
-HALT = "dropbot/signals/halt"
+HALT = "dropbot/requests/halt"

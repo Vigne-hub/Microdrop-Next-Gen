@@ -257,14 +257,14 @@ class DropBotStatusWidget(QWidget):
         # Show the dialog
         self.no_power_dialog.exec()
 
-    def _on_halted_triggered(self):
+    def _on_halted_triggered(self, message):
         self.halted_popup = QMessageBox()
         self.halted_popup.setWindowTitle("ERROR: DropBot Halted")
         self.halted_popup.setButtonText(QMessageBox.StandardButton.Ok, "Close")
-        self.halted_popup.setText("DropBot has been halted because output current was exceeded."
+        self.halted_popup.setText(f"DropBot has been halted, reason was {message}."
                                   "\n\n"
                                   "All channels have been disabled and high voltage has been turned off until "
-                                  "the DropBot is restarted (e.g. unplug all cables and plug back in)")
+                                  "the DropBot is restarted (e.g. unplug all cables and plug back in).")
 
         self.halted_popup.exec()
 
