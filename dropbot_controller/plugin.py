@@ -8,6 +8,7 @@ from .dropbot_controller_base import DropbotControllerBase
 from .interfaces.i_dropbot_control_mixin_service import IDropbotControlMixinService
 from .consts import ACTOR_TOPIC_DICT
 from .services.dropbot_monitor_mixin_service import DropbotMonitorMixinService
+from .services.dropbot_states_setting_mixin_service import DropbotStatesSettingMixinService
 from .consts import PKG
 
 # microdrop imports
@@ -30,12 +31,17 @@ class DropbotControllerPlugin(Plugin):
     def _service_offers_default(self):
         """Return the service offers."""
         return [
-            ServiceOffer(protocol=IDropbotControlMixinService, factory=self._create_service),
+            ServiceOffer(protocol=IDropbotControlMixinService, factory=self._create_monitor_service),
+            ServiceOffer(protocol=IDropbotControlMixinService, factory=self._create_set_states_service),
         ]
 
-    def _create_service(self, *args, **kwargs):
+    def _create_monitor_service(self, *args, **kwargs):
         """Returns a dropbot monitor mixin service with core functionality."""
         return DropbotMonitorMixinService
+
+    def _create_set_states_service(self, *args, **kwargs):
+        """Returns a dropbot set states mixin service with some basic states setting functionality."""
+        return DropbotStatesSettingMixinService
 
     def start(self):
         """ Initialize the dropbot on plugin start """

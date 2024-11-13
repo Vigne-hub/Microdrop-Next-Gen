@@ -8,8 +8,9 @@ from pint import UnitRegistry
 
 ureg = UnitRegistry()
 
-from .consts import CHIP_INSERTED, CHIP_NOT_INSERTED, OUTPUT_ENABLE_PIN, CAPACITANCE_UPDATED, HALTED, HALT, \
-    START_DEVICE_MONITORING, RETRY_CONNECTION
+from .consts import (CHIP_INSERTED, CHIP_NOT_INSERTED, CAPACITANCE_UPDATED, HALTED, HALT, START_DEVICE_MONITORING,
+                     RETRY_CONNECTION)
+
 from .interfaces.i_dropbot_controller_base import IDropbotControllerBase
 
 from traits.api import HasTraits, provides, Bool
@@ -123,7 +124,7 @@ class DropbotControllerBase(HasTraits):
     @staticmethod
     def _capacitance_updated_wrapper(signal: dict[str, str]):
         capacitance = float(signal.get('new_value', 0.0)) * ureg.farad
-        capacitance_formatted = f"{capacitance.to(ureg.picofarad):.2g~P}"
+        capacitance_formatted = f"{capacitance.to(ureg.picofarad):.3g~P}"
         voltage = float(signal.get('V_a', 0.0)) * ureg.volt
         voltage_formatted = f"{voltage:.2g~P}"
         publish_message(topic=CAPACITANCE_UPDATED,

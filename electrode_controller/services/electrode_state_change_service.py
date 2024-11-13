@@ -1,11 +1,6 @@
 # library imports
 from traits.api import provides, HasTraits
 
-# unit handling
-from pint import UnitRegistry
-
-ureg = UnitRegistry()
-
 # interface imports from microdrop plugins
 from dropbot_controller.interfaces.i_dropbot_control_mixin_service import IDropbotControlMixinService
 
