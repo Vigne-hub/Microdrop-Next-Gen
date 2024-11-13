@@ -161,35 +161,3 @@ class DropbotMonitorMixinService(HasTraits):
         # if the dropbot is already connected
         else:
             logger.info(f"Dropbot already connected on port {port_name}")
-
-    def _on_dropbot_proxy_connected(self):
-        # do initial check on if chip inserted or not
-        if self.proxy.digital_read(OUTPUT_ENABLE_PIN):
-            logger.info("Publishing Chip Not Inserted")
-            publish_message(topic=CHIP_NOT_INSERTED, message='Chip not inserted')
-        else:
-            logger.info("Publishing Chip inserted")
-            publish_message(topic=CHIP_INSERTED, message='Chip inserted')
-            self.on_detect_shorts_request("")
-
-        self.proxy.signals.signal('output_enabled').connect(self._output_state_changed_wrapper)
-        self.proxy.signals.signal('output_disabled').connect(self._output_state_changed_wrapper)
-        self.proxy.signals.signal('halted').connect(self._halted_event_wrapper, weak=False)
-        self.proxy.signals.signal('capacitance-updated').connect(self._capacitance_updated_wrapper)
-
-        # Initial Proxy State Update
-        self.proxy.update_state(capacitance_update_interval_ms=1000,
-                                event_mask=EVENT_CHANNELS_UPDATED |
-                                           EVENT_SHORTS_DETECTED |
-                                           EVENT_ENABLE)
-        # If the feedback capacitor is < 300nF, disable the chip load
-        # saturation check to prevent false positive triggers.
-        if self.proxy.config.C16 < 0.3e-6:
-            self.proxy.update_state(chip_load_range_margin=-1)
-
-        self.proxy.update_state(hv_output_selected=True,
-                                hv_output_enabled=True,
-                                voltage=75,
-                                )
-
-        self.proxy.turn_off_all_channels()

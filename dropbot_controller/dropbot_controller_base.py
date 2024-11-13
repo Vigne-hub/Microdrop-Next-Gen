@@ -1,5 +1,6 @@
 import json
 
+from dropbot import EVENT_CHANNELS_UPDATED, EVENT_SHORTS_DETECTED, EVENT_ENABLE
 from traits.api import Instance
 import dramatiq
 
@@ -9,7 +10,7 @@ from pint import UnitRegistry
 ureg = UnitRegistry()
 
 from .consts import (CHIP_INSERTED, CHIP_NOT_INSERTED, CAPACITANCE_UPDATED, HALTED, HALT, START_DEVICE_MONITORING,
-                     RETRY_CONNECTION)
+                     RETRY_CONNECTION, OUTPUT_ENABLE_PIN)
 
 from .interfaces.i_dropbot_controller_base import IDropbotControllerBase
 
@@ -120,6 +121,38 @@ class DropbotControllerBase(HasTraits):
     #######################################################################
 
     # proxy signal handlers done this way so that these methods can be overrided externally
+
+    def _on_dropbot_proxy_connected(self):
+        # do initial check on if chip inserted or not
+        if self.proxy.digital_read(OUTPUT_ENABLE_PIN):
+            logger.info("Publishing Chip Not Inserted")
+            publish_message(topic=CHIP_NOT_INSERTED, message='Chip not inserted')
+        else:
+            logger.info("Publishing Chip inserted")
+            publish_message(topic=CHIP_INSERTED, message='Chip inserted')
+            self.on_detect_shorts_request("")
+
+        self.proxy.signals.signal('output_enabled').connect(self._output_state_changed_wrapper)
+        self.proxy.signals.signal('output_disabled').connect(self._output_state_changed_wrapper)
+        self.proxy.signals.signal('halted').connect(self._halted_event_wrapper, weak=False)
+        self.proxy.signals.signal('capacitance-updated').connect(self._capacitance_updated_wrapper)
+
+        # Initial Proxy State Update
+        self.proxy.update_state(capacitance_update_interval_ms=1000,
+                                event_mask=EVENT_CHANNELS_UPDATED |
+                                           EVENT_SHORTS_DETECTED |
+                                           EVENT_ENABLE)
+        # If the feedback capacitor is < 300nF, disable the chip load
+        # saturation check to prevent false positive triggers.
+        if self.proxy.config.C16 < 0.3e-6:
+            self.proxy.update_state(chip_load_range_margin=-1)
+
+        self.proxy.update_state(hv_output_selected=True,
+                                hv_output_enabled=True,
+                                voltage=75,
+                                )
+
+        self.proxy.turn_off_all_channels()
 
     @staticmethod
     def _capacitance_updated_wrapper(signal: dict[str, str]):

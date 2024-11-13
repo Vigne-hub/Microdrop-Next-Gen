@@ -16,7 +16,9 @@ class IDropbotControllerBase(IDramatiqControllerBase):
              "connection"
     )
 
-    def on_dropbot_signal(self, *args, **kwargs):
-        """define some dropbot signal handlers:
-        some signals are connected, disconnected, halted
+    def _on_dropbot_proxy_connected(self):
+        """
+        Method that should be called once a dropbot proxy has been connected. There should be a routine here to setup
+        the new connection. For instance, updating the states as needed, and hooking up the blinker signals emitted
+        by the dropbot proxy to appropriate handlers (like the halted event for instance).
         """
