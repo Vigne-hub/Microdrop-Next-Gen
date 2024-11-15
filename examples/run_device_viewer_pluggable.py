@@ -15,9 +15,11 @@ def main(args):
     from dropbot_controller.plugin import DropbotControllerPlugin
     from manual_controls.plugin import ManualControlsPlugin
     from electrode_controller.plugin import ElectrodeControllerPlugin
+    from microdrop.plugins.frontend_plugins.protocol_grid_controller.protocol_grid_controller_plugin import ProtocolGridControllerPlugin
 
     plugins = [CorePlugin(), TasksPlugin(), DeviceViewerPlugin(), DropbotStatusPlugin(),
-               MessageRouterPlugin(), DropbotControllerPlugin(), ElectrodeControllerPlugin(), ManualControlsPlugin()]
+               MessageRouterPlugin(), DropbotControllerPlugin(), ElectrodeControllerPlugin(), ManualControlsPlugin(),
+               ProtocolGridControllerPlugin()]
 
     app = DeviceViewerApplication(plugins=plugins)
 

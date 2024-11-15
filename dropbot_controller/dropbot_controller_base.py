@@ -157,9 +157,9 @@ class DropbotControllerBase(HasTraits):
     @staticmethod
     def _capacitance_updated_wrapper(signal: dict[str, str]):
         capacitance = float(signal.get('new_value', 0.0)) * ureg.farad
-        capacitance_formatted = f"{capacitance.to(ureg.picofarad):.3g~P}"
+        capacitance_formatted = f"{capacitance.to(ureg.picofarad):.4g~P}"
         voltage = float(signal.get('V_a', 0.0)) * ureg.volt
-        voltage_formatted = f"{voltage:.2g~P}"
+        voltage_formatted = f"{voltage:.3g~P}"
         publish_message(topic=CAPACITANCE_UPDATED,
                         message=json.dumps({'capacitance': capacitance_formatted, 'voltage': voltage_formatted}))
 

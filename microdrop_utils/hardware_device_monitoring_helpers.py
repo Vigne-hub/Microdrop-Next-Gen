@@ -22,7 +22,7 @@ def check_connected_ports_hwid(id_to_screen, regexp='USB Serial'):
     return valid_ports
 
 
-def check_dropbot_devices_available(hwids_to_check):
+def check_devices_available(hwids_to_check):
     """
     Method to find the USB port of the DropBot if it is connected.
     """
@@ -41,4 +41,4 @@ def check_dropbot_devices_available(hwids_to_check):
 
 if __name__ == "__main__":
     hwids = ['VID:PID=16C0:0483']
-    check_dropbot_devices_available(hwids)
+    check_devices_available(hwids)

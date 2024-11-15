@@ -11,7 +11,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
 from microdrop_utils._logger import get_logger
 from microdrop_utils.dramatiq_dropbot_serial_proxy import DramatiqDropbotSerialProxy
-from microdrop_utils.dropbot_monitoring_helpers import check_dropbot_devices_available
+from microdrop_utils.hardware_device_monitoring_helpers import check_devices_available
 from ..interfaces.i_dropbot_control_mixin_service import IDropbotControlMixinService
 
 from ..consts import NO_DROPBOT_AVAILABLE, SHORTS_DETECTED, NO_POWER, DROPBOT_DB3_120_HWID, RETRY_CONNECTION, \
@@ -44,7 +44,7 @@ class DropbotMonitorMixinService(HasTraits):
 
         scheduler = BackgroundScheduler()
         scheduler.add_job(
-            func=functools.partial(check_dropbot_devices_available, hwid_to_check),
+            func=functools.partial(check_devices_available, hwid_to_check),
             trigger=IntervalTrigger(seconds=2),
         )
         scheduler.add_listener(self._on_dropbot_port_found, EVENT_JOB_EXECUTED)
