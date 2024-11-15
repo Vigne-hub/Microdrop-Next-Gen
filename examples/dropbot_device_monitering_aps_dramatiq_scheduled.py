@@ -79,10 +79,12 @@ class DropBotDeviceConnectionMonitor(HasTraits):
                                 for port_name in new_ports:
                                     publish_message(f'New DropBot found on port: {port_name}', 'dropbot/info')
 
-                                publish_message(port_names, 'dropbot/ports')
+                                # publish the first port name on the list
+                                publish_message(port_names[0], 'dropbot/port')
 
                         else:
-                            publish_message("No New DropBot found", 'dropbot/info')
+                            # publish_message("No New DropBot found", 'dropbot/info')
+                            logger.debug('No new Dropbot found')
                     else:
                         # reset the port names list to capture a reconnection in the same port.
                         self.port_names = []
@@ -135,6 +137,7 @@ def make_serial_proxy(port_name:Str, topic: Str):
     import dropbot
     try:
         proxy = dropbot.SerialProxy(port=port_name)
+        proxy.ram_free()
     except (IOError, AttributeError):
         publish_message('No DropBot available for connection', 'dropbot/error')
     except dropbot.proxy.NoPower:
@@ -145,7 +148,7 @@ def main(args):
     message_router_actor = MessageRouterActor()
 
     message_router_actor.message_router_data.add_subscriber_to_topic('dropbot/#', 'print_dropbot_message')
-   # message_router_actor.message_router_data.add_subscriber_to_topic('dropbot/ports', 'make_serial_proxy')
+    message_router_actor.message_router_data.add_subscriber_to_topic('dropbot/port', 'make_serial_proxy')
 
     example_instance = DropBotDeviceConnectionMonitor()
     scheduler = BlockingScheduler()
@@ -168,11 +171,11 @@ if __name__ == "__main__":
     from microdrop_utils.broker_server_helpers import init_broker_server, stop_broker_server
 
     try:
-       # init_broker_server(BROKER)
+        init_broker_server(BROKER)
         worker = Worker(BROKER, worker_threads=1)
         worker.start()
         main(sys.argv[1:])
     finally:
         BROKER.flush_all()
         worker.stop()
-    #    stop_broker_server(BROKER)
+        stop_broker_server(BROKER)
