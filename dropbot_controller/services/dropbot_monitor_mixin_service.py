@@ -34,17 +34,17 @@ class DropbotMonitorMixinService(HasTraits):
                                  )
 
     ######################################## Methods to Expose #############################################
-    def on_start_device_monitoring_request(self, hwid_to_check):
+    def on_start_device_monitoring_request(self, hwids_to_check):
         """
         Method to start looking for dropbots connected using their hwids.
         """
 
-        if not hwid_to_check:
-            hwid_to_check = DROPBOT_DB3_120_HWID
+        if not hwids_to_check:
+            hwids_to_check = [DROPBOT_DB3_120_HWID]
 
         scheduler = BackgroundScheduler()
         scheduler.add_job(
-            func=functools.partial(check_devices_available, hwid_to_check),
+            func=functools.partial(check_devices_available, hwids_to_check),
             trigger=IntervalTrigger(seconds=2),
         )
         scheduler.add_listener(self._on_dropbot_port_found, EVENT_JOB_EXECUTED)

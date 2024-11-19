@@ -39,23 +39,23 @@ class ProtocolGridControllerPlugin(Plugin):
 
     def start(self):
         super().start() # starts plugin service
-        self.protocol_grid = self._create_service() # gets services
-        self.register_subscribers() # registers subscribers
-        self._start_worker() # starts worker for
+        # self.protocol_grid = self._create_service() # gets services
+        # self.register_subscribers() # registers subscribers
+        # self._start_worker() # starts worker for
 
-    def _create_service(self):
-        from microdrop.services.dropbot_services import DropbotService
-        return DropbotService()
+    # def _create_service(self):
+    #     from microdrop.services.dropbot_services import DropbotService
+    #     return DropbotService()
 
-    def register_subscribers(self):
-        self.message_router = self.application.get_service(MessageRouterActor)
-        if self.message_router is not None:
-            # Use the message_router_actor instance as needed
-            print("MessageRouterActor service accessed successfully.")
-            for actor_name, topics_list in self.dropbot_service.actor_topics_dict.items():
-                for topic in topics_list:
-                    # figure out how to set up message router plugin
-                    self.message_router.message_router_data.add_subscriber_to_topic(topic, actor_name)
-        else:
-            print("MessageRouterActor service not found.")
-            return
+    # def register_subscribers(self):
+    #     self.message_router = self.application.get_service(MessageRouterActor)
+    #     if self.message_router is not None:
+    #         # Use the message_router_actor instance as needed
+    #         print("MessageRouterActor service accessed successfully.")
+    #         for actor_name, topics_list in self.dropbot_service.actor_topics_dict.items():
+    #             for topic in topics_list:
+    #                 # figure out how to set up message router plugin
+    #                 self.message_router.message_router_data.add_subscriber_to_topic(topic, actor_name)
+    #     else:
+    #         print("MessageRouterActor service not found.")
+    #         return
