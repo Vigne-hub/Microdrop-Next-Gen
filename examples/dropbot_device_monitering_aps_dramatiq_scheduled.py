@@ -137,7 +137,7 @@ def make_serial_proxy(port_name:Str, topic: Str):
     import dropbot
     try:
         proxy = dropbot.SerialProxy(port=port_name)
-        proxy.ram_free()
+        print(proxy.ram_free())
     except (IOError, AttributeError):
         publish_message('No DropBot available for connection', 'dropbot/error')
     except dropbot.proxy.NoPower:
