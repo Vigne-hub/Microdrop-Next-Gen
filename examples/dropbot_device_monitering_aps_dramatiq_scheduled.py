@@ -1,4 +1,6 @@
 import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 # import base_node_rpc as bnr
 from traits.api import HasTraits, Str, Callable, List
 from microdrop_utils.dramatiq_pub_sub_helpers import publish_message, MessageRouterActor

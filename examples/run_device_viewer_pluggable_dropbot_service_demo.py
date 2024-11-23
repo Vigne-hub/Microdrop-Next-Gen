@@ -6,6 +6,10 @@ from envisage.api import CorePlugin, Plugin, SERVICE_OFFERS, ServiceOffer
 from envisage.application import Application
 from traits.api import provides, HasTraits, List, observe
 
+import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 # plugin imports
 from dropbot_controller.interfaces.i_dropbot_control_mixin_service import IDropbotControlMixinService
 from dropbot_controller.plugin import DropbotControllerPlugin
@@ -80,9 +84,4 @@ def main(args):
 
 
 if __name__ == "__main__":
-    import sys
-    import os
-
-    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
     main(sys.argv)
