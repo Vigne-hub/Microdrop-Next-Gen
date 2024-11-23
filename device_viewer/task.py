@@ -44,6 +44,8 @@ class DeviceViewerTask(Task):
 
         SMenu(id="Edit", name="&Edit"),
 
+        SMenu(id="Tools", name="&Tools"),
+
         SMenu(TaskToggleGroup(), id="View", name="&View")
     )
 
