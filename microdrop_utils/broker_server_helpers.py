@@ -23,7 +23,7 @@ def is_redis_running():
 
 def start_redis_server(retries=5, wait=3):
     """Start the Redis server."""
-    process = subprocess.Popen(f"redis-server {os.path.dirname(__file__)}{os.sep}redis.conf", shell=True)
+    process = subprocess.Popen(["redis-server", f"{os.path.dirname(__file__)}{os.sep}redis.conf"])
     for _ in range(retries):  # Retry up to 5 times
         if is_redis_running():
             print("Redis server is running.")
