@@ -9,6 +9,7 @@ from .interfaces.i_dropbot_control_mixin_service import IDropbotControlMixinServ
 from .consts import ACTOR_TOPIC_DICT
 from .services.dropbot_monitor_mixin_service import DropbotMonitorMixinService
 from .services.dropbot_states_setting_mixin_service import DropbotStatesSettingMixinService
+from .services.dropbot_self_tests_mixin_service import DropbotSelfTestsMixinService
 from .consts import PKG
 
 # microdrop imports
@@ -33,6 +34,7 @@ class DropbotControllerPlugin(Plugin):
         return [
             ServiceOffer(protocol=IDropbotControlMixinService, factory=self._create_monitor_service),
             ServiceOffer(protocol=IDropbotControlMixinService, factory=self._create_set_states_service),
+            ServiceOffer(protocol=IDropbotControlMixinService, factory=self._create_self_test_service),
         ]
 
     def _create_monitor_service(self, *args, **kwargs):
@@ -42,6 +44,13 @@ class DropbotControllerPlugin(Plugin):
     def _create_set_states_service(self, *args, **kwargs):
         """Returns a dropbot set states mixin service with some basic states setting functionality."""
         return DropbotStatesSettingMixinService
+
+    def _create_self_test_service(self, *args, **kwargs):
+        """
+        Returns a dropbot self test mixin service providing the ability to run all the dorpbot QC methods
+        and generate a report.
+        """
+        return DropbotSelfTestsMixinService
 
     def start(self):
         """ Initialize the dropbot on plugin start """
