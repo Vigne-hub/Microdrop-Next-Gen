@@ -2,7 +2,6 @@
 
 from envisage.api import CorePlugin
 from envisage.ui.tasks.api import TasksPlugin
-from microdrop_utils.broker_server_helpers import dramatiq_broker_context
 
 
 def main(args):
@@ -33,5 +32,6 @@ if __name__ == "__main__":
     import os
 
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+    from microdrop_utils.broker_server_helpers import dramatiq_broker_context
 
     main(sys.argv)
