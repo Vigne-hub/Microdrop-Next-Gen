@@ -2,7 +2,6 @@
 
 from envisage.api import CorePlugin
 from envisage.ui.tasks.api import TasksPlugin
-from microdrop_utils.broker_server_helpers import dramatiq_broker_context
 
 
 def main(args):
@@ -19,8 +18,10 @@ def main(args):
     from dropbot_tools_menu.plugin import DropbotToolsMenuPlugin
 
     plugins = [CorePlugin(), TasksPlugin(), DeviceViewerPlugin(),
-               DropbotStatusPlugin(), MessageRouterPlugin(), DropbotControllerPlugin(), ElectrodeControllerPlugin(),
-               ManualControlsPlugin(), ProtocolGridControllerPlugin(), DropbotToolsMenuPlugin()]
+               DropbotStatusPlugin(), ElectrodeControllerPlugin(),
+               MessageRouterPlugin(), DropbotControllerPlugin(),
+               ManualControlsPlugin(), ProtocolGridControllerPlugin(),
+               DropbotToolsMenuPlugin()]
 
     app = DeviceViewerApplication(plugins=plugins)
 
@@ -33,5 +34,6 @@ if __name__ == "__main__":
     import os
 
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+    from microdrop_utils.broker_server_helpers import dramatiq_broker_context
 
     main(sys.argv)
