@@ -26,6 +26,7 @@ CHIP_INSERTED = 'dropbot/signals/chip_inserted'
 SHORTS_DETECTED = 'dropbot/signals/shorts_detected'
 CAPACITANCE_UPDATED = 'dropbot/signals/capacitance_updated'
 DROPBOT_SETUP_SUCCESS = 'dropbot/signals/setup_success'
+SELF_TESTS_PROGRESS = 'dropbot/signals/self_tests_progress'
 
 # Dropbot Services Topics -- Offered by default from the dropbot monitor mixin in this package
 START_DEVICE_MONITORING = "dropbot/requests/start_device_monitoring"
@@ -35,3 +36,7 @@ HALT = "dropbot/requests/halt"
 SET_VOLTAGE = "dropbot/requests/set_voltage"
 SET_FREQUENCY = "dropbot/requests/set_frequency"
 RUN_ALL_TESTS = "dropbot/requests/run_all_tests"
+TEST_VOLTAGE = "dropbot/requests/test_voltage"
+TEST_ON_BOARD_FEEDBACK_CALIBRATION = "dropbot/requests/test_on_board_feedback_calibration"
+TEST_SHORTS = "dropbot/requests/test_shorts"
+TEST_CHANNELS = "dropbot/requests/test_channels"
