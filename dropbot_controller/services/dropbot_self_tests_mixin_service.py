@@ -1,11 +1,20 @@
+import json
 from pathlib import Path
 from functools import wraps
 import datetime as dt
+from tqdm import tqdm
 
+from dropbot.hardware_test import (ALL_TESTS, system_info, test_system_metrics,
+                                   test_i2c, test_voltage, test_shorts,
+                                   test_on_board_feedback_calibration,
+                                   test_channels)
+
+from dropbot.self_test import generate_report
 from traits.api import provides, HasTraits
-from dropbot import self_test
 
 from microdrop_utils._logger import get_logger
+from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
+from ..consts import SELF_TESTS_PROGRESS
 
 logger = get_logger(__name__)
 
@@ -24,6 +33,57 @@ def get_timestamped_results_path(test_name: str, path: [str, Path]):
     timestamp = dt.datetime.utcnow().strftime('%Y-%m-%dT%H_%M_%S')
 
     return path.joinpath(f'{test_name}_results-{timestamp}')
+
+
+def self_test(proxy, tests=None):
+    """
+    .. versionadded:: 1.28
+
+    Perform quality control tests.
+
+    Parameters
+    ----------
+    proxy : dropbot.SerialProxy
+        DropBot control board reference.
+    tests : list, optional
+        List of names of test functions to run.
+
+        By default, run all tests.
+
+    Returns
+    -------
+    dict
+        Results from all tests.
+    """
+    total_time = 0
+
+    if tests is None:
+        tests = ALL_TESTS
+    results = {}
+
+    publish_message(topic=SELF_TESTS_PROGRESS, message=json.dumps({"active_state": True}))
+
+    for i, test_name_i in enumerate(pbar := tqdm(tests)):
+        # description of test that will be processed
+        publish_message(topic=SELF_TESTS_PROGRESS, message=json.dumps({"current_message": test_name_i}))
+        pbar.set_description(test_name_i)
+
+        # do the job
+        test_func_i = eval(test_name_i)
+        results[test_name_i] = test_func_i(proxy)
+
+        # job done
+        publish_message(topic=SELF_TESTS_PROGRESS, message=json.dumps({"done_test_number": i}))
+
+        duration_i = results[test_name_i]['duration']
+        logger.info('%s: %.1f s', test_name_i, duration_i)
+        total_time += duration_i
+
+    publish_message(topic=SELF_TESTS_PROGRESS, message=json.dumps({"active_state": False}))
+
+    logger.info('**Total time: %.1f s**', total_time)
+
+    return results
 
 
 @provides(IDropbotControlMixinService)
@@ -58,10 +118,11 @@ class DropbotSelfTestsMixinService(HasTraits):
                 tests = [test_name]
 
             logger.info(f"Running test {test_name}")
-            result = self_test.self_test(self.proxy, tests=tests)
+            result = self_test(self.proxy, tests=tests)
 
             logger.info(f"Report generating in the file {report_path}")
-            self_test.generate_report(result, report_path, force=True)
+            generate_report(result, report_path, force=True)
+            publish_message(topic=SELF_TESTS_PROGRESS, message=json.dumps({"report_path": report_path}))
 
             # do whatever else is defined in func
             func(self, report_generation_directory)
