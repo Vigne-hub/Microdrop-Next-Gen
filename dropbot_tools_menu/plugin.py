@@ -34,7 +34,6 @@ class DropbotToolsMenuPlugin(Plugin):
                 actions=[
                     SchemaAddition(
                         factory=dropbot_tools_menu_factory,
-                        before="TaskToggleGroup",
                         path='MenuBar/Tools',
                     )
 
