@@ -35,15 +35,17 @@ def dropbot_tools_menu_factory():
     It fetches the specified method from teh dock pane essentially.
     """
 
-    # create new groups with sets of actions and an id
-    test_options_group = SGroup(items=[
-        RunTest(name="Run all tests", topic=RUN_ALL_TESTS),
+    # create new groups with all the possible dropbot self-test options as actions
+    test_options_menu = SMenu(items=[
         RunTest(name="Test high voltage", topic=TEST_VOLTAGE),
         RunTest(name='On-board feedback calibration', topic=TEST_ON_BOARD_FEEDBACK_CALIBRATION),
         RunTest(name='Detect shorted channels', topic=TEST_SHORTS),
         RunTest(name="Scan test board", topic=TEST_CHANNELS),
     ],
-        id="dropbot_tests")
+        id="dropbot_on_board_self_tests", name="On-board self-tests",)
 
-    # return an SMenu object compiling each made group
-    return SMenu(items=[test_options_group], id="dropbot_tools", name="Dropbot")
+    # create an action to run all the test options at once
+    run_all_tests = RunTest(name="Run all on-board self-tests", topic=RUN_ALL_TESTS)
+
+    # return an SMenu object compiling each object made and put into Dropbot menu under Tools menu.
+    return SMenu(items=[run_all_tests, test_options_menu], id="dropbot_tools", name="Dropbot")
