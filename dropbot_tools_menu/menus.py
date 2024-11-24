@@ -1,25 +1,19 @@
-from pyface.tasks.action.api import SGroup, SMenu, TasksApplicationAction, TaskAction, TaskWindowAction
-from pyface.action.api import Action
-from traits.api import Property, Directory
+from pyface.tasks.action.api import SGroup, SMenu, TaskWindowAction
+from traits.api import Property, Directory, Str
 
 from microdrop_utils._logger import get_logger
+
 logger = get_logger(__name__)
 
 from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
 
-
 PKG = '.'.join(__name__.split('.')[:-1])
 
-from dropbot_controller.consts import RUN_ALL_TESTS
+from dropbot_controller.consts import RUN_ALL_TESTS, TEST_SHORTS, TEST_VOLTAGE, TEST_CHANNELS, TEST_ON_BOARD_FEEDBACK_CALIBRATION
 
 
-# Define some actions
-
-class RunAllTests(TaskWindowAction):
-    id = PKG + ".dropbot_run_all_tests"
-
-    name = "Run all tests"
-
+class RunTest(TaskWindowAction):
+    topic = Str(desc="topic that this test action connects to.")
     app_data_dir = Property(Directory, observe="object.application.app_data_dir")
 
     def _get_app_data_dir(self):
@@ -29,7 +23,7 @@ class RunAllTests(TaskWindowAction):
 
     def perform(self, event=None):
         logger.info("Requesting running all self tests for dropbot")
-        publish_message(topic=RUN_ALL_TESTS, message=self.app_data_dir)
+        publish_message(topic=self.topic, message=self.app_data_dir)
 
 
 def dropbot_tools_menu_factory():
@@ -42,7 +36,14 @@ def dropbot_tools_menu_factory():
     """
 
     # create new groups with sets of actions and an id
-    test_options_group = SGroup(items=[RunAllTests()], id="dropbot_tests")
+    test_options_group = SGroup(items=[
+        RunTest(name="Run all tests", topic=RUN_ALL_TESTS),
+        RunTest(name="Test high voltage", topic=TEST_VOLTAGE),
+        RunTest(name='On-board feedback calibration', topic=TEST_ON_BOARD_FEEDBACK_CALIBRATION),
+        RunTest(name='Detect shorted channels', topic=TEST_SHORTS),
+        RunTest(name="Scan test board", topic=TEST_CHANNELS),
+    ],
+        id="dropbot_tests")
 
     # return an SMenu object compiling each made group
     return SMenu(items=[test_options_group], id="dropbot_tools", name="Dropbot")
