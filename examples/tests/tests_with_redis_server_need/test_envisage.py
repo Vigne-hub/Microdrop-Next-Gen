@@ -1,10 +1,13 @@
+import dramatiq
 import pytest
+
+from examples.tests.tests_with_redis_server_need.common import worker
 
 
 @pytest.fixture
 def results_file():
     from pathlib import Path
-    from .common import TEST_PATH
+    from examples.tests.tests_with_redis_server_need.common import TEST_PATH
     test_results = Path(TEST_PATH) / "results.txt"
     with open(test_results, "w") as f:
         f.write("")
@@ -29,20 +32,22 @@ def setup_app():
     return app
 
 
-def test_analysis_plugin_import(stub_broker):
+def test_analysis_plugin_import():
     print("#" * 100)
     print("Testing actor declaration with the broker\n")
 
+    broker = dramatiq.get_broker()
+
     # before...
-    assert len(stub_broker.get_declared_actors()) == 0
-    print(f"Declared actors before: {stub_broker.get_declared_actors()}\n")
+    assert (len(broker.get_declared_actors()) == 0) # its either empty or the message router actor is in there.
+    print(f"Declared actors before: {broker.get_declared_actors()}\n")
 
     # importing plugin with an actor
     from examples.toy_plugins.backend import AnalysisPlugin
 
     # after...
-    assert len(stub_broker.get_declared_actors()) == 1
-    print(f"Declared actors after: {stub_broker.get_declared_actors()}\n")
+    assert (len(broker.get_declared_actors()) == 1)
+    print(f"Declared actors after: {broker.get_declared_actors()}\n")
 
 
 def test_plugin_manager(setup_app):
@@ -119,30 +124,24 @@ def test_dramatiq_task_processing_regular_call(dramatiq_task_setup):
 
 
 def test_dramatiq_task_send_call(dramatiq_task_setup, results_file):
-
-    from dramatiq import Worker
-    from examples.broker import BROKER
     from time import sleep
-    from microdrop_utils.broker_server_helpers import init_broker_server, stop_broker_server
 
     payload = {"args_to_sum": [1, 2, 3], "sleep_time": 0.1, "reply": 0, "results_file": str(results_file)}
-    N_tasks = 3
-
-    # first start the server
-    init_broker_server(BROKER)
-
-    # then the worker
-    worker = Worker(broker=BROKER, queues=None, worker_timeout=1000, worker_threads=N_tasks)
-    worker.start()
+    N_tasks = 5
 
     # send the tasks in
     for i in range(N_tasks):
         assert dramatiq_task_setup.process_task.send(payload)
 
+    broker = dramatiq.get_broker()
+    with worker(broker, worker_timeout=1000) as current_worker:
+        broker.join("default")
+        current_worker.join()
+
     # The result will be printed on the dramatiq worker process
 
     # wait for the job to finish
-    sleep(2 + (payload["sleep_time"] * N_tasks))
+    sleep(2 + (payload["sleep_time"] * (N_tasks+1)))
 
     # check the results
     with open(results_file) as f:
@@ -151,7 +150,3 @@ def test_dramatiq_task_send_call(dramatiq_task_setup, results_file):
         for el in results:
             assert el == "Analysis result: 6\n"
         assert len(results) == N_tasks
-
-    # cleanup
-    worker.stop()
-    stop_broker_server(BROKER)

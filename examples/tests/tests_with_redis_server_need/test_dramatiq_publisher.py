@@ -1,15 +1,8 @@
 import dramatiq
-from .common import worker
-import pytest
+from examples.tests.tests_with_redis_server_need.common import worker
 
 
-@pytest.fixture
-def router_data():
-    from microdrop_utils.dramatiq_pub_sub_helpers import MessageRouterData
-    return MessageRouterData()
-
-
-def test_publish_message_can_send_messages_to_actors(stub_broker):
+def test_publish_message_can_send_messages_to_actors():
     # this is adapted from the dramatiq testing suite
 
     from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
@@ -26,12 +19,13 @@ def test_publish_message_can_send_messages_to_actors(stub_broker):
     publish_message("test", "test", "put")
 
     # And I give the workers time to process the messages
-    with worker(stub_broker, worker_timeout=100):
-        stub_broker.join("default")
+    broker = dramatiq.get_broker()
+    with worker(broker, worker_timeout=100):
+        broker.join("default")
 
     # I expect the database to be populated
     assert database == {"test": "test"}
 
-    stub_broker.actors.clear()
+    broker.actors.clear()
 
 

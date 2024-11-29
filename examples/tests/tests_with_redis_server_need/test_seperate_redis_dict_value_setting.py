@@ -1,8 +1,7 @@
 import redis
 import multiprocessing
-import pytest
 import time
-from microdrop_utils.broker_server_helpers import start_redis_server, stop_redis_server
+from microdrop_utils.broker_server_helpers import redis_server_context
 
 # Redis connection setup
 REDIS_HOST = "localhost"
@@ -28,20 +27,10 @@ def process2():
         client.hset("my_dict", f"key2_{i}", f"value2_{i}")
         time.sleep(0.1)  # Simulate processing time
 
-# Pytest fixture to clean up Redis before and after the test
-@pytest.fixture
-def setup_and_teardown_redis():
-    start_redis_server()
-    time.sleep(2)
-    client = redis_client()
-    client.flushdb()  # Clear all keys in Redis
-    yield
-    client.flushdb()  # Clean up after test
-    stop_redis_server()
-
 
 # The test function
-def test_concurrent_redis_updates(setup_and_teardown_redis):
+def test_concurrent_redis_updates():
+
     # Start the two processes
     p1 = multiprocessing.Process(target=process1)
     p2 = multiprocessing.Process(target=process2)

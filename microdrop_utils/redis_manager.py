@@ -1,14 +1,11 @@
-import redis
 import json
+from traits.api import HasTraits, Instance, Str
 
 
-class RedisHashDictProxy:
-    def __init__(self, redis_host='localhost', redis_port=6379, hash_name="my_data"):
-        """
-        Initializes the Redis connection and hash name.
-        """
-        self.redis_client = redis.StrictRedis(host=redis_host, port=redis_port, decode_responses=True)
-        self.hash_name = hash_name
+class RedisHashDictProxy(HasTraits):
+
+    redis_client = Instance('redis.StrictRedis')
+    hash_name = Str("routing_info")
 
     # Magic methods to make the class behave like a dictionary
     def __getitem__(self, key):
@@ -64,7 +61,16 @@ class RedisHashDictProxy:
         """
         Returns the keys in the Redis hash.
         """
-        return self.redis_client.hkeys(self.hash_name)
+        keys = []
+
+        # check if keys need to be decoded:
+        for key in self.redis_client.hkeys(self.hash_name):
+            if isinstance(key, bytes):
+                key = key.decode()
+
+            keys.append(key)
+
+        return keys
 
     def values(self):
         """
@@ -104,33 +110,38 @@ class RedisHashDictProxy:
 
 # Example usage
 if __name__ == "__main__":
-    # Initialize manager
-    manager = RedisHashDictProxy(hash_name="example_data")
+    from microdrop_utils.broker_server_helpers import redis_server_context
+    from dramatiq import get_broker
 
-    # Set items
-    manager["key1"] = ["val1", "val2"]
-    manager["key2"] = ["val3", "val4"]
+    with redis_server_context():
+        client = get_broker().client
+        # Initialize manager
+        redis_dict = RedisHashDictProxy(redis_client=client, hash_name="example_data")
 
-    # Get items
-    print("Get 'key1':", manager["key1"])  # ['val1', 'val2']
+        # Set items
+        redis_dict["key1"] = ["val1", "val2"]
+        redis_dict["key2"] = ["val3", "val4"]
 
-    # Check existence
-    print("'key1' in manager:", "key1" in manager)  # True
+        # Get items
+        print("Get 'key1':", redis_dict["key1"])  # ['val1', 'val2']
 
-    # Iterate over keys
-    print("Keys:", list(manager))  # ['key1', 'key2']
+        # Check existence
+        print("'key1' in manager:", "key1" in redis_dict)  # True
 
-    # Length
-    print("Length:", len(manager))  # 2
+        # Iterate over keys
+        print("Keys:", list(redis_dict))  # ['key1', 'key2']
 
-    # Delete a key
-    del manager["key2"]
-    print("After deletion:", list(manager))  # ['key1']
+        # Length
+        print("Length:", len(redis_dict))  # 2
 
-    # Update with a dictionary
-    manager.update({"key3": ["val5", "val6"], "key4": ["val7"]})
-    print("Updated items:", list(manager.items()))  # [('key1', [...]), ('key3', [...]), ...]
+        # Delete a key
+        del redis_dict["key2"]
+        print("After deletion:", list(redis_dict))  # ['key1']
 
-    # Clear all data
-    manager.clear()
-    print("After clearing:", list(manager))  # []
+        # Update with a dictionary
+        redis_dict.update({"key3": ["val5", "val6"], "key4": ["val7"]})
+        print("Updated items:", list(redis_dict.items()))  # [('key1', [...]), ('key3', [...]), ...]
+
+        # Clear all data
+        redis_dict.clear()
+        print("After clearing:", list(redis_dict))  # []

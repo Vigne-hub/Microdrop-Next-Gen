@@ -3,7 +3,7 @@ import pytest
 import numpy as np
 from traits.trait_errors import TraitError
 
-from .common import TEST_PATH
+from examples.tests.tests_with_redis_server_need.common import TEST_PATH
 from pathlib import Path
 
 correct_path_array = np.array(

@@ -36,11 +36,13 @@ def start_redis_server(retries=5, wait=3):
     return None
 
 
-def stop_redis_server():
+def stop_redis_server(client=None):
     import redis
     """Stop the Redis server."""
     try:
-        client = redis.StrictRedis(host='localhost', port=6379)
+        if client is None:
+            client = redis.StrictRedis(host='localhost', port=6379)
+
         client.shutdown()
         print("Redis server stopped.")
     except redis.exceptions.ConnectionError as e:
@@ -124,6 +126,27 @@ def dramatiq_broker_context():
     finally:
         # Shutdown routine
         shutdown_routine()
+
+
+@contextmanager
+def redis_server_context():
+    """
+    Context manager for apps that make use of dramatiq.
+    Ensures proper startup and shutdown routines.
+    """
+    from redis import StrictRedis
+
+    try:
+        start_redis_server()
+        client = StrictRedis(host='localhost', port=6379)
+        client.flushall() # clear all keys in keys databases in Redis
+
+        yield  # This is where the main logic will execute within the context
+
+    finally:
+        client.flushall()
+        # Shutdown routine
+        stop_redis_server(client)
 
 
 # Example usage
