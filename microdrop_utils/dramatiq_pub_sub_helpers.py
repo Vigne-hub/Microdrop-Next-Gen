@@ -1,8 +1,13 @@
-from traits.api import HasTraits, Dict, Str, List
+from traits.api import HasTraits, Dict, Str, Instance
 import dramatiq
+
+from microdrop_utils.redis_manager import RedisHashDictProxy
+
 from microdrop_utils._logger import get_logger
 
 logger = get_logger(__name__)
+
+DEFAULT_STORAGE_KEY_NAME = "microdrop:message_router_data"
 
 
 def publish_message(message, topic, actor_to_send="message_router_actor"):
@@ -10,7 +15,7 @@ def publish_message(message, topic, actor_to_send="message_router_actor"):
     Publish a message to a given actor with a certain topic
     """
     logger.debug(f"Publishing message: {message} to actor: {actor_to_send} on topic: {topic}")
-   # print(f"Publishing message: {message} to actor: {actor_to_send} on topic: {topic}")
+    # print(f"Publishing message: {message} to actor: {actor_to_send} on topic: {topic}")
     broker = dramatiq.get_broker()
 
     message = dramatiq.Message(
@@ -72,8 +77,8 @@ class MQTTMatcher:
         try:
             parent, node = None, self._root
             for k in key.split('/'):
-                 parent, node = node, node._children[k]
-                 lst.append((parent, k, node))
+                parent, node = node, node._children[k]
+                lst.append((parent, k, node))
             # TODO
             node._content = None
         except KeyError as ke:
@@ -81,7 +86,7 @@ class MQTTMatcher:
         else:  # cleanup
             for parent, k, node in reversed(lst):
                 if node._children or node._content is not None:
-                     break
+                    break
                 del parent._children[k]
 
     def iter_match(self, topic):
@@ -89,6 +94,7 @@ class MQTTMatcher:
         that match the :topic"""
         lst = topic.split('/')
         normal = not topic.startswith('$')
+
         def rec(node, i=0):
             if i == len(lst):
                 if node._content is not None:
@@ -105,8 +111,8 @@ class MQTTMatcher:
                 content = node._children['#']._content
                 if content is not None:
                     yield content
-        return rec(self._root)
 
+        return rec(self._root)
 
 
 class MessageRouterData(HasTraits):
@@ -169,8 +175,19 @@ class MessageRouterData(HasTraits):
         >>> router_data.get_subscribers_for_topic("NONEXISTENT")
         []
     """
-    topic_subscriber_map = Dict(Str, List(Str),
-                                desc="A dictionary of topics and a list of their subscribing actor names")
+    topic_subscriber_map = Instance('RedisHashDictProxy',
+                                    desc="A dictionary of topics and a list of their subscribing actor names stored in "
+                                         "redis as a hash")
+
+    storage_key_name = Str(DEFAULT_STORAGE_KEY_NAME, desc="The name of the redis key under which this data will be "
+                                                          "stored")
+
+    # ------- default trait setters ----------- #
+
+    # ------- trait change handler ---------#
+
+    def _topic_subscriber_map_default(self):
+        return RedisHashDictProxy(redis_client=dramatiq.get_broker().client, hash_name=self.storage_key_name)
 
     def add_subscriber_to_topic(self, topic: Str, subscribing_actor_name: Str):
         """
@@ -195,7 +212,7 @@ class MessageRouterData(HasTraits):
             self.topic_subscriber_map[topic] = [subscribing_actor_name]
         else:
             if subscribing_actor_name not in self.topic_subscriber_map[topic]:
-                self.topic_subscriber_map[topic].append(subscribing_actor_name)
+                self.topic_subscriber_map[topic] += [subscribing_actor_name]
 
     def remove_subscriber_from_topic(self, topic: Str, subscribing_actor_name: Str):
         """
@@ -218,9 +235,14 @@ class MessageRouterData(HasTraits):
 
         """
         if topic in self.topic_subscriber_map:
-            self.topic_subscriber_map[topic].remove(subscribing_actor_name)
-            if not self.topic_subscriber_map[topic]:
+            new_list = self.topic_subscriber_map[topic]
+            new_list.remove(subscribing_actor_name)
+
+            if len(new_list) == 0:
                 del self.topic_subscriber_map[topic]
+
+            else:
+                self.topic_subscriber_map[topic] = new_list
 
     def get_subscribers_for_topic(self, topic: str) -> list:
         """
@@ -243,8 +265,12 @@ class MessageRouterData(HasTraits):
             >>> sorted(router_data.get_subscribers_for_topic("SENSOR/1/HUMIDITY"))
             ['actor2', 'actor3']
         """
+        bytes_to_str = lambda x: x.decode() if isinstance(x, bytes) else x
+
         subscribers = set()
         for key, value in self.topic_subscriber_map.items():
+            key = bytes_to_str(key)
+            value = bytes_to_str(value)
             if self._topic_matches_pattern(key, topic):
                 subscribers.update(value)
 
@@ -287,7 +313,7 @@ class MessageRouterData(HasTraits):
             return True
         except StopIteration:
             return False
- 
+
 
 class MessageRouterActor:
     """
@@ -308,7 +334,7 @@ class MessageRouterActor:
         """
         Create a message router actor that routes messages to subscribers based on topics.
         """
-        
+
         @dramatiq.actor
         def message_router_actor(message: Str, topic: Str):
             """
