@@ -17,4 +17,4 @@ def redis_server_context():
     yield  # This is where the main logic will execute within the context
     client.flushall()
     # Shutdown routine
-    stop_redis_server(client)
+    stop_redis_server()
