@@ -19,10 +19,9 @@ class RedisHashDictProxy(HasTraits):
 
     def __setitem__(self, key, value):
         """
-        Sets the list for a given key.
+        Sets the value for a given key.
         """
-        if not isinstance(value, list):
-            raise ValueError("Value must be a list.")
+
         self.redis_client.hset(self.hash_name, key, json.dumps(value))
 
     def __delitem__(self, key):

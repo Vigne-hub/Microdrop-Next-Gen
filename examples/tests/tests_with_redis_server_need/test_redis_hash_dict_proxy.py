@@ -28,6 +28,14 @@ def test_set_and_get(redis_dict):
     assert redis_dict["key1"] == ["val1", "val2"]
 
 
+def test_set_and_get_tuple(redis_dict):
+    """
+    Test setting and getting items.
+    """
+    redis_dict["key1"] = (["val1", "val2"], "home_queue")
+    assert ["val1", "val2"], "home_queue" == redis_dict["key1"]
+
+
 def test_key_existence(redis_dict):
     """
     Test checking key existence.
