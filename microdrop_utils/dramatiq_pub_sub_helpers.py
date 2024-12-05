@@ -10,7 +10,7 @@ logger = get_logger(__name__)
 DEFAULT_STORAGE_KEY_NAME = "microdrop:message_router_data"
 
 
-def publish_message(message, topic, actor_to_send="message_router_actor"):
+def publish_message(message, topic, actor_to_send="message_router_actor", queue_name="default", **message_kwargs):
     """
     Publish a message to a given actor with a certain topic
     """
@@ -19,10 +19,10 @@ def publish_message(message, topic, actor_to_send="message_router_actor"):
     broker = dramatiq.get_broker()
 
     message = dramatiq.Message(
-        queue_name="default",
+        queue_name=queue_name,
         actor_name=actor_to_send,
         args=(message, topic),
-        kwargs={},
+        kwargs=message_kwargs,
         options={"max_retires": 1},
     )
 
@@ -181,6 +181,7 @@ class MessageRouterData(HasTraits):
 
     storage_key_name = Str(DEFAULT_STORAGE_KEY_NAME, desc="The name of the redis key under which this data will be "
                                                           "stored")
+    listener_queue = Str("default")
 
     # ------- default trait setters ----------- #
 
@@ -209,10 +210,10 @@ class MessageRouterData(HasTraits):
 
         """
         if topic not in self.topic_subscriber_map:
-            self.topic_subscriber_map[topic] = [subscribing_actor_name]
-        else:
-            if subscribing_actor_name not in self.topic_subscriber_map[topic]:
-                self.topic_subscriber_map[topic] += [subscribing_actor_name]
+            self.topic_subscriber_map[topic] = [(subscribing_actor_name, self.listener_queue)]
+
+        elif [subscribing_actor_name, self.listener_queue] not in self.topic_subscriber_map[topic]:
+                self.topic_subscriber_map[topic] += [(subscribing_actor_name, self.listener_queue)]
 
     def remove_subscriber_from_topic(self, topic: Str, subscribing_actor_name: Str):
         """
@@ -236,7 +237,7 @@ class MessageRouterData(HasTraits):
         """
         if topic in self.topic_subscriber_map:
             new_list = self.topic_subscriber_map[topic]
-            new_list.remove(subscribing_actor_name)
+            new_list.remove([subscribing_actor_name, self.listener_queue])
 
             if len(new_list) == 0:
                 del self.topic_subscriber_map[topic]
@@ -257,13 +258,6 @@ class MessageRouterData(HasTraits):
         Preconditions:
             - `topic` should be a valid string.
 
-        Example:
-            >>> router_data = MessageRouterData()
-            >>> router_data.add_subscriber_to_topic("SENSOR/+", "actor1")
-            >>> router_data.add_subscriber_to_topic("SENSOR/1/HUMIDITY", "actor2")
-            >>> router_data.add_subscriber_to_topic("SENSOR/#", "actor3")
-            >>> sorted(router_data.get_subscribers_for_topic("SENSOR/1/HUMIDITY"))
-            ['actor2', 'actor3']
         """
         bytes_to_str = lambda x: x.decode() if isinstance(x, bytes) else x
 
@@ -271,8 +265,10 @@ class MessageRouterData(HasTraits):
         for key, value in self.topic_subscriber_map.items():
             key = bytes_to_str(key)
             value = bytes_to_str(value)
+
             if self._topic_matches_pattern(key, topic):
-                subscribers.update(value)
+                for actor in value:
+                    subscribers.add(tuple(actor))
 
         return list(subscribers)
 
@@ -320,11 +316,12 @@ class MessageRouterActor:
     A class that routes messages to subscribers based on topics
     """
 
-    def __init__(self, message_router_data: MessageRouterData = None):
+    def __init__(self, message_router_data: MessageRouterData = None, listener_queue="default"):
         if message_router_data is None:
-            message_router_data = MessageRouterData()
+            message_router_data = MessageRouterData(listener_queue=listener_queue)
 
         self.message_router_data = message_router_data
+        self.listener_queue = listener_queue
         self.message_router_actor = self.create_message_router_actor()
 
         # We define this actor here like this since we need to access self.message_router_data but cannot have this
@@ -335,7 +332,7 @@ class MessageRouterActor:
         Create a message router actor that routes messages to subscribers based on topics.
         """
 
-        @dramatiq.actor
+        @dramatiq.actor(queue_name=self.listener_queue)
         def message_router_actor(message: Str, topic: Str):
             """
             A Dramatiq actor that routes messages to subscribers based on topics.
@@ -344,9 +341,10 @@ class MessageRouterActor:
 
             subscribing_actor_names = self.message_router_data.get_subscribers_for_topic(topic)
 
-            for subscribing_actor_name in subscribing_actor_names:
-                logger.debug(f"MESSAGE_ROUTER: Publishing message: {message} to actor: {subscribing_actor_name}")
-                publish_message(message, topic, subscribing_actor_name)
+            for subscribing_actor, queue in subscribing_actor_names:
+                logger.debug(f"MESSAGE_ROUTER: Publishing message: {message} to actor: {subscribing_actor}")
+
+                publish_message(message, topic, subscribing_actor, queue_name=queue)
 
             logger.debug(
                 f"MESSAGE_ROUTER: Message: {message} on topic {topic} published to {len(subscribing_actor_names)} subscribers")

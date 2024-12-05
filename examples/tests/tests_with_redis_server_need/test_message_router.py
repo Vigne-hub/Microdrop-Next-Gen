@@ -19,7 +19,7 @@ class TestMessageRouterData:
         """
         from microdrop_utils.dramatiq_pub_sub_helpers import MessageRouterData
 
-        return MessageRouterData()
+        return MessageRouterData(listener_queue="default")
 
     def test_add_subscriber_to_topic(self, router_data):
         """
@@ -29,9 +29,9 @@ class TestMessageRouterData:
             router_data (MessageRouterData): The message router data instance.
         """
         router_data.add_subscriber_to_topic("x", "actor1")
-        assert router_data.topic_subscriber_map["x"] == ["actor1"]
+        assert ["actor1"], "default" == router_data.topic_subscriber_map["x"]
         router_data.add_subscriber_to_topic("x", "actor2")
-        assert router_data.topic_subscriber_map["x"] == ["actor1", "actor2"]
+        assert router_data.topic_subscriber_map["x"] == [["actor1", "default"], ["actor2", "default"]]
 
     def test_remove_subscriber_from_topic(self, router_data):
         """
@@ -43,7 +43,7 @@ class TestMessageRouterData:
         router_data.add_subscriber_to_topic("x", "actor1")
         router_data.add_subscriber_to_topic("x", "actor2")
         router_data.remove_subscriber_from_topic("x", "actor1")
-        assert router_data.topic_subscriber_map["x"] == ["actor2"]
+        assert router_data.topic_subscriber_map["x"] == [["actor2", "default"]]
         router_data.remove_subscriber_from_topic("x", "actor2")
         assert "x" not in router_data.topic_subscriber_map
 
@@ -60,7 +60,7 @@ class TestMessageRouterData:
     ])
     def test_matching(self, router_data, sub, topic):
         router_data.add_subscriber_to_topic(sub, "test_actor")
-        assert "test_actor" in router_data.get_subscribers_for_topic(topic)
+        assert ("test_actor", "default") in router_data.get_subscribers_for_topic(topic)
 
     @pytest.mark.parametrize("sub, topic", [
         ("test/6/#", "test/3"),
@@ -74,7 +74,7 @@ class TestMessageRouterData:
     ])
     def test_not_matching(self, router_data, sub, topic):
         router_data.add_subscriber_to_topic(sub, "test_actor")
-        assert "test_actor" not in router_data.get_subscribers_for_topic(topic)
+        assert ("test_actor", "default") not in router_data.get_subscribers_for_topic(topic)
 
 
 class TestMessageRouterActor:
