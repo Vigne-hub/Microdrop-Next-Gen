@@ -2,6 +2,7 @@ from envisage.api import Plugin, ExtensionPoint
 from traits.api import List, Str, Dict, Instance
 import dramatiq
 import uuid
+import re
 
 from .consts import ACTOR_TOPIC_ROUTES, PKG
 from microdrop_utils._logger import get_logger
@@ -19,7 +20,7 @@ class MessageRouterPlugin(Plugin):
     id = PKG + '.plugin'
     name = 'Message Router Plugin'
     router_actor = Instance(MessageRouterActor)
-    listener_queue = str(uuid.uuid4())
+    listener_queue = "_" + str(uuid.uuid4())  # queue names cannot start with number, has to be letter on underscore.
 
     # This tells us that the plugin offers the 'greetings' extension point,
     # and that plugins that want to contribute to it must each provide a list
