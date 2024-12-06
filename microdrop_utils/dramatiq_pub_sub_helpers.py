@@ -206,7 +206,7 @@ class MessageRouterData(HasTraits):
             >>> router_data = MessageRouterData()
             >>> router_data.add_subscriber_to_topic("SENSOR/+", "actor1")
             >>> router_data.topic_subscriber_map
-            {'SENSOR/+': ['actor1']}
+            {'SENSOR/+': ['actor1', 'queue_name']}
 
         """
         if topic not in self.topic_subscriber_map:
