@@ -25,7 +25,7 @@ def main(args):
 
     app = DeviceViewerApplication(plugins=plugins)
 
-    with dramatiq_broker_context():
+    with dramatiq_broker_context(worker_threads=64):
         app.run()
 
 
