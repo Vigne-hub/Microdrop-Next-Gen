@@ -83,21 +83,21 @@ def stop_broker_server(BROKER):
         sys.exit(1)
 
 
-def startup_routine():
+def startup_routine(**kwargs):
     """
     A startup routine for apps that make use of dramatiq.
     """
     BROKER = get_broker()
     # Startup routine
     BROKER.flush_all()
-    init_broker_server(BROKER)
+    # init_broker_server(BROKER)
 
     # Remove Prometheus middleware if it exists
     for el in BROKER.middleware:
         if el.__module__ == "dramatiq.middleware.prometheus":
             BROKER.middleware.remove(el)
 
-    worker = Worker(broker=BROKER)
+    worker = Worker(broker=BROKER, **kwargs)
     worker.start()
 
 
@@ -107,17 +107,34 @@ def shutdown_routine():
     """
     BROKER = get_broker()
     BROKER.flush_all()
-    stop_broker_server(BROKER)
 
 
 @contextmanager
-def dramatiq_broker_context():
+def redis_server_context():
+    """
+    Context manager for apps that make use of dramatiq.
+    Ensures proper startup and shutdown routines.
+    """
+
+    start_redis_server()
+
+    shutdown_routine()
+
+    yield  # This is where the main logic will execute within the context
+
+    shutdown_routine()
+    # Shutdown routine
+    stop_redis_server()
+
+
+@contextmanager
+def dramatiq_broker_context(**kwargs):
     """
     Context manager for apps that make use of dramatiq.
     Ensures proper startup and shutdown routines.
     """
     try:
-        startup_routine()
+        startup_routine(**kwargs)
 
         yield  # This is where the main logic will execute within the context
 
