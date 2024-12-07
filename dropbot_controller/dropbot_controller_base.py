@@ -138,7 +138,7 @@ class DropbotControllerBase(HasTraits):
         self.proxy.signals.signal('capacitance-updated').connect(self._capacitance_updated_wrapper)
 
         # Initial Proxy State Update
-        self.proxy.update_state(capacitance_update_interval_ms=1000,
+        self.proxy.update_state(capacitance_update_interval_ms=250,
                                 event_mask=EVENT_CHANNELS_UPDATED |
                                            EVENT_SHORTS_DETECTED |
                                            EVENT_ENABLE)
