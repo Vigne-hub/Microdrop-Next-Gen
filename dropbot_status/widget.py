@@ -62,9 +62,11 @@ class DropBotStatusLabel(QLabel):
         """
 
         if dropbot_connected:
+            logger.info("Dropbot Connected")
             self.dropbot_connection_status.setText("Connected")
 
             if chip_inserted:
+                logger.info("Chip Inserted")
                 # dropbot ready to use: give greenlight and display chip.
                 self.dropbot_chip_status.setText("Chip inserted")
                 img_path = DROPBOT_CHIP_INSERTED_IMAGE
@@ -72,12 +74,14 @@ class DropBotStatusLabel(QLabel):
 
             # dropbot connected but no chip inside. Yellow signal.
             else:
+                logger.info("Chip Not Inserted")
                 self.dropbot_chip_status.setText("Chip not inserted")
                 img_path = DROPBOT_IMAGE
                 status_color = yellow
 
         else:
             # dropbot not there. Red light.
+            logger.info("Dropbot Disconnected")
             img_path = DROPBOT_IMAGE
             status_color = red
             self.dropbot_connection_status.setText("Disconnected")
