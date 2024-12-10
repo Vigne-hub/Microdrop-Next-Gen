@@ -40,13 +40,14 @@ class DropbotMonitorMixinService(HasTraits):
         If dropbot already connected, publishes dropbot connected signal.
         """
 
-        # check if dropbot already conencted
+        # check if dropbot already connected
         if self.dropbot_connection_active:
             # send out signal about dropbot status as connected and chip insertion information
-            publish_message(message="dropbot_connected", topic=connection_flags["connected"])
-
             if not self.proxy.digital_read(OUTPUT_ENABLE_PIN):
                 publish_message(topic=CHIP_INSERTED, message='Chip inserted')
+
+            else:
+                publish_message(topic=CHIP_NOT_INSERTED, message='Chip not inserted')
 
         else:
             if not hwids_to_check:
