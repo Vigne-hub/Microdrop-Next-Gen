@@ -53,7 +53,7 @@ def remove_middleware_from_dramatiq_broker(middleware_name: str, broker: 'dramat
             broker.middleware.remove(el)
 
 
-def start_workers(**kwargs):
+def start_workers(**kwargs) -> 'dramatiq.worker.Worker':
     """
     A startup routine for apps that make use of dramatiq.
     """
@@ -61,6 +61,8 @@ def start_workers(**kwargs):
 
     worker = Worker(broker=BROKER, **kwargs)
     worker.start()
+
+    return worker
 
 
 @contextmanager
@@ -86,12 +88,13 @@ def dramatiq_workers(**kwargs):
     """
     remove_middleware_from_dramatiq_broker(middleware_name="dramatiq.middleware.prometheus", broker=get_broker())
     try:
-        start_workers(**kwargs)
+        worker = start_workers(**kwargs)
 
-        yield  # This is where the main logic will execute within the context
+        yield worker  # This is where the main logic will execute within the context
 
     finally:
         # Shutdown routine
+        worker.stop()
         get_broker().flush_all()
 
 
