@@ -3,6 +3,11 @@ from dropbot.proxy import SerialProxy
 import base_node_rpc as bnr
 import functools as ft
 
+CONNECTED = "dropbot/signals/connected"
+DISCONNECTED = "dropbot/signals/disconnected"
+
+connection_flags = {"connected": CONNECTED, "disconnected": DISCONNECTED}
+
 
 class DramatiqDropbotSerialProxy(SerialProxy):
 
@@ -16,7 +21,7 @@ class DramatiqDropbotSerialProxy(SerialProxy):
         # define the dramatiq pub sub wrappers
         def publish_wrapper(f, signal_name):
             f()
-            publish_message(f'dropbot_{signal_name}', f"dropbot/signals/{signal_name}")
+            publish_message(f'dropbot_{signal_name}', connection_flags[signal_name])
 
         monitor = bnr.ser_async.BaseNodeSerialMonitor(port=self.port)
 

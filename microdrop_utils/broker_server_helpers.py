@@ -1,6 +1,5 @@
 import subprocess
 import time
-import sys
 import logging
 from contextlib import contextmanager
 import os
@@ -47,83 +46,56 @@ def stop_redis_server():
         print(f"Failed to stop Redis server: {e}")
 
 
-def init_broker_server(BROKER):
-    try:
-        from dramatiq.brokers.redis import RedisBroker
-        # if we have a redis broker, start the server
-        if isinstance(BROKER, RedisBroker):
-            start_redis_server()
-        else:
-            logger.warning("BROKER must be a Redis broker.")
-
-    except ImportError:
-        logger.warning("Redis broker not available")
-
-    except Exception as e:
-
-        logger.error(f"No broker available. Exception:{e}")
-        sys.exit(1)
+def remove_middleware_from_dramatiq_broker(middleware_name: str, broker: 'dramatiq.broker.Broker'):
+    # Remove Prometheus middleware if it exists
+    for el in broker.middleware:
+        if el.__module__ == middleware_name:
+            broker.middleware.remove(el)
 
 
-def stop_broker_server(BROKER):
-    try:
-        from dramatiq.brokers.redis import RedisBroker
-
-        # if we have a redis broker, stop the server
-        if isinstance(BROKER, RedisBroker):
-            stop_redis_server()
-        else:
-            logger.warning("BROKER must be a Redis broker.")
-
-    except ImportError:
-        logger.warning("Redis broker not available")
-
-    except Exception as e:
-        logger.error(f"No broker available. Exception {e}")
-        sys.exit(1)
-
-
-def startup_routine():
+def start_workers(**kwargs) -> 'dramatiq.worker.Worker':
     """
     A startup routine for apps that make use of dramatiq.
     """
     BROKER = get_broker()
-    # Startup routine
-    BROKER.flush_all()
-    init_broker_server(BROKER)
 
-    # Remove Prometheus middleware if it exists
-    for el in BROKER.middleware:
-        if el.__module__ == "dramatiq.middleware.prometheus":
-            BROKER.middleware.remove(el)
-
-    worker = Worker(broker=BROKER)
+    worker = Worker(broker=BROKER, **kwargs)
     worker.start()
 
-
-def shutdown_routine():
-    """
-    A shutdown routine for apps that make use of dramatiq.
-    """
-    BROKER = get_broker()
-    BROKER.flush_all()
-    stop_broker_server(BROKER)
+    return worker
 
 
 @contextmanager
-def dramatiq_broker_context():
+def redis_server_context():
     """
-    Context manager for apps that make use of dramatiq.
-    Ensures proper startup and shutdown routines.
+    Context manager for apps that make use of a redis server
     """
+
     try:
-        startup_routine()
+        start_redis_server()
 
         yield  # This is where the main logic will execute within the context
 
     finally:
         # Shutdown routine
-        shutdown_routine()
+        stop_redis_server()
+
+
+@contextmanager
+def dramatiq_workers(**kwargs):
+    """
+    Context manager for apps that make use of dramatiq. They need the workers to exist.
+    """
+    remove_middleware_from_dramatiq_broker(middleware_name="dramatiq.middleware.prometheus", broker=get_broker())
+    try:
+        worker = start_workers(**kwargs)
+
+        yield worker  # This is where the main logic will execute within the context
+
+    finally:
+        # Shutdown routine
+        worker.stop()
+        get_broker().flush_all()
 
 
 # Example usage
@@ -154,5 +126,6 @@ if __name__ == "__main__":
                 exit(0)
 
 
-    with dramatiq_broker_context():
-        example_app_routine()
+    with redis_server_context():
+        with dramatiq_workers():
+            example_app_routine()

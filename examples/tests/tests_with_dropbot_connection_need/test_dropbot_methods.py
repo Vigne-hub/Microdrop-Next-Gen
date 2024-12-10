@@ -10,7 +10,7 @@ Notes:
 import time
 from dropbot import EVENT_SHORTS_DETECTED, EVENT_ENABLE, EVENT_CHANNELS_UPDATED
 import numpy as np
-from .common import TESTING_BOARD_ELECTRODE_CAPACTIANCE_MIN, proxy_context
+from ..common import TESTING_BOARD_ELECTRODE_CAPACTIANCE_MIN, proxy_context
 import pytest
 
 

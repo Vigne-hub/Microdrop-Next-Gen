@@ -1,6 +1,7 @@
 import pytest
 import dramatiq
-from .common import worker
+from ..common import worker
+from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
 
 
 class TestMessageRouterData:
@@ -18,7 +19,7 @@ class TestMessageRouterData:
         """
         from microdrop_utils.dramatiq_pub_sub_helpers import MessageRouterData
 
-        return MessageRouterData()
+        return MessageRouterData(listener_queue="default")
 
     def test_add_subscriber_to_topic(self, router_data):
         """
@@ -28,9 +29,9 @@ class TestMessageRouterData:
             router_data (MessageRouterData): The message router data instance.
         """
         router_data.add_subscriber_to_topic("x", "actor1")
-        assert router_data.topic_subscriber_map["x"] == ["actor1"]
+        assert ["actor1"], "default" == router_data.topic_subscriber_map["x"]
         router_data.add_subscriber_to_topic("x", "actor2")
-        assert router_data.topic_subscriber_map["x"] == ["actor1", "actor2"]
+        assert router_data.topic_subscriber_map["x"] == [["actor1", "default"], ["actor2", "default"]]
 
     def test_remove_subscriber_from_topic(self, router_data):
         """
@@ -42,7 +43,7 @@ class TestMessageRouterData:
         router_data.add_subscriber_to_topic("x", "actor1")
         router_data.add_subscriber_to_topic("x", "actor2")
         router_data.remove_subscriber_from_topic("x", "actor1")
-        assert router_data.topic_subscriber_map["x"] == ["actor2"]
+        assert router_data.topic_subscriber_map["x"] == [["actor2", "default"]]
         router_data.remove_subscriber_from_topic("x", "actor2")
         assert "x" not in router_data.topic_subscriber_map
 
@@ -59,7 +60,7 @@ class TestMessageRouterData:
     ])
     def test_matching(self, router_data, sub, topic):
         router_data.add_subscriber_to_topic(sub, "test_actor")
-        assert "test_actor" in router_data.get_subscribers_for_topic(topic)
+        assert ("test_actor", "default") in router_data.get_subscribers_for_topic(topic)
 
     @pytest.mark.parametrize("sub, topic", [
         ("test/6/#", "test/3"),
@@ -73,7 +74,7 @@ class TestMessageRouterData:
     ])
     def test_not_matching(self, router_data, sub, topic):
         router_data.add_subscriber_to_topic(sub, "test_actor")
-        assert "test_actor" not in router_data.get_subscribers_for_topic(topic)
+        assert ("test_actor", "default") not in router_data.get_subscribers_for_topic(topic)
 
 
 class TestMessageRouterActor:
@@ -81,8 +82,8 @@ class TestMessageRouterActor:
     Tests on the MessageRouterActor class.
     """
 
-    @pytest.fixture()
-    def router_actor(self, stub_broker):
+    @pytest.fixture(scope="module")
+    def router_actor(self):
         """
         Fixture to initialize a MessageRouterActor instance.
 
@@ -93,8 +94,8 @@ class TestMessageRouterActor:
 
         return MessageRouterActor()
 
-    def test_message_router_actor_can_route_message(self, router_actor, stub_broker, stub_worker):
-        from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
+    def test_message_router_actor_can_route_message(self, router_actor):
+        broker = dramatiq.get_broker()
 
         # Given that I have a database
         database = {}
@@ -113,16 +114,14 @@ class TestMessageRouterActor:
         # Now I publish a message to the message router actor to the test topic for triggering it.
         publish_message(test_message, test_topic, "message_router_actor")
 
-        # And I give the workers time to process the messages
-        stub_broker.join("default")
-        stub_worker.join()
+        with worker(broker, worker_timeout=100):
+            # And I give the workers time to process the messages
+            broker.join("default")
 
         # I expect the database to be populated
         assert database == {test_topic: test_message}
 
-    def test_message_router_actor_can_route_message_to_multiple_subscribing_actors(self, router_actor, stub_broker, stub_worker):
-        from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
-
+    def test_message_router_actor_can_route_message_to_multiple_subscribing_actors(self, router_actor):
         # Given that I have two databases
         database1 = {}
         database2 = {}
@@ -147,7 +146,8 @@ class TestMessageRouterActor:
         # after declaring the actors, I add to the message router and ascribe topics.
         router_actor.message_router_data.add_subscriber_to_topic(topic=f"{test_topic}/#", subscribing_actor_name="put1")
         router_actor.message_router_data.add_subscriber_to_topic(topic=f"{test_topic}/y", subscribing_actor_name="put2")
-        router_actor.message_router_data.add_subscriber_to_topic(topic=f"{test_topic}/y/+", subscribing_actor_name="put3")
+        router_actor.message_router_data.add_subscriber_to_topic(topic=f"{test_topic}/y/+",
+                                                                 subscribing_actor_name="put3")
 
         # Now I publish a message to the message router actor to the test topic for triggering it.
         publish_message(test_message, test_topic, "message_router_actor")
@@ -162,8 +162,10 @@ class TestMessageRouterActor:
         # this should trigger the three actors that are subscribed to the topic, the topic/y/* (the subtopic) and the
         # topic/# (the sub
 
-        stub_broker.join("default")
-        stub_worker.join()
+        broker = dramatiq.get_broker()
+        with worker(broker, worker_timeout=100) as current_worker:
+            broker.join("default")
+            current_worker.join()
 
         # I expect the database to be populated like so
         assert database1 == {test_topic: test_message, test_topic + "/y": test_message,

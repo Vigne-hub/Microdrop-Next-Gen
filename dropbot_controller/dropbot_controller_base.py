@@ -10,7 +10,7 @@ from pint import UnitRegistry
 ureg = UnitRegistry()
 
 from .consts import (CHIP_INSERTED, CHIP_NOT_INSERTED, CAPACITANCE_UPDATED, HALTED, HALT, START_DEVICE_MONITORING,
-                     RETRY_CONNECTION, OUTPUT_ENABLE_PIN)
+                     RETRY_CONNECTION, OUTPUT_ENABLE_PIN, SHORTS_DETECTED)
 
 from .interfaces.i_dropbot_controller_base import IDropbotControllerBase
 
@@ -136,9 +136,10 @@ class DropbotControllerBase(HasTraits):
         self.proxy.signals.signal('output_disabled').connect(self._output_state_changed_wrapper)
         self.proxy.signals.signal('halted').connect(self._halted_event_wrapper, weak=False)
         self.proxy.signals.signal('capacitance-updated').connect(self._capacitance_updated_wrapper)
+        self.proxy.signals.signal('shorts-detected').connect(self._shorts_detected_wrapper)
 
         # Initial Proxy State Update
-        self.proxy.update_state(capacitance_update_interval_ms=1000,
+        self.proxy.update_state(capacitance_update_interval_ms=250,
                                 event_mask=EVENT_CHANNELS_UPDATED |
                                            EVENT_SHORTS_DETECTED |
                                            EVENT_ENABLE)
@@ -162,6 +163,12 @@ class DropbotControllerBase(HasTraits):
         voltage_formatted = f"{voltage:.3g~P}"
         publish_message(topic=CAPACITANCE_UPDATED,
                         message=json.dumps({'capacitance': capacitance_formatted, 'voltage': voltage_formatted}))
+
+    @staticmethod
+    def _shorts_detected_wrapper(signal: dict[str, str]):
+        shorts_list = signal.get('values')
+        shorts_dict = {'Shorts_detected': shorts_list}
+        publish_message(topic=SHORTS_DETECTED, message=json.dumps(shorts_dict))
 
     @staticmethod
     def _halted_event_wrapper(signal):

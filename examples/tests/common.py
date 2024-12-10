@@ -39,3 +39,8 @@ def proxy_context(*args, **kwargs):
 
 TEST_PATH = os.getenv("TEST_PATH", os.path.dirname(os.path.abspath(__file__)))
 TESTING_BOARD_ELECTRODE_CAPACTIANCE_MIN = 7e-12
+
+
+def redis_client():
+    import dramatiq
+    return dramatiq.get_broker().client

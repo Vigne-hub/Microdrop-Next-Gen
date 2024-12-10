@@ -10,7 +10,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 
 from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
 from microdrop_utils._logger import get_logger
-from microdrop_utils.dramatiq_dropbot_serial_proxy import DramatiqDropbotSerialProxy
+from microdrop_utils.dramatiq_dropbot_serial_proxy import DramatiqDropbotSerialProxy, connection_flags
 from microdrop_utils.hardware_device_monitoring_helpers import check_devices_available
 from ..interfaces.i_dropbot_control_mixin_service import IDropbotControlMixinService
 
@@ -37,22 +37,33 @@ class DropbotMonitorMixinService(HasTraits):
     def on_start_device_monitoring_request(self, hwids_to_check):
         """
         Method to start looking for dropbots connected using their hwids.
+        If dropbot already connected, publishes dropbot connected signal.
         """
 
-        if not hwids_to_check:
-            hwids_to_check = [DROPBOT_DB3_120_HWID]
+        # check if dropbot already connected
+        if self.dropbot_connection_active:
+            # send out signal about dropbot status as connected and chip insertion information
+            if not self.proxy.digital_read(OUTPUT_ENABLE_PIN):
+                publish_message(topic=CHIP_INSERTED, message='Chip inserted')
 
-        scheduler = BackgroundScheduler()
-        scheduler.add_job(
-            func=functools.partial(check_devices_available, hwids_to_check),
-            trigger=IntervalTrigger(seconds=2),
-        )
-        scheduler.add_listener(self._on_dropbot_port_found, EVENT_JOB_EXECUTED)
-        self.monitor_scheduler = scheduler
+            else:
+                publish_message(topic=CHIP_NOT_INSERTED, message='Chip not inserted')
 
-        logger.info("DropBot monitor created and started")
+        else:
+            if not hwids_to_check:
+                hwids_to_check = [DROPBOT_DB3_120_HWID]
 
-        self.monitor_scheduler.start()
+            scheduler = BackgroundScheduler()
+            scheduler.add_job(
+                func=functools.partial(check_devices_available, hwids_to_check),
+                trigger=IntervalTrigger(seconds=2),
+            )
+            scheduler.add_listener(self._on_dropbot_port_found, EVENT_JOB_EXECUTED)
+            self.monitor_scheduler = scheduler
+
+            logger.info("DropBot monitor created and started")
+
+            self.monitor_scheduler.start()
 
     def on_detect_shorts_request(self, message):
         if self.proxy is not None:

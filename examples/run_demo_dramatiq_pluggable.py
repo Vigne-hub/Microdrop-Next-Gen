@@ -210,15 +210,15 @@ if __name__ == '__main__':
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
     from dramatiq import get_broker
 
-    from microdrop_utils.broker_server_helpers import init_broker_server, stop_broker_server
+    from microdrop_utils.broker_server_helpers import start_redis_server, stop_redis_server
     BROKER = get_broker()
 
     try:
         # start broker server
-        init_broker_server(BROKER)
+        start_redis_server()
         demo()
     finally:
         # stop broker server
-        stop_broker_server(BROKER)
+        stop_redis_server()
 
 

@@ -1,5 +1,3 @@
-import threading
-
 from dropbot.hardware_test import ALL_TESTS
 from pyface.tasks.action.api import SMenu, TaskWindowAction
 from traits.api import Property, Directory
@@ -11,9 +9,9 @@ logger = get_logger(__name__)
 from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
 
 from dropbot_controller.consts import RUN_ALL_TESTS, TEST_SHORTS, TEST_VOLTAGE, TEST_CHANNELS, \
-    TEST_ON_BOARD_FEEDBACK_CALIBRATION
+    TEST_ON_BOARD_FEEDBACK_CALIBRATION, START_DEVICE_MONITORING
 
-from traits.api import HasTraits, Str, Int
+from traits.api import HasTraits, Str, Int, Any
 from traitsui.editors.progress_editor import ProgressEditor
 from traitsui.api import View, HGroup, UItem
 
@@ -40,13 +38,19 @@ class ProgressBar(HasTraits):
         height=100
     )
 
-
-class RunTests(TaskWindowAction):
+class DramatiqMessagePublishAction(TaskWindowAction):
     topic = Str(desc="topic this action connects to")
-    num_tests = Int(1, desc="number of tests run")
-    app_data_dir = Property(Directory, observe="object.application.app_data_dir")
+    message = Any(desc="message to publish")
 
-    def _get_app_data_dir(self):
+    def perform(self, event=None):
+        publish_message(topic=self.topic, message=self.message)
+
+
+class RunTests(DramatiqMessagePublishAction):
+    num_tests = Int(1, desc="number of tests run")
+    message = Property(Directory, observe="object.application.app_data_dir")
+
+    def _get_message(self):
         if self.object.application:
             return self.object.application.app_data_dir
         return None
@@ -57,8 +61,7 @@ class RunTests(TaskWindowAction):
         self.task.progress_bar = ProgressBar(current_message="Starting dropbot tests\n", num_tasks=self.num_tests)
         self.task.progress_bar_instance = self.task.progress_bar.edit_traits()
 
-        publish_message(topic=self.topic, message=self.app_data_dir)
-
+        super().perform(event)
 
 
 def dropbot_tools_menu_factory():
@@ -67,7 +70,7 @@ def dropbot_tools_menu_factory():
     The Sgroup is a list of actions that will be displayed in the menu.
     In this case there is only one action, the help menu.
     It is contributed to the manual controls dock pane using its show help method. Hence it is a DockPaneAction.
-    It fetches the specified method from teh dock pane essentially.
+    It fetches the specified method from the dock pane essentially.
     """
 
     # create new groups with all the possible dropbot self-test options as actions
@@ -83,5 +86,8 @@ def dropbot_tools_menu_factory():
     # create an action to run all the test options at once
     run_all_tests = RunTests(name="Run all on-board self-tests", topic=RUN_ALL_TESTS, num_tests=len(ALL_TESTS))
 
+    # create an action to restart dropbot search
+    dropbot_search = DramatiqMessagePublishAction(name="Search for Dropbot Connection", topic=START_DEVICE_MONITORING)
+
     # return an SMenu object compiling each object made and put into Dropbot menu under Tools menu.
-    return SMenu(items=[run_all_tests, test_options_menu], id="dropbot_tools", name="Dropbot")
+    return SMenu(items=[run_all_tests, test_options_menu, dropbot_search], id="dropbot_tools", name="Dropbot")

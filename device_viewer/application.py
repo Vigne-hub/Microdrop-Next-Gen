@@ -1,5 +1,8 @@
 # sys imports
 import os
+from pathlib import Path
+
+from envisage.ui.tasks.tasks_application import DEFAULT_STATE_FILENAME
 
 from dropbot_controller.consts import START_DEVICE_MONITORING
 from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
@@ -24,6 +27,14 @@ class DeviceViewerApplication(TasksApplication):
 
     # The application's user-visible name.
     name = "Microdrop Next Gen"
+
+    #: The directory on the local file system used to persist window layout
+    #: information.
+    state_location = Path.home() / ".microdrop_next_gen"
+
+    #: The filename that the application uses to persist window layout
+    #: information.
+    state_filename = DEFAULT_STATE_FILENAME
 
     #### 'TasksApplication' interface #########################################
 

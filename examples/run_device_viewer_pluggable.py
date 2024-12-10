@@ -25,7 +25,7 @@ def main(args):
 
     app = DeviceViewerApplication(plugins=plugins)
 
-    with dramatiq_broker_context():
+    with dramatiq_workers():
         app.run()
 
 
@@ -34,6 +34,7 @@ if __name__ == "__main__":
     import os
 
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-    from microdrop_utils.broker_server_helpers import dramatiq_broker_context
+    from microdrop_utils.broker_server_helpers import dramatiq_workers, redis_server_context
 
-    main(sys.argv)
+    with redis_server_context():
+        main(sys.argv)
