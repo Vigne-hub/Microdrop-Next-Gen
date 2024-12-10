@@ -1,5 +1,5 @@
 import dramatiq
-from examples.tests.tests_with_redis_server_need.common import worker
+from ..common import worker
 
 
 def test_publish_message_can_send_messages_to_actors():

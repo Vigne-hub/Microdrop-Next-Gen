@@ -8,7 +8,7 @@ from xml.etree import ElementTree as ET
 
 @pytest.fixture
 def clean_svg():
-    from examples.tests.tests_with_redis_server_need.common import TEST_PATH
+    from .common import TEST_PATH
     with tempfile.TemporaryDirectory() as tmpdir:
         shutil.copy(f"{TEST_PATH}{os.sep}device_svg_files{os.sep}2x3device.svg", tmpdir)
         yield Path(tmpdir) / '2x3device.svg'

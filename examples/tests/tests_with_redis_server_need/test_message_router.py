@@ -1,6 +1,6 @@
 import pytest
 import dramatiq
-from examples.tests.tests_with_redis_server_need.common import worker
+from ..common import worker
 from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
 
 

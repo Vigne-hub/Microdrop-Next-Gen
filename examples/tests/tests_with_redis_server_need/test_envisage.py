@@ -1,13 +1,13 @@
 import dramatiq
 import pytest
 
-from examples.tests.tests_with_redis_server_need.common import worker
+from ..common import worker
 
 
 @pytest.fixture
 def results_file():
     from pathlib import Path
-    from examples.tests.tests_with_redis_server_need.common import TEST_PATH
+    from examples.tests.common import TEST_PATH
     test_results = Path(TEST_PATH) / "results.txt"
     with open(test_results, "w") as f:
         f.write("")

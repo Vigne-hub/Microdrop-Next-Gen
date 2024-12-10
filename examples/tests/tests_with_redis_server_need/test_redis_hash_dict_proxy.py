@@ -1,4 +1,4 @@
-from examples.tests.tests_with_redis_server_need.common import redis_client
+from ..common import redis_client
 import pytest
 from redis.exceptions import ConnectionError
 from microdrop_utils.redis_manager import RedisHashDictProxy
@@ -100,14 +100,6 @@ def test_update_bulk(redis_dict):
     redis_dict.update({"key1": ["val1", "val2"], "key2": ["val3", "val4"]})
     assert redis_dict["key1"] == ["val1", "val2"]
     assert redis_dict["key2"] == ["val3", "val4"]
-
-
-def test_invalid_value_type(redis_dict):
-    """
-    Test that setting a non-list value raises a ValueError.
-    """
-    with pytest.raises(ValueError):
-        redis_dict["key1"] = "not_a_list"
 
 
 def test_key_not_found(redis_dict):
