@@ -1,5 +1,5 @@
 import pytest
-from examples.tests.tests_with_redis_server_need.common import redis_client
+from ..common import redis_client
 from microdrop_utils.broker_server_helpers import start_redis_server, stop_redis_server
 
 
