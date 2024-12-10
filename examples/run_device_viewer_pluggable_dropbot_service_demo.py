@@ -18,7 +18,7 @@ from message_router.plugin import MessageRouterPlugin
 from message_router.consts import ACTOR_TOPIC_ROUTES
 
 # local helpers imports
-from microdrop_utils.broker_server_helpers import dramatiq_broker_context
+from microdrop_utils.broker_server_helpers import dramatiq_workers
 from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
 from microdrop_utils._logger import get_logger
 
@@ -79,7 +79,7 @@ def main(args):
     app = Application(plugins=plugins)
 
     # Need to run with a dramatiq broker context since app requires plugins that use dramatiq
-    with dramatiq_broker_context():
+    with dramatiq_workers():
         app.run()
 
 
