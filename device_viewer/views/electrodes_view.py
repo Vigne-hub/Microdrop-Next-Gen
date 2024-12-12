@@ -1,5 +1,6 @@
 # library imports
 import numpy as np
+from PySide6.QtWidgets import QGraphicsScene
 
 # local imports
 from microdrop_utils._logger import get_logger
@@ -146,20 +147,17 @@ class ElectrodeView(QGraphicsPathItem):
         self.update()
 
 
-class ElectrodeLayer(QGraphicsItemGroup):
+class ElectrodeLayer():
     """
     Class defining the view for an electrode layer in the device viewer.
 
-    - This view is a QGraphicsItemGroup that contains a group of electrode view objects
+    - This view contains a group of electrode view objects
     - The view is responsible for updating the properties of all the electrode views contained in bulk.
     """
 
-    def __init__(self, id_: str, electrodes, parent=None):
-        super().__init__(parent=parent)
-
-        self.id = id_
-        self.setHandlesChildEvents(False)  # Pass events to children
-
+    def __init__(self, electrodes):
+        # Create the connection and electrode items
+        self.connection_items = []
         self.electrode_views = {}
 
         svg = electrodes.svg_model
@@ -167,34 +165,52 @@ class ElectrodeLayer(QGraphicsItemGroup):
         # # Scale to approx 360p resolution for display
         modifier = max(640 / (svg.max_x - svg.min_x), 360 / (svg.max_y - svg.min_y))
 
-        logger.debug(f"Creating Electrode Layer {id_} with {len(electrodes.electrodes)} electrodes.")
-
         # Create the electrode views for each electrode from the electrodes model and add them to the group
         for electrode_id, electrode in electrodes.electrodes.items():
             self.electrode_views[electrode_id] = ElectrodeView(electrode_id, electrodes[electrode_id],
                                                                modifier * electrode.path[:, 0, :])
 
-            self.addToGroup(self.electrode_views[electrode_id])
-
         # Create the connections between the electrodes
         self.connections = [con * modifier for con in svg.connections]
-        # Create the connection items
-        self.connection_items = []
-        # Draw the connections
-        self.draw_connections()
 
-    def draw_connections(self):
-        """
-        Method to draw the connections between the electrodes in the layer
-        """
         for connection in self.connections:
             path = QPainterPath()
             coords = connection.flatten()
             path.moveTo(coords[0], coords[1])
             path.lineTo(coords[2], coords[3])
 
-            connection_item = QGraphicsPathItem(path, parent=self)
+            connection_item = QGraphicsPathItem(path)
             color = QColor(default_colors['connection'])
             color.setAlphaF(1.0)
             connection_item.setPen(QPen(color, 1))
             self.connection_items.append(connection_item)
+
+    def add_electrodes_to_scene(self, parent_scene: 'QGraphicsScene'):
+        for electrode_id, electrode_view in self.electrode_views.items():
+            parent_scene.addItem(electrode_view)
+
+    def add_connections_to_scene(self, parent_scene: 'QGraphicsScene'):
+        """
+        Method to draw the connections between the electrodes in the layer
+        """
+        for el in self.connection_items:
+            parent_scene.addItem(el)
+
+    def remove_electrodes_to_scene(self, parent_scene: 'QGraphicsScene'):
+        for electrode_id, electrode_view in self.electrode_views.items():
+            parent_scene.removeItem(electrode_view)
+
+    def remove_connections_to_scene(self, parent_scene: 'QGraphicsScene'):
+        """
+        Method to draw the connections between the electrodes in the layer
+        """
+        for el in self.connection_items:
+            parent_scene.removeItem(el)
+
+    def add_all_items_to_scene(self, parent_scene: 'QGraphicsScene'):
+        self.add_electrodes_to_scene(parent_scene)
+        self.add_connections_to_scene(parent_scene)
+
+    def remove_all_items_to_scene(self, parent_scene: 'QGraphicsScene'):
+        self.remove_electrodes_to_scene(parent_scene)
+        self.remove_connections_to_scene(parent_scene)

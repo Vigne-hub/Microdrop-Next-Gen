@@ -42,7 +42,7 @@ class DeviceViewerPane(TaskPane):
         Utility methods to remove current scene's electrode layer.
         """
         if self.current_electrode_layer:
-            self.scene.removeItem(self.current_electrode_layer)
+            self.current_electrode_layer.remove_all_items_to_scene(self.scene)
             self.scene.clear()
             self.scene.update()
 
@@ -53,7 +53,7 @@ class DeviceViewerPane(TaskPane):
 
     def set_view_from_model(self, new_model):
         self.remove_current_layer()
-        self.current_electrode_layer = ElectrodeLayer("layer1", new_model)
-        self.scene.addItem(self.current_electrode_layer)
+        self.current_electrode_layer = ElectrodeLayer(new_model)
+        self.current_electrode_layer.add_all_items_to_scene(self.scene)
         self.scene.setSceneRect(self.scene.itemsBoundingRect())
         self.view.fitInView(self.scene.sceneRect(), Qt.AspectRatioMode.KeepAspectRatio)
