@@ -22,6 +22,7 @@ default_colors = {True: '#8d99ae', False: '#0a2463', 'no-channel': '#fc8eac',
 default_alphas = {'line': 1.0, 'fill': 1.0, 'text': 1.0}
 
 
+# Establishes the view for each electrode
 class ElectrodeView(QGraphicsPathItem):
     """
     Class defining the view for an electrode in the device viewer:
@@ -148,20 +149,7 @@ class ElectrodeView(QGraphicsPathItem):
         self.update()
 
 
-def generate_connection_line(src: tuple, dst: tuple, color: QColor=None):
-    """
-    Paints a line based on src and dst coordinates.
-    """
-    path = QPainterPath()
-    path.moveTo(src[0], src[1])
-    path.lineTo(dst[0], dst[1])
-    connection_item = QGraphicsPathItem(path)
-
-    if color is not None:
-        connection_item.setPen(QPen(color, 1))
-    return connection_item
-
-
+# Container holding information about multiple electrode views together, and connections between them
 class ElectrodeLayer():
     """
     Class defining the view for an electrode layer in the device viewer.
@@ -228,10 +216,12 @@ class ElectrodeLayer():
         self.remove_connections_to_scene(parent_scene)
 
 
+# Device viewer scene with electrode elements from the electrode layer
 class ElectrodeScene(QGraphicsScene):
     """
     Class to handle electrode view scene. Handles identifying mouse action across the scene.
     """
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.drag_start = None
@@ -282,3 +272,19 @@ class ElectrodeScene(QGraphicsScene):
         self.current_route = []
         self.route_points = []
         super().mouseReleaseEvent(event)
+
+
+#################### Helper functions #############################
+
+def generate_connection_line(src: tuple, dst: tuple, color: QColor = None):
+    """
+    Paints a line based on src and dst coordinates.
+    """
+    path = QPainterPath()
+    path.moveTo(src[0], src[1])
+    path.lineTo(dst[0], dst[1])
+    connection_item = QGraphicsPathItem(path)
+
+    if color is not None:
+        connection_item.setPen(QPen(color, 1))
+    return connection_item
