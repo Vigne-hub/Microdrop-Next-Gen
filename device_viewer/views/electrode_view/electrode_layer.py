@@ -31,15 +31,21 @@ class ElectrodeLayer():
                                                                modifier * electrode.path)
 
         # Create the connections between the electrodes
-        self.connections = [con * modifier for con in svg.connections]
+        self.connections = {
+            key: ((coord1[0] * modifier, coord1[1] * modifier), (coord2[0] * modifier, coord2[1] * modifier))
+            for key, (coord1, coord2) in svg.connections.items()
+        }
 
-        for connection in self.connections:
-            connection = connection.flatten()
-            src = (connection[0], connection[1])
-            dst = (connection[2], connection[3])
+        for key, (src, dst) in self.connections.items():
+
+            # Set up the color
             color = QColor(default_colors['connection'])
             color.setAlphaF(1.0)
-            connection_item = generate_connection_line(src, dst, color=color)
+
+            # Generate connection line
+            connection_item = generate_connection_line(key, src, dst, color=color)
+
+            # Store the generated connection item
             self.connection_items.append(connection_item)
 
     ################# add electrodes/connections from scene ############################################
