@@ -13,7 +13,7 @@ from traits.api import Instance, Str, provides
 # Local imports.
 from .models.electrodes import Electrodes
 from .views.device_view_pane import DeviceViewerPane
-from .views.electrodes_view import ElectrodeLayer
+from device_viewer.views.electrode_view.electrode_layer import ElectrodeLayer
 from .consts import ELECTRODES_STATE_CHANGE
 
 from microdrop_utils.dramatiq_pub_sub_helpers import publish_message

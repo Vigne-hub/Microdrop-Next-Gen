@@ -20,7 +20,7 @@ class Electrode(HasTraits):
     channel = Int()
 
     #: NDArray path to electrode
-    path = Array(dtype=Float, shape=(None, 1, 2))
+    path = Array(dtype=Float, shape=(None, 2))
 
     #: State of the electrode (On or Off)
     _state = Bool(False)

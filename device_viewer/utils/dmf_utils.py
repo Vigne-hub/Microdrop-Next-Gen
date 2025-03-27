@@ -219,10 +219,10 @@ class SvgUtil:
 
             try:
                 electrodes[element.attrib['id']] = {'channel': int(element.attrib['data-channels']),
-                                                    'path': (np.array(moves) + transform).reshape((-1, 1, 2))}
+                                                    'path': (np.array(moves) + transform).reshape((-1, 2))}
             except KeyError:
                 electrodes[element.attrib['id']] = {'channel': None,
-                                                    'path': (np.array(moves) + transform).reshape((-1, 1, 2))}
+                                                    'path': (np.array(moves) + transform).reshape((-1, 2))}
 
         self.max_x = max([e['path'][..., 0].max() for e in electrodes.values()])
         self.max_y = max([e['path'][..., 1].max() for e in electrodes.values()])
