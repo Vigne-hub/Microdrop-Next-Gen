@@ -27,7 +27,7 @@ class ElectrodeScene(QGraphicsScene):
         if isinstance(item, ElectrodeView):
             self.drag_start = item
             self.current_route = [item.electrode.channel]  # Start the route with this electrode
-            self.route_points = [get_mean_path(item)]
+            self.electrode_ids_visited = [item.id]
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
@@ -48,17 +48,19 @@ class ElectrodeScene(QGraphicsScene):
 
                 channel_ = new_item.electrode.channel
                 if self.current_route[-1] != channel_:
+
+                    # add new information
                     self.current_route.append(channel_)
+                    self.electrode_ids_visited.append(new_item.id)
 
-                    src = self.route_points[-1].flatten()
-                    self.route_points.append(get_mean_path(new_item))
-                    dst = self.route_points[-1].flatten()
+                    # define key to look for
+                    src_key = self.electrode_ids_visited[-2]
+                    dst_key = self.electrode_ids_visited[-1]
 
-                    # Define the query path: [(x1, y1), (x2, y2), ...]
-                    query_path = [src, dst]  # MoveTo, LineTo
+                    key = (src_key, dst_key)
 
                     # Find the matching path item
-                    found_item = find_path_item(self, query_path)
+                    found_item = find_path_item(self, key)
                     found_item.update_color()
 
                     print(f"path will be {'->'.join([str(i) for i in self.current_route])}")
@@ -70,5 +72,4 @@ class ElectrodeScene(QGraphicsScene):
         print(self.current_route)
         self.drag_start = None
         self.current_route = []
-        self.route_points = []
         super().mouseReleaseEvent(event)

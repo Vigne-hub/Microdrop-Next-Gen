@@ -18,12 +18,19 @@ logger = get_logger(__name__, level='DEBUG')
 
 # electrode connection lines
 class ElectrodeConnectionItem(QGraphicsPathItem):
+    def __init__(self, key, path):
+        # Initialize the parent class constructor
+        super().__init__(path)
+
+        # Add a new variable specific to this class
+        self.key = key
 
     def update_color(self):
         """
-        Method to update the color of the electrode based on the state
+        Method to update the color of the electrode connection.
+        This could depend on the state or other properties of the item.
         """
-        self.setPen(QPen(Qt.green, 5))
+        self.setPen(QPen(Qt.green, 5))  # Example: Set pen color to green with thickness 5
 
 
 # electrode polygons

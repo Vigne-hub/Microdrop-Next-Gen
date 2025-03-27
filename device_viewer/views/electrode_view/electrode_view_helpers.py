@@ -4,33 +4,24 @@ from PySide6.QtGui import QColor, QPainterPath, QPen
 from .electrodes_view_base import ElectrodeConnectionItem
 
 
-def find_path_item(scene, path_data):
+def find_path_item(scene, connected_electrodes_keys):
     """Find a QGraphicsPathItem with the exact path sequence"""
     for item in scene.items():
         if isinstance(item, ElectrodeConnectionItem):
-            path = item.path()
-
-            match = True
-            for i, (expected_x, expected_y) in enumerate(path_data):
-                element = path.elementAt(i)
-                if not (abs(element.x - expected_x) < 0.1 and abs(element.y - expected_y) < 0.1):
-                    match = False
-                    break  # If any element doesn't match, break early
-
-            if match:
-                return item  # Found a matching path item
+            if item.key[0] in connected_electrodes_keys and item.key[1] in connected_electrodes_keys:
+                return item
 
     return None  # No match found
 
 
-def generate_connection_line(src: tuple, dst: tuple, color: QColor = None):
+def generate_connection_line(key, src: tuple, dst: tuple, color: QColor = None):
     """
     Paints a line based on src and dst coordinates.
     """
     path = QPainterPath()
     path.moveTo(src[0], src[1])
     path.lineTo(dst[0], dst[1])
-    connection_item = ElectrodeConnectionItem(path)
+    connection_item = ElectrodeConnectionItem(key, path)
 
     if color is not None:
         connection_item.setPen(QPen(color, 1))
