@@ -7,7 +7,7 @@ from pyface.qt.QtCore import Qt
 
 # local imports
 # TODO: maybe get these from an extension point for very granular control
-from .electrodes_view import ElectrodeLayer
+from .electrodes_view import ElectrodeLayer, ElectrodeScene
 from ..utils.auto_fit_graphics_view import AutoFitGraphicsView
 from microdrop_utils._logger import get_logger
 
@@ -27,7 +27,7 @@ class DeviceViewerPane(TaskPane):
 
     # --------- Device View trait initializers -------------
     def _scene_default(self):
-        return QGraphicsScene()
+        return ElectrodeScene()
 
     def _view_default(self):
         view = AutoFitGraphicsView(self.scene)

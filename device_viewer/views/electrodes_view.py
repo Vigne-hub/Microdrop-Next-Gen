@@ -1,5 +1,6 @@
 # library imports
 import numpy as np
+from PySide6.QtCore import QPointF
 from PySide6.QtWidgets import QGraphicsScene
 
 # local imports
@@ -9,7 +10,7 @@ from microdrop_utils._logger import get_logger
 from traits.api import Instance, Array, Str
 from pyface.qt.QtCore import Qt
 from pyface.qt.QtGui import (QColor, QPen, QBrush, QFont, QPainterPath, QGraphicsPathItem, QGraphicsTextItem,
-                             QGraphicsItem, QGraphicsItemGroup)
+                             QGraphicsItem)
 
 from ..models.electrodes import Electrode
 
@@ -147,6 +148,20 @@ class ElectrodeView(QGraphicsPathItem):
         self.update()
 
 
+def generate_connection_line(src: tuple, dst: tuple, color: QColor=None):
+    """
+    Paints a line based on src and dst coordinates.
+    """
+    path = QPainterPath()
+    path.moveTo(src[0], src[1])
+    path.lineTo(dst[0], dst[1])
+    connection_item = QGraphicsPathItem(path)
+
+    if color is not None:
+        connection_item.setPen(QPen(color, 1))
+    return connection_item
+
+
 class ElectrodeLayer():
     """
     Class defining the view for an electrode layer in the device viewer.
@@ -174,15 +189,12 @@ class ElectrodeLayer():
         self.connections = [con * modifier for con in svg.connections]
 
         for connection in self.connections:
-            path = QPainterPath()
-            coords = connection.flatten()
-            path.moveTo(coords[0], coords[1])
-            path.lineTo(coords[2], coords[3])
-
-            connection_item = QGraphicsPathItem(path)
+            connection = connection.flatten()
+            src = (connection[0], connection[1])
+            dst = (connection[2], connection[3])
             color = QColor(default_colors['connection'])
             color.setAlphaF(1.0)
-            connection_item.setPen(QPen(color, 1))
+            connection_item = generate_connection_line(src, dst, color=color)
             self.connection_items.append(connection_item)
 
     def add_electrodes_to_scene(self, parent_scene: 'QGraphicsScene'):
@@ -214,3 +226,59 @@ class ElectrodeLayer():
     def remove_all_items_to_scene(self, parent_scene: 'QGraphicsScene'):
         self.remove_electrodes_to_scene(parent_scene)
         self.remove_connections_to_scene(parent_scene)
+
+
+class ElectrodeScene(QGraphicsScene):
+    """
+    Class to handle electrode view scene. Handles identifying mouse action across the scene.
+    """
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.drag_start = None
+
+    def mousePressEvent(self, event):
+        """Handle the start of a drag operation."""
+        item = self.itemAt(event.scenePos(), self.views()[0].transform())
+
+        try:
+            if isinstance(item.parentItem(), ElectrodeView):
+                item = item.parentItem()
+        except AttributeError:
+            pass
+
+        if isinstance(item, ElectrodeView):
+            self.drag_start = item
+            self.current_route = [item.electrode.channel]  # Start the route with this electrode
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        """Handle the dragging motion."""
+        if self.drag_start:
+
+            # identify new item hovered over
+            new_item = self.itemAt(event.scenePos(), self.views()[0].transform())
+
+            # check if this item or parent item (if exists) is an electrode view
+            try:
+                if isinstance(new_item.parentItem(), ElectrodeView):
+                    new_item = new_item.parentItem()
+            except AttributeError:
+                pass
+
+            if isinstance(new_item, ElectrodeView):
+
+                channel_ = new_item.electrode.channel
+                if self.current_route[-1] != channel_:
+                    self.current_route.append(channel_)
+
+                    print(f"path will be {'->'.join([str(i) for i in self.current_route])}")
+                self.drag_start = new_item  # Update the drag start to the current electrode
+        super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        """Finalize the drag operation."""
+        print(self.current_route)
+        self.drag_start = None
+        self.current_route = []
+        self.route_points = []
+        super().mouseReleaseEvent(event)
