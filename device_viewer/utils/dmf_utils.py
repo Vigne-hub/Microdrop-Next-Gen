@@ -125,15 +125,17 @@ class SvgUtil:
         return neighbours
 
     def neighbours_to_points(self):
-        # Scan the neighbours and create a list of unique connections
-        self.connections = []
-        connected = []
+        # Dictionary to store electrode connections
+        self.connections = {}
+
         for k, v in self.neighbours.items():
             for n in v:
-                if (n, k) not in connected and (k, n) not in connected:
-                    connected.append((k, n))
-                    points = [self.get_electrode_center(k), self.get_electrode_center(n)]
-                    self.connections.append(np.array(points).reshape((-1, 1, 2)))
+                if (n, k) not in self.connections and (k, n) not in self.connections:
+                    coord_k = self.get_electrode_center(k)
+                    coord_n = self.get_electrode_center(n)
+
+                    # Store electrode pair (sorted for uniqueness) and their coordinates
+                    self.connections[(k, n)] = (coord_k, coord_n)
 
     @staticmethod
     def set_fill_black(obj: ET.Element) -> None:
