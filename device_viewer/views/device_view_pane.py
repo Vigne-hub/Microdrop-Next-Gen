@@ -7,7 +7,8 @@ from pyface.qt.QtCore import Qt
 
 # local imports
 # TODO: maybe get these from an extension point for very granular control
-from .electrodes_view import ElectrodeLayer
+from device_viewer.views.electrode_view.electrode_scene import ElectrodeScene
+from device_viewer.views.electrode_view.electrode_layer import ElectrodeLayer
 from ..utils.auto_fit_graphics_view import AutoFitGraphicsView
 from microdrop_utils._logger import get_logger
 
@@ -27,7 +28,7 @@ class DeviceViewerPane(TaskPane):
 
     # --------- Device View trait initializers -------------
     def _scene_default(self):
-        return QGraphicsScene()
+        return ElectrodeScene()
 
     def _view_default(self):
         view = AutoFitGraphicsView(self.scene)
@@ -42,7 +43,7 @@ class DeviceViewerPane(TaskPane):
         Utility methods to remove current scene's electrode layer.
         """
         if self.current_electrode_layer:
-            self.scene.removeItem(self.current_electrode_layer)
+            self.current_electrode_layer.remove_all_items_to_scene(self.scene)
             self.scene.clear()
             self.scene.update()
 
@@ -53,7 +54,7 @@ class DeviceViewerPane(TaskPane):
 
     def set_view_from_model(self, new_model):
         self.remove_current_layer()
-        self.current_electrode_layer = ElectrodeLayer("layer1", new_model)
-        self.scene.addItem(self.current_electrode_layer)
+        self.current_electrode_layer = ElectrodeLayer(new_model)
+        self.current_electrode_layer.add_all_items_to_scene(self.scene)
         self.scene.setSceneRect(self.scene.itemsBoundingRect())
         self.view.fitInView(self.scene.sceneRect(), Qt.AspectRatioMode.KeepAspectRatio)

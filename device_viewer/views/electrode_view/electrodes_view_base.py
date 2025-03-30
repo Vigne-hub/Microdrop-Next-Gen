@@ -8,18 +8,32 @@ from microdrop_utils._logger import get_logger
 from traits.api import Instance, Array, Str
 from pyface.qt.QtCore import Qt
 from pyface.qt.QtGui import (QColor, QPen, QBrush, QFont, QPainterPath, QGraphicsPathItem, QGraphicsTextItem,
-                             QGraphicsItem, QGraphicsItemGroup)
+                             QGraphicsItem)
 
-from ..models.electrodes import Electrode
+from .default_settings import default_colors, default_alphas
+from device_viewer.models.electrodes import Electrode
 
 logger = get_logger(__name__, level='DEBUG')
 
-default_colors = {True: '#8d99ae', False: '#0a2463', 'no-channel': '#fc8eac',
-                  'droplet': '#06d6a0', 'line': '#3e92cc', 'connection': '#ffffff'}
 
-default_alphas = {'line': 1.0, 'fill': 1.0, 'text': 1.0}
+# electrode connection lines
+class ElectrodeConnectionItem(QGraphicsPathItem):
+    def __init__(self, key, path):
+        # Initialize the parent class constructor
+        super().__init__(path)
+
+        # Add a new variable specific to this class
+        self.key = key
+
+    def update_color(self):
+        """
+        Method to update the color of the electrode connection.
+        This could depend on the state or other properties of the item.
+        """
+        self.setPen(QPen(Qt.green, 5))  # Example: Set pen color to green with thickness 5
 
 
+# electrode polygons
 class ElectrodeView(QGraphicsPathItem):
     """
     Class defining the view for an electrode in the device viewer:
@@ -146,55 +160,3 @@ class ElectrodeView(QGraphicsPathItem):
         self.update()
 
 
-class ElectrodeLayer(QGraphicsItemGroup):
-    """
-    Class defining the view for an electrode layer in the device viewer.
-
-    - This view is a QGraphicsItemGroup that contains a group of electrode view objects
-    - The view is responsible for updating the properties of all the electrode views contained in bulk.
-    """
-
-    def __init__(self, id_: str, electrodes, parent=None):
-        super().__init__(parent=parent)
-
-        self.id = id_
-        self.setHandlesChildEvents(False)  # Pass events to children
-
-        self.electrode_views = {}
-
-        svg = electrodes.svg_model
-
-        # # Scale to approx 360p resolution for display
-        modifier = max(640 / (svg.max_x - svg.min_x), 360 / (svg.max_y - svg.min_y))
-
-        logger.debug(f"Creating Electrode Layer {id_} with {len(electrodes.electrodes)} electrodes.")
-
-        # Create the electrode views for each electrode from the electrodes model and add them to the group
-        for electrode_id, electrode in electrodes.electrodes.items():
-            self.electrode_views[electrode_id] = ElectrodeView(electrode_id, electrodes[electrode_id],
-                                                               modifier * electrode.path[:, 0, :])
-
-            self.addToGroup(self.electrode_views[electrode_id])
-
-        # Create the connections between the electrodes
-        self.connections = [con * modifier for con in svg.connections]
-        # Create the connection items
-        self.connection_items = []
-        # Draw the connections
-        self.draw_connections()
-
-    def draw_connections(self):
-        """
-        Method to draw the connections between the electrodes in the layer
-        """
-        for connection in self.connections:
-            path = QPainterPath()
-            coords = connection.flatten()
-            path.moveTo(coords[0], coords[1])
-            path.lineTo(coords[2], coords[3])
-
-            connection_item = QGraphicsPathItem(path, parent=self)
-            color = QColor(default_colors['connection'])
-            color.setAlphaF(1.0)
-            connection_item.setPen(QPen(color, 1))
-            self.connection_items.append(connection_item)
