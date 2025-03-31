@@ -15,6 +15,7 @@ from .models.electrodes import Electrodes
 from .views.device_view_pane import DeviceViewerPane
 from device_viewer.views.electrode_view.electrode_layer import ElectrodeLayer
 from .consts import ELECTRODES_STATE_CHANGE
+from .services.electrode_interaction_service import ElectrodeInteractionControllerService
 
 from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
 from microdrop_utils._logger import get_logger
@@ -93,9 +94,16 @@ class DeviceViewerTask(Task):
         self.window.central_pane.set_view_from_model(new_model)
         logger.debug(f"New Electrode Layer added --> {new_model.svg_model.filename}")
 
-        # setup event handlers for the new electrode layer
-        self.__handle_electrode_layer_events()
-        logger.debug(f"setting up handlers for new layer for new electrodes model {new_model}")
+        # Initialize the electrode mouse interaction service with the new model and layer
+        self.interaction_service = ElectrodeInteractionControllerService(
+            electrodes_model=new_model,
+            electrode_view_layer=self.window.central_pane.current_electrode_layer
+        )
+
+        # Update the scene with the interaction service
+        self.window.central_pane.scene.interaction_service = self.interaction_service
+
+        logger.debug(f"Setting up handlers for new layer for new electrodes model {new_model}")
         publish_message(topic=ELECTRODES_STATE_CHANGE, message=json.dumps(self.electrodes_model.channels_states_map))
 
     ###########################################################################
@@ -115,72 +123,6 @@ class DeviceViewerTask(Task):
 
             self.electrodes_model = new_model
             logger.info(f"Electrodes model set to {new_model}")
-
-    ###########################################################################
-    # UI Controller interface.
-    ###########################################################################
-
-    def __handle_electrode_layer_events(self):
-        """Handle events from the panes. Any Notifications, Updates, etc. should be done here."""
-
-        ################### Handler Method Connections ####################################
-
-        for electrode_id, electrode_view in self.window.central_pane.current_electrode_layer.electrode_views.items():
-            electrode_view.on_leftClicked = partial(
-                self.on_electrode_leftClicked,  # handler method
-                electrode_id, self.electrodes_model, self.window.central_pane.current_electrode_layer  # args
-            )
-
-    ################# Handler Methods ################################################
-
-    # TODO: maybe make these methods set from services or a task extension.
-
-    @staticmethod
-    def on_electrode_leftClicked(_electrode_id: Str, _electrodes_model: Electrodes,
-                                 _electrode_view_layer: ElectrodeLayer):
-        """
-        Handle the event when an electrode is clicked.
-
-        params
-        _electrode_id (str): Provide electrode id clicked by user.
-
-        _electrodes_model (Electrodes): Provide all the electrodes available. Need this to check other models with same
-                                        channel as the current electrode clicked
-
-        _electrode_view_layer (ElectrodeLayer): Provide all electrodes view elements. Need to update all the ones affected
-                                                by current click based on their channel.
-        """
-
-        logger.debug(f"Electrode {_electrode_id} clicked")
-
-        # get electrode model for current electrode clicked
-        _clicked_electrode_channel = _electrodes_model[_electrode_id].channel
-
-        logger.debug(f"Channel {_clicked_electrode_channel} will be actuated")
-
-        affected_electrode_ids = _electrodes_model.channels_electrode_ids_map[_clicked_electrode_channel]
-
-        logger.debug(f"Affected electrodes {affected_electrode_ids} with same channel as clicked electrode")
-
-        # NOTE: performance is ok, sticking to serial for loop. If need be, we may have to multithread.
-        for affected_electrode_id in affected_electrode_ids:
-            # obtain affected electrode object
-            _electrode = _electrodes_model[affected_electrode_id]
-
-            # update electrode model for electrode clicked and all electrodes with same channel affected by this click.
-            _electrode.state = not _electrode.state
-
-            # update electrode view for electrode clicked and all electrodes with same channel affected by this click.
-            _electrode_view = _electrode_view_layer.electrode_views[affected_electrode_id]
-            _electrode_view.update_color(_electrode.state)
-
-        updated_channels_states_map = _electrodes_model.channels_states_map
-
-        logger.info(f"New electrode channels states map: {updated_channels_states_map}")
-
-        # publish event to all interested. Mainly to backend actors who need to know user has requested the electrode
-        # to be actuated / unactuated.
-        publish_message(topic=ELECTRODES_STATE_CHANGE, message=json.dumps(updated_channels_states_map))
 
     ##########################################################
     # 'IDramatiqControllerBase' interface.
