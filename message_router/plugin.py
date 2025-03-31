@@ -2,7 +2,6 @@ from envisage.api import Plugin, ExtensionPoint
 from traits.api import List, Str, Dict, Instance
 import dramatiq
 import uuid
-import re
 
 from .consts import ACTOR_TOPIC_ROUTES, PKG
 from microdrop_utils._logger import get_logger

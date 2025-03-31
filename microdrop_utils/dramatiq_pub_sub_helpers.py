@@ -176,12 +176,12 @@ class MessageRouterData(HasTraits):
         []
     """
     topic_subscriber_map = Instance('RedisHashDictProxy',
-                                    desc="A dictionary of topics and a list of their subscribing actor names stored in "
-                                         "redis as a hash")
+                                    desc="A dictionary of topics and a list of tuples containing topic subscribed "
+                                         "actor name, listening queue pairs stored in redis as a hash")
 
     storage_key_name = Str(DEFAULT_STORAGE_KEY_NAME, desc="The name of the redis key under which this data will be "
                                                           "stored")
-    listener_queue = Str("default")
+    listener_queue = Str("default", desc="The unique queue for a message router actor that it is listening to")
 
     # ------- default trait setters ----------- #
 
@@ -209,15 +209,19 @@ class MessageRouterData(HasTraits):
             {'SENSOR/+': ['actor1', 'queue_name']}
 
         """
+
+        # initialize topic with the sub actor. listener queue pair if it does not exist
         if topic not in self.topic_subscriber_map:
             self.topic_subscriber_map[topic] = [(subscribing_actor_name, self.listener_queue)]
 
+        # if the sub actor, listener queue pair is not a value for the topic, then add it
         elif [subscribing_actor_name, self.listener_queue] not in self.topic_subscriber_map[topic]:
-                self.topic_subscriber_map[topic] += [(subscribing_actor_name, self.listener_queue)]
+            self.topic_subscriber_map[topic] += [(subscribing_actor_name, self.listener_queue)]
 
     def remove_subscriber_from_topic(self, topic: Str, subscribing_actor_name: Str):
         """
-        Removes a subscriber from a specific topic. If the topic has no more subscribers, it is removed from the map.
+        Removes a subscriber, listener queue pair from a specific topic.
+        If the topic has no more subscribers, it is removed from the map.
 
         Args:
             topic (str): The topic to unsubscribe from.
@@ -313,7 +317,9 @@ class MessageRouterData(HasTraits):
 
 class MessageRouterActor:
     """
-    A class that routes messages to subscribers based on topics
+    A class that routes messages to subscribers based on topics.
+
+    Each instance of this class has one message router actor with a specific queue unique to it.
     """
 
     def __init__(self, message_router_data: MessageRouterData = None, listener_queue="default"):
@@ -321,7 +327,7 @@ class MessageRouterActor:
             message_router_data = MessageRouterData(listener_queue=listener_queue)
 
         self.message_router_data = message_router_data
-        self.listener_queue = listener_queue
+        self.listener_queue = listener_queue  # unique queue for this message router actor to listen to
         self.message_router_actor = self.create_message_router_actor()
 
         # We define this actor here like this since we need to access self.message_router_data but cannot have this
