@@ -1,6 +1,5 @@
 from traits.api import HasTraits, Instance, Dict, List, Str
 import json
-import dramatiq
 from microdrop_utils._logger import get_logger
 from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
 from device_viewer.models.electrodes import Electrodes

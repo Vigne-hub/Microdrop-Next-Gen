@@ -15,7 +15,7 @@ from .consts import (CHIP_INSERTED, CHIP_NOT_INSERTED, CAPACITANCE_UPDATED, HALT
 from .interfaces.i_dropbot_controller_base import IDropbotControllerBase
 
 from traits.api import HasTraits, provides, Bool
-from microdrop_utils.dramatiq_dropbot_serial_proxy import DramatiqDropbotSerialProxy
+from microdrop_utils.dramatiq_dropbot_serial_proxy import DramatiqDropbotSerialProxy, CONNECTED, DISCONNECTED
 from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
 
 from microdrop_utils._logger import get_logger
@@ -88,7 +88,7 @@ class DropbotControllerBase(HasTraits):
             if head_topic == 'dropbot':
 
                 # 2. Handle the connected / disconnected signals
-                if topic in ["dropbot/signals/connected", "dropbot/signals/disconnected"]:
+                if topic in [CONNECTED, DISCONNECTED]:
                     requested_method = f"on_{specific_sub_topic}_signal"
 
                 # 3. Handle specific dropbot requests that would change dropbot connectivity
