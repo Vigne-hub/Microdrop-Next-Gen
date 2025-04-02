@@ -9,6 +9,7 @@ from PySide6.QtGui import QPixmap
 
 # local imports
 from microdrop_utils._logger import get_logger
+from microdrop_utils.base_dropbot_qwidget import BaseControllableDropBotQWidget
 from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
 
 logger = get_logger(__name__)
@@ -101,8 +102,7 @@ class DropBotStatusLabel(QLabel):
         self.dropbot_voltage_reading.setText(f"Voltage: {voltage}")
 
 
-class DropBotStatusWidget(QWidget):
-    controller_signal = Signal(str)
+class DropBotStatusWidget(BaseControllableDropBotQWidget):
     def __init__(self):
         super().__init__()
 
@@ -113,26 +113,6 @@ class DropBotStatusWidget(QWidget):
 
         self.status_label = DropBotStatusLabel()
         self.layout.addWidget(self.status_label)
-
-        # self.detect_shorts_button = QPushButton("Detect Shorts")
-        # self.detect_shorts_button.clicked.connect(self.request_detect_shorts)
-        # self.layout.addWidget(self.detect_shorts_button)
-
-        self.controller = None
-
-    # ---- controller setter method ------------
-
-    def setController(self, controller_factory: callable):
-        """
-        Function to set the controller for this view
-
-        Params:
-        controller_factory (callable): Function to return a controller for this view. Should take the self view itself
-        as an argument.  Should implement a handler for the controller_signal called controller_signal_handler
-        """
-        # this is likely going to provide a dramatiq listener.
-        self.controller = controller_factory(view=self)
-        self.controller_signal.connect(self.controller.controller_signal_handler)
 
     ###################################################################################################################
     # Publisher methods

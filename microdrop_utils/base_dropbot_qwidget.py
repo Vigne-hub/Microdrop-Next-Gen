@@ -1,0 +1,63 @@
+from PySide6.QtCore import Signal
+import logging
+
+from PySide6.QtWidgets import QWidget
+
+logger = logging.getLogger(__name__)
+
+
+# =============================================================================
+# BaseUI Class
+# =============================================================================
+class BaseControllableDropBotQWidget(QWidget):
+    """
+    A base class for a QWidget components that encapsulates common initialization
+    and signal declaration logic with the presence of a controller.
+
+    This class declares:
+      - A common controller_signal (emitting a string) for communication.
+      - A controller property (with getter and setter) that uses a
+        factory function to create and assign a controller. The controller must implement
+        a controller_signal_handler method. The mixin then connects the view's controller_signal
+        to the controller's handler method.
+
+    """
+    controller_signal = Signal(str)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+        self._controller = None
+
+    @property
+    def controller(self) -> any:
+        """
+        Retrieve the current controller instance.
+
+        Returns:
+            The controller instance if set, or None otherwise.
+        """
+        return self._controller
+
+    @controller.setter
+    def controller(self, controller_factory: callable) -> None:
+        """
+        Set the controller for the view using a factory function.
+
+        Args:
+            controller_factory (callable): A function that accepts the view as an argument
+                and returns a controller instance. The controller must implement a
+                controller_signal_handler method.
+
+        Raises:
+            ValueError: If the provided factory is not callable or if the returned controller
+                        does not have a controller_signal_handler method.
+        """
+        if not callable(controller_factory):
+            raise ValueError("Controller factory must be callable")
+
+        controller = controller_factory(view=self)
+        if not hasattr(controller, 'controller_signal_handler'):
+            raise ValueError("Controller must implement controller_signal_handler method")
+
+        self._controller = controller
+        self.controller_signal.connect(controller.controller_signal_handler)
