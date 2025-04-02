@@ -55,7 +55,10 @@ class BaseControllableDropBotQWidget(QWidget):
         if not callable(controller_factory):
             raise ValueError("Controller factory must be callable")
 
-        controller = controller_factory(view=self)
+        # Set the listener actor name based on the root module of the widget's class
+        listener_name = self.__class__.__module__.split(".")[0] + "_listener"
+
+        controller = controller_factory(view=self, listener_name=listener_name)
         if not hasattr(controller, 'controller_signal_handler'):
             raise ValueError("Controller must implement controller_signal_handler method")
 

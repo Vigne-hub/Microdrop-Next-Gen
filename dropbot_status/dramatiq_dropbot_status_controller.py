@@ -1,5 +1,4 @@
-from PySide6.QtCore import Signal
-from traits.api import Instance, HasTraits, provides
+from traits.api import Instance, HasTraits, provides, Str
 import dramatiq
 import json
 
@@ -11,7 +10,6 @@ logger = get_logger(__name__)
 # local imports
 from .widget import DropBotStatusWidget
 from .interfaces.i_dramatiq_dropbot_status_controller import IDramatiqDropbotStatusController
-from .consts import PKG
 
 
 @provides(IDramatiqDropbotStatusController)
@@ -27,7 +25,10 @@ class DramatiqDropbotStatusController(HasTraits):
     ##########################################################
 
     dramatiq_listener_actor = Instance(dramatiq.Actor)
-    listener_name = f"{PKG}_listener"
+
+    # This class is not immediately initialized here as in device viewer and in dropbot controller
+    # this can be set later by whatever UI view that uses it
+    listener_name = Str(desc="Unique identifier for the Dramatiq actor")
 
     def listener_actor_routine(self, message, topic):
         logger.debug(f"UI_LISTENER: Received message: {message} from topic: {topic}. Triggering UI Signal")
