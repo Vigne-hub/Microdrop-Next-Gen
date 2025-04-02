@@ -64,3 +64,7 @@ class BaseControllableDropBotQWidget(QWidget):
 
         self._controller = controller
         self.controller_signal.connect(controller.controller_signal_handler)
+
+    def setControllerDirectly(self, controller):
+        self._controller = controller
+        self.controller_signal.connect(controller.controller_signal_handler)

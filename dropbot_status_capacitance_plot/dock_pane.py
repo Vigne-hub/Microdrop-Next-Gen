@@ -5,19 +5,19 @@ from dropbot_status.dramatiq_dropbot_status_controller import DramatiqDropbotSta
 from .consts import PKG, PKG_name
 
 
-class DropbotStatusDockPane(DockPane):
+class DropbotStatusCapacitancePlotDockPane(DockPane):
     """
     A dock pane to view the status of the dropbot.
     """
     #### 'ITaskPane' interface ################################################
 
     id = PKG + ".pane"
-    name = PKG_name + " Dock Pane"
+    name = PKG_name + " Capacitance Dock Pane"
 
     def create_contents(self, parent):
-        from .widget import DropBotStatusPlotWidget
+        from .widget import DropBotStatusCapacitancePlotWidget
 
-        view = DropBotStatusPlotWidget()
+        view = DropBotStatusCapacitancePlotWidget()
 
         # we can use the same controller as the basic dramatiq dropbot status plugin
         view.controller = DramatiqDropbotStatusController

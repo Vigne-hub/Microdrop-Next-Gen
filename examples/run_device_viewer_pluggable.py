@@ -16,7 +16,8 @@ def main(args):
     from electrode_controller.plugin import ElectrodeControllerPlugin
     from microdrop.plugins.frontend_plugins.protocol_grid_controller.protocol_grid_controller_plugin import ProtocolGridControllerPlugin
     from dropbot_tools_menu.plugin import DropbotToolsMenuPlugin
-    from dropbot_status_plot.plugin import DropbotStatusPlotPlugin
+    from dropbot_status_voltage_plot.plugin import DropbotStatusVoltagePlotPlugin
+    from dropbot_status_capacitance_plot.plugin import DropbotStatusCapacitancePlotPlugin
 
     plugins = [
         CorePlugin(),
@@ -29,7 +30,8 @@ def main(args):
         ManualControlsPlugin(),
         # ProtocolGridControllerPlugin(),
         DropbotToolsMenuPlugin(),
-        DropbotStatusPlotPlugin()
+        DropbotStatusVoltagePlotPlugin(),
+        DropbotStatusCapacitancePlotPlugin()
     ]
 
     app = DeviceViewerApplication(plugins=plugins)

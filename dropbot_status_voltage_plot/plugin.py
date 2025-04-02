@@ -12,7 +12,7 @@ from microdrop_utils._logger import get_logger
 logger = get_logger(__name__)
 
 
-class DropbotStatusPlotPlugin(Plugin):
+class DropbotStatusVoltagePlotPlugin(Plugin):
     """ Contributes a dropbot status UI view with plots. """
 
     #### 'IPlugin' interface ##################################################
@@ -32,12 +32,14 @@ class DropbotStatusPlotPlugin(Plugin):
     #### Trait initializers ###################################################
 
     def _contributed_task_extensions_default(self):
-        from .dock_pane import DropbotStatusDockPane
+        from .dock_pane import DropbotStatusVoltagePlotDockPane
         from device_viewer.consts import PKG
 
         return [
             TaskExtension(
                 task_id=f"{PKG}.task",  # specify which task id it has to add on to
-                dock_pane_factories=[DropbotStatusDockPane],
+                dock_pane_factories=[
+                    DropbotStatusVoltagePlotDockPane
+                ],
             )
         ]

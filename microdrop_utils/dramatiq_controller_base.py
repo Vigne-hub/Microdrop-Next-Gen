@@ -1,3 +1,5 @@
+import warnings
+
 import dramatiq
 from dramatiq import Actor
 from traits.api import Instance, Str, provides, HasTraits, Callable
@@ -85,13 +87,15 @@ def generate_class_method_dramatiq_listener_actor(listener_name, class_method) -
     """
     # If the given listener name is not registered,
     if listener_name in dramatiq.get_broker().actors:
-        raise Exception("Dramatiq actor with this name has already been registered.This plugin already has a listener "
+        warnings.warn("Dramatiq actor with this name has already been registered.This plugin already has a listener "
                         "actor. No need to create a new actor.")
 
-    # Dramatiq controller base class made  with listener actor generated as an attribute
-    dramatiq_controller = DramatiqControllerBase(listener_name=listener_name, listener_actor_method=class_method)
+    else:
 
-    return dramatiq_controller.listener_actor
+        # Dramatiq controller base class made  with listener actor generated as an attribute
+        dramatiq_controller = DramatiqControllerBase(listener_name=listener_name, listener_actor_method=class_method)
+
+        return dramatiq_controller.listener_actor
 
 
 def basic_listener_actor_routine(parent_obj: object, message: any, topic: str,

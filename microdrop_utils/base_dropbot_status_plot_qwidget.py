@@ -1,7 +1,7 @@
 import json
 import time
 import pyqtgraph as pg
-from PySide6.QtWidgets import QWidget, QVBoxLayout
+from PySide6.QtWidgets import QVBoxLayout
 from PySide6.QtCore import QTimer, Qt
 from microdrop_utils._logger import get_logger
 from microdrop_utils.base_dropbot_qwidget import BaseControllableDropBotQWidget
@@ -9,23 +9,26 @@ from microdrop_utils.base_dropbot_qwidget import BaseControllableDropBotQWidget
 logger = get_logger(__name__)
 
 
-class DropBotStatusPlotWidget(BaseControllableDropBotQWidget):
+class BaseDropBotStatusPlotWidget(BaseControllableDropBotQWidget):
     """Widget for displaying real-time voltage data."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.init_ui()
+        self.init_ui(*args, **kwargs)
 
-    def init_ui(self):
+    def init_ui(self, *args, **kwargs):
         """Initialize the UI components."""
         # Create main layout
         self.layout = QVBoxLayout()
 
+        self.value_tracked_name = kwargs.get('value_tracked_name')
+        self.value_tracked_unit = kwargs.get('value_tracked_unit')
+
         # Create plot widget
         self.plot_widget = pg.PlotWidget()
         self.plot_widget.setBackground('#2b2b2b')
-        self.plot_widget.setTitle("Real-time Voltage Monitoring", color='w')
-        self.plot_widget.setLabel('left', 'Voltage (V)', color='w')
+        self.plot_widget.setTitle(f"Real-time {self.value_tracked_name} Monitoring", color='w')
+        self.plot_widget.setLabel('left', f"{self.value_tracked_name} {self.value_tracked_unit}", color='w')
         self.plot_widget.setLabel('bottom', 'Time (s)', color='w')
 
         # Enable mouse interaction for zooming and panning
@@ -42,7 +45,7 @@ class DropBotStatusPlotWidget(BaseControllableDropBotQWidget):
         self.plot_widget.getAxis('bottom').setTextPen('w')
 
         # Create voltage curve with thicker line
-        self.voltage_curve = self.plot_widget.plot(pen=pg.mkPen(color='y', width=2))
+        self.tracked_value_curve = self.plot_widget.plot(pen=pg.mkPen(color='y', width=2))
 
         # Add horizontal reference lines at key voltage levels
         self.plot_widget.addLine(y=0, pen=pg.mkPen(color='r', style=Qt.DashLine))
@@ -52,13 +55,12 @@ class DropBotStatusPlotWidget(BaseControllableDropBotQWidget):
 
         # Add legend
         self.plot_widget.addLegend()
-        # self.voltage_curve.setName('Voltage')
 
         self.layout.addWidget(self.plot_widget)
 
         # Data storage
         self.times = []
-        self.voltages = []
+        self.tracked_values = []
         self.start_time = time.time()
 
         # Update timer
@@ -70,45 +72,30 @@ class DropBotStatusPlotWidget(BaseControllableDropBotQWidget):
 
     #### Update UI elements methods ###########
 
-    def update_voltage(self, voltage_str):
+    def update_tracked_value(self, tracked_value_str):
         """Update the voltage reading."""
         try:
             # Extract numeric value from voltage string (e.g., "10.5 V" -> 10.5)
-            voltage = float(voltage_str.split()[0])
-            self.voltages.append(voltage)
+            voltage = float(tracked_value_str.split()[0])
+            self.tracked_values.append(voltage)
 
             # Keep only last 100 seconds of data
-            if len(self.voltages) > 1000:  # 100 seconds at 10Hz
-                self.voltages.pop(0)
+            if len(self.tracked_values) > 1000:  # 100 seconds at 10Hz
+                self.tracked_values.pop(0)
 
         except (ValueError, IndexError) as e:
-            logger.error(f"Error parsing voltage value: {e}")
+            logger.error(f"Error parsing {self.value_tracked_name} value: {e}")
 
     def update_plot(self):
         """Update the plot with current data."""
-        if not self.voltages:
+        if not self.tracked_values:
             return
 
         current_time = time.time() - self.start_time
         self.times.append(current_time)
 
         # Keep time array in sync with voltage array
-        if len(self.times) > len(self.voltages):
+        if len(self.times) > len(self.tracked_values):
             self.times.pop(0)
 
-        self.voltage_curve.setData(self.times, self.voltages)
-
-    ###################################################################################################################
-    # Subscriber methods
-    ###################################################################################################################
-
-    ######################################### Handler methods #############################################
-
-    ################# Capacitance Voltage readings ##################
-    def _on_capacitance_updated_triggered(self, body):
-        data = json.loads(body)
-        capacitance = data.get('capacitance', '0 pF')
-        voltage = data.get('voltage', '0 V')
-
-        # Update voltage plot
-        self.update_voltage(voltage)
+        self.tracked_value_curve.setData(self.times, self.tracked_values)
