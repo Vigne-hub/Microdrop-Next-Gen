@@ -18,6 +18,6 @@ class DropbotStatusDockPane(DockPane):
         from .widget import DropBotStatusWidget
 
         view = DropBotStatusWidget()
-        view.controller = DramatiqDropbotStatusController
+        view.setController(DramatiqDropbotStatusController)
 
         return view
