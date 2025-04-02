@@ -21,13 +21,13 @@ def main(args):
         CorePlugin(),
         TasksPlugin(),
         DeviceViewerPlugin(),
-        # DropbotStatusPlugin(),
-        # ElectrodeControllerPlugin(),
+        DropbotStatusPlugin(),
+        ElectrodeControllerPlugin(),
         MessageRouterPlugin(),
-        # DropbotControllerPlugin(),
-        # ManualControlsPlugin(),
+        DropbotControllerPlugin(),
+        ManualControlsPlugin(),
         # ProtocolGridControllerPlugin(),
-        # DropbotToolsMenuPlugin()
+        DropbotToolsMenuPlugin()
     ]
 
     app = DeviceViewerApplication(plugins=plugins)

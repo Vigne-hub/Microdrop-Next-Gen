@@ -76,7 +76,21 @@ class DramatiqControllerBase(HasTraits):
 
 
 def generate_class_method_dramatiq_listener_actor(listener_name, class_method) -> Actor:
+    """
+    Method to generate a Dramatiq Actor for message handling for a class based on one of its methods.
+
+    Params:
+    listener_name (str): Name identifier for the Dramatiq actor.
+    class_method (Callable): Method that handles message handling that requires to be wrapped up as an Actor
+    """
+    # If the given listener name is not registered,
+    if listener_name in dramatiq.get_broker().actors:
+        raise Exception("Dramatiq actor with this name has already been registered.This plugin already has a listener "
+                        "actor. No need to create a new actor.")
+
+    # Dramatiq controller base class made  with listener actor generated as an attribute
     dramatiq_controller = DramatiqControllerBase(listener_name=listener_name, listener_actor_method=class_method)
+
     return dramatiq_controller.listener_actor
 
 
