@@ -18,27 +18,36 @@ class DramatiqDropbotStatusController(HasTraits):
     Needs to be added as an attribute to a view.
     """
 
-    listener = Instance(dramatiq.Actor)
     view = Instance(DropBotStatusWidget, desc="The DropbotStatusWidget object")
 
+    ##########################################################
+    # 'IDramatiqControllerBase' interface.
+    ##########################################################
+
+    dramatiq_listener_actor = Instance(dramatiq.Actor)
+    listener_name = f"{PKG}_listener"
+
+    def listener_actor_routine(self, message, topic):
+        logger.debug(f"UI_LISTENER: Received message: {message} from topic: {topic}. Triggering UI Signal")
+        self.view.controller_signal.emit(json.dumps({'message': message, 'topic': topic}))
+
     def traits_init(self):
-        """ Initialize everything """
-
-        self.listener = self._listener_default()
-
-    def _listener_default(self):
         """
-        Listen to Topics being triggered to affect UI and emit signal.
-        We are using signals since pyside6 widgets are used. signals and splots mechanism seems to work better
-        than using callbacks that are setup manually.
+        This function needs to be here to let the listener be initialized to the default value automatically.
+        We just do it manually here to make the code clearer.
+        We can also do other initialization routines here if needed.
+
+        This is equivalent to doing:
+
+        def __init__(self, **traits):
+            super().__init__(**traits)
+
         """
 
-        @dramatiq.actor
-        def dropbot_status_listener(message, topic):
-            logger.debug(f"UI_LISTENER: Received message: {message} from topic: {topic}. Triggering UI Signal")
-            self.view.controller_signal.emit(json.dumps({'message': message, 'topic': topic}))
-
-        return dropbot_status_listener
+        logger.info("Starting DeviceViewer listener")
+        self.dramatiq_listener_actor = generate_class_method_dramatiq_listener_actor(
+            listener_name=self.listener_name,
+            class_method=self.listener_actor_routine)
 
     def controller_signal_handler(self, signal):
         """

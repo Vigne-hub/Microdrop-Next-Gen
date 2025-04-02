@@ -19,18 +19,44 @@ from .consts import PKG
 
 from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
 from microdrop_utils._logger import get_logger
-from microdrop_utils.i_dramatiq_controller_base import IDramatiqControllerBase
+from microdrop_utils.dramatiq_controller_base import generate_class_method_dramatiq_listener_actor, \
+    basic_listener_actor_routine
 
 logger = get_logger(__name__)
 DEFAULT_SVG_FILE = f"{os.path.dirname(__file__)}{os.sep}2x3device.svg"
 
 listener_name = f"{PKG}_listener"
 
-@provides(IDramatiqControllerBase)
-class DeviceViewerTask(Task):
 
-    #### 'IDramatuqControllerBase' interface #####
-    listener = Instance(dramatiq.Actor)
+class DeviceViewerTask(Task):
+    ##########################################################
+    # 'IDramatiqControllerBase' interface.
+    ##########################################################
+
+    dramatiq_listener_actor = Instance(dramatiq.Actor)
+
+    listener_name = f"{PKG}_listener"
+
+    def listener_actor_routine(self, message, topic):
+        return basic_listener_actor_routine(self, message, topic)
+
+    def traits_init(self):
+        """
+        This function needs to be here to let the listener be initialized to the default value automatically.
+        We just do it manually here to make the code clearer.
+        We can also do other initialization routines here if needed.
+
+        This is equivalent to doing:
+
+        def __init__(self, **traits):
+            super().__init__(**traits)
+
+        """
+
+        logger.info("Starting DeviceViewer listener")
+        self.dramatiq_listener_actor = generate_class_method_dramatiq_listener_actor(
+            listener_name=listener_name,
+            class_method=self.listener_actor_routine)
 
     #### 'Task' interface #####################################################
 
@@ -125,56 +151,6 @@ class DeviceViewerTask(Task):
             self.electrodes_model = new_model
             logger.info(f"Electrodes model set to {new_model}")
 
-    ##########################################################
-    # 'IDramatiqControllerBase' interface.
-    ##########################################################
-    def traits_init(self):
-        """
-        This function needs to be here to let the listener be initialized to the default value automatically.
-        We just do it manually here to make the code clearer.
-        We can also do other initialization routines here if needed.
-
-        This is equivalent to doing:
-
-        def __init__(self, **traits):
-            super().__init__(**traits)
-
-        """
-        logger.info("Starting DeviceViewer listener")
-        self.listener = self._listener_default()
-
-    def _listener_default(self) -> dramatiq.Actor:
-        """
-        Create a Dramatiq actor for listening to UI-related messages.
-
-        Returns:
-        dramatiq.Actor: The created Dramatiq actor.
-        """
-
-        @dramatiq.actor
-        def device_viewer_listener(message, topic):
-            """
-            A Dramatiq actor that listens to messages.
-
-            Parameters:
-            message (str): The received message.
-            topic (str): The topic of the message.
-
-            """
-            logger.info(f"DEVICE VIEWER LISTENER: Received message: {message} from topic: {topic}")
-
-            topic = topic.split("/")
-            method_name = f"_on_{topic[-1]}_triggered"
-            # Check if the method exists and call it
-            if hasattr(self, method_name) and getattr(self, method_name):
-                # Use getattr to get the method and call it
-                getattr(self, str(method_name))(message)
-
-            else:
-                logger.warning(f"Method for {topic[-1]} not found")
-
-        return device_viewer_listener
-
     ####### handlers for dramatiq listener topics ##########
     def _on_setup_success_triggered(self, message):
         publish_message(topic=ELECTRODES_STATE_CHANGE, message=json.dumps(self.electrodes_model.channels_states_map))
@@ -185,5 +161,3 @@ class DeviceViewerTask(Task):
     def show_help(self):
         """Show the help dialog."""
         logger.info("Showing help dialog.")
-
-

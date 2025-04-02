@@ -7,10 +7,12 @@ import dramatiq
 # unit handling
 from pint import UnitRegistry
 
+from microdrop_utils.dramatiq_controller_base import generate_class_method_dramatiq_listener_actor
+
 ureg = UnitRegistry()
 
 from .consts import (CHIP_INSERTED, CHIP_NOT_INSERTED, CAPACITANCE_UPDATED, HALTED, HALT, START_DEVICE_MONITORING,
-                     RETRY_CONNECTION, OUTPUT_ENABLE_PIN, SHORTS_DETECTED)
+                     RETRY_CONNECTION, OUTPUT_ENABLE_PIN, SHORTS_DETECTED, PKG)
 
 from .interfaces.i_dropbot_controller_base import IDropbotControllerBase
 
@@ -30,9 +32,71 @@ class DropbotControllerBase(HasTraits):
     that captures appropriate signals and calls the methods needed.
     """
     proxy = Instance(DramatiqDropbotSerialProxy)
-    listener = Instance(dramatiq.Actor,
-                        desc="Listener actor listens to messages sent to request dropbot backend services.")
     dropbot_connection_active = Bool(False)
+
+    ##########################################################
+    # 'IDramatiqControllerBase' interface.
+    ##########################################################
+
+    dramatiq_listener_actor = Instance(dramatiq.Actor)
+
+    listener_name = f"{PKG}_listener"
+
+    def listener_actor_routine(self, message, topic):
+        """
+        A Dramatiq actor that listens to messages.
+
+        Parameters:
+        message (str): The received message.
+        topic (str): The topic of the message.
+
+        """
+
+        logger.info(f"DROPBOT BACKEND LISTENER: Received message: '{message}' from topic: '{topic}'")
+
+        # find the topics hierarchy: first element is the head topic. Last element is the specific topic
+        topics_tree = topic.split("/")
+        head_topic = topics_tree[0]
+        primary_sub_topic = topics_tree[1]
+        specific_sub_topic = topics_tree[-1]
+
+        # set requested method to None for now
+        requested_method = None
+
+        # Determine the requested method to call based on the topic, if it is a dropbot request or signal topic
+        # for external dropbot signals connected/disconnected, we handle them everytime. For requests,
+        # we need to check if we have a dropbot available or not. Unless it is a request to start looking for a
+        # device or disconnect the device.
+
+        # 1. Check if it is a dropbot related topic
+        if head_topic == 'dropbot':
+
+            # 2. Handle the connected / disconnected signals
+            if topic in [CONNECTED, DISCONNECTED]:
+                requested_method = f"on_{specific_sub_topic}_signal"
+
+            # 3. Handle specific dropbot requests that would change dropbot connectivity
+            ## 3.1. Request to activate dropbot connection
+            elif topic in [START_DEVICE_MONITORING, RETRY_CONNECTION]:
+                if self.dropbot_connection_active:
+                    logger.warning(
+                        "Redundant request to start device monitoring denied: Dropbot is already connected.")
+                else:
+                    requested_method = f"on_{specific_sub_topic}_request"
+                    logger.info(f"Executing {specific_sub_topic} method as Dropbot is currently disconnected.")
+
+            # 4. Handle all other requests
+            elif primary_sub_topic == 'requests':
+                if self.dropbot_connection_active:
+                    requested_method = f"on_{specific_sub_topic}_request"
+                else:
+                    logger.warning(f"Request for {specific_sub_topic} denied: Dropbot is disconnected.")
+
+        else:
+            logger.info(f"Ignored request from topic '{topic}': Not a Dropbot-related request.")
+
+        if requested_method:
+            self.__invoke_method(requested_method, message)
 
     def traits_init(self):
         """
@@ -46,75 +110,11 @@ class DropbotControllerBase(HasTraits):
             super().__init__(**traits)
 
         """
-        logger.info("Starting DropbotControllerBase")
-        self.listener = self._listener_default()
 
-    def _listener_default(self) -> dramatiq.Actor:
-        """
-        Create a Dramatiq actor for listening to UI-related messages.
-
-        Returns:
-        dramatiq.Actor: The created Dramatiq actor.
-        """
-
-        @dramatiq.actor
-        def dropbot_controller_listener(message, topic):
-            """
-            A Dramatiq actor that listens to messages.
-
-            Parameters:
-            message (str): The received message.
-            topic (str): The topic of the message.
-
-            """
-
-            logger.info(f"DROPBOT BACKEND LISTENER: Received message: '{message}' from topic: '{topic}'")
-
-            # find the topics hierarchy: first element is the head topic. Last element is the specific topic
-            topics_tree = topic.split("/")
-            head_topic = topics_tree[0]
-            primary_sub_topic = topics_tree[1]
-            specific_sub_topic = topics_tree[-1]
-
-            # set requested method to None for now
-            requested_method = None
-
-            # Determine the requested method to call based on the topic, if it is a dropbot request or signal topic
-            # for external dropbot signals connected/disconnected, we handle them everytime. For requests,
-            # we need to check if we have a dropbot available or not. Unless it is a request to start looking for a
-            # device or disconnect the device.
-
-            # 1. Check if it is a dropbot related topic
-            if head_topic == 'dropbot':
-
-                # 2. Handle the connected / disconnected signals
-                if topic in [CONNECTED, DISCONNECTED]:
-                    requested_method = f"on_{specific_sub_topic}_signal"
-
-                # 3. Handle specific dropbot requests that would change dropbot connectivity
-                ## 3.1. Request to activate dropbot connection
-                elif topic in [START_DEVICE_MONITORING, RETRY_CONNECTION]:
-                    if self.dropbot_connection_active:
-                        logger.warning(
-                            "Redundant request to start device monitoring denied: Dropbot is already connected.")
-                    else:
-                        requested_method = f"on_{specific_sub_topic}_request"
-                        logger.info(f"Executing {specific_sub_topic} method as Dropbot is currently disconnected.")
-
-                # 4. Handle all other requests
-                elif primary_sub_topic == 'requests':
-                    if self.dropbot_connection_active:
-                        requested_method = f"on_{specific_sub_topic}_request"
-                    else:
-                        logger.warning(f"Request for {specific_sub_topic} denied: Dropbot is disconnected.")
-
-            else:
-                logger.info(f"Ignored request from topic '{topic}': Not a Dropbot-related request.")
-
-            if requested_method:
-                self.__invoke_method(requested_method, message)
-
-        return dropbot_controller_listener
+        logger.info("Starting DeviceViewer listener")
+        self.dramatiq_listener_actor = generate_class_method_dramatiq_listener_actor(
+            listener_name=self.listener_name,
+            class_method=self.listener_actor_routine)
 
     ######################################################################
     # Proxy signal handlers
@@ -185,7 +185,6 @@ class DropbotControllerBase(HasTraits):
         publish_message(topic=HALT, message="")
 
         logger.error(f'DropBot halted due to {reason}')
-
 
     @staticmethod
     def _output_state_changed_wrapper(signal: dict[str, str]):

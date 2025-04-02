@@ -1,5 +1,5 @@
 from dramatiq import Actor
-from traits.api import Interface, Instance
+from traits.api import Interface, Instance, Str, Callable, Subclass
 
 
 class IDramatiqControllerBase(Interface):
@@ -8,7 +8,10 @@ class IDramatiqControllerBase(Interface):
     Provides methods for controlling some object via dramatiq signalling.
     """
 
-    listener = Instance(Actor, desc="Create Dramatiq actor to listen for messages to control this object.")
+    listener_name: str = Str(desc="Unique identifier for the Dramatiq actor")
+    listener_actor: Actor = Instance(Actor, desc="Dramatiq actor instance for message handling")
+    listener_actor_method = Callable(desc="Method to be wrapped into listener_actor"
+                                           "Should accept message, topic parameters")
 
     def traits_init(self):
         """
@@ -23,9 +26,9 @@ class IDramatiqControllerBase(Interface):
 
     def _listener_default(self) -> Actor:
         """
-        Create a Dramatiq actor for listening to messages relating to controlling this object.
+        Wraps up listener routine as a dramatiq actor and returns it.
 
         Returns:
-            dramatiq.Actor: The created Dramatiq actor.
+        dramatiq.Actor: The created Dramatiq actor.
         """
         pass
