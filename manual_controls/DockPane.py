@@ -1,20 +1,11 @@
 # enthought imports
 from pyface.tasks.api import TraitsDockPane
-from traits.api import Instance
 from traits.api import HasTraits, HTML
 from traitsui.api import UItem, View, HTMLEditor
 
-# Standard library imports.
-import os.path
-
-# Constants.
-HELP_PATH = os.path.join(os.path.dirname(__file__), "help")
-
 # local imports
 from .MVC import ManualControlModel, ManualControlView, ManualControlControl
-
-# This module's package.
-PKG = '.'.join(__name__.split('.')[:-1])
+from .consts import PKG_name, PKG
 
 
 class ManualControlsDockPane(TraitsDockPane):
@@ -24,7 +15,7 @@ class ManualControlsDockPane(TraitsDockPane):
     #### 'ITaskPane' interface ################################################
 
     id = PKG + ".dock_pane"
-    name = "Manual Controls Dock Pane"
+    name = f"{PKG_name} Dock Pane"
 
     #### 'ManualControlsPane' interface ##########################################
 

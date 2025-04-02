@@ -7,6 +7,7 @@ from .consts import PKG, ACTOR_TOPIC_DICT
 
 # microdrop imports
 from message_router.consts import ACTOR_TOPIC_ROUTES
+from device_viewer.consts import PKG as device_viewer_PKG
 from microdrop_utils._logger import get_logger
 # Initialize logger
 logger = get_logger(__name__)
@@ -20,7 +21,7 @@ class DropbotStatusPlugin(Plugin):
     #: The plugin unique identifier.
     id = PKG + ".plugin"
     #: The plugin name (suitable for displaying to the user).
-    name = "Dropbot Status Plugin"
+    name = PKG.title().replace("_", " ")
 
     # This plugin contributes some actors that can be called using certain routing keys.
     actor_topic_routing = List([ACTOR_TOPIC_DICT], contributes_to=ACTOR_TOPIC_ROUTES)
@@ -36,7 +37,7 @@ class DropbotStatusPlugin(Plugin):
 
         return [
             TaskExtension(
-                task_id="device_viewer.task",  # specify which task id it has to add on to
+                task_id=f"{device_viewer_PKG}.task",  # specify which task id it has to add on to
                 dock_pane_factories=[DropbotStatusDockPane],
             )
         ]

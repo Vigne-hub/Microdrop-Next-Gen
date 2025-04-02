@@ -6,8 +6,9 @@ from traits.api import List, observe
 from envisage.api import Plugin, TASK_EXTENSIONS
 from envisage.ui.tasks.api import TaskExtension
 from message_router.consts import ACTOR_TOPIC_ROUTES
+from device_viewer.consts import PKG as device_viewer_PKG
 
-from .consts import ACTOR_TOPIC_DICT, PKG
+from .consts import ACTOR_TOPIC_DICT, PKG, PKG_name
 from .device_viewer_task_method_additions import _on_self_tests_progress_triggered
 
 
@@ -20,7 +21,7 @@ class DropbotToolsMenuPlugin(Plugin):
     id = PKG + ".plugin"
 
     #: The plugin name (suitable for displaying to the user).
-    name = "Dropbot Tools Menu Plugin"
+    name = f"{PKG_name} Plugin"
 
     #### Contributions to extension points made by this plugin ################
 
@@ -34,11 +35,9 @@ class DropbotToolsMenuPlugin(Plugin):
     def _contributed_task_extensions_default(self):
         from .menus import dropbot_tools_menu_factory
 
-
-
         return [
             TaskExtension(
-                task_id="device_viewer.task",
+                task_id=f"{device_viewer_PKG}.task",
                 actions=[
                     SchemaAddition(
                         factory=dropbot_tools_menu_factory,
@@ -53,6 +52,6 @@ class DropbotToolsMenuPlugin(Plugin):
     def on_application_initialized(self, event):
         # add some listener methods to the application task
         for task in self.application.active_window.tasks:
-            if task.id == "device_viewer.task":
+            if task.id == f"{device_viewer_PKG}.task":
                 setattr(task, _on_self_tests_progress_triggered.__name__,
                         partial(_on_self_tests_progress_triggered, task))

@@ -4,8 +4,10 @@ from traits.api import List
 from envisage.api import Plugin, TASK_EXTENSIONS
 from envisage.ui.tasks.api import TaskExtension
 
-# This module's package.
-PKG = '.'.join(__name__.split('.')[:-1])
+from device_viewer.consts import PKG as device_viewer_PKG
+
+from .consts import PKG, PKG_name
+
 
 class ManualControlsPlugin(Plugin):
     """ Contributes UI actions on top of the IPython Kernel Plugin. """
@@ -16,7 +18,7 @@ class ManualControlsPlugin(Plugin):
     id = PKG + ".plugin"
 
     #: The plugin name (suitable for displaying to the user).
-    name = "Manual Controls Plugin"
+    name = f"{PKG_name} Plugin"
 
     #### Contributions to extension points made by this plugin ################
 
@@ -25,13 +27,12 @@ class ManualControlsPlugin(Plugin):
     #### Trait initializers ###################################################
 
     def _contributed_task_extensions_default(self):
-
         from .DockPane import ManualControlsDockPane
         from .menus import menu_factory
 
         return [
             TaskExtension(
-                task_id="device_viewer.task",
+                task_id=f"{device_viewer_PKG}.task",
                 dock_pane_factories=[ManualControlsDockPane],
                 actions=[
                     SchemaAddition(

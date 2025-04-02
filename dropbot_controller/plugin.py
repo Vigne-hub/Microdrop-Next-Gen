@@ -6,11 +6,10 @@ from traits.api import List
 # local package imports
 from .dropbot_controller_base import DropbotControllerBase
 from .interfaces.i_dropbot_control_mixin_service import IDropbotControlMixinService
-from .consts import ACTOR_TOPIC_DICT
+from .consts import ACTOR_TOPIC_DICT, PKG, PKG_name
 from .services.dropbot_monitor_mixin_service import DropbotMonitorMixinService
 from .services.dropbot_states_setting_mixin_service import DropbotStatesSettingMixinService
 from .services.dropbot_self_tests_mixin_service import DropbotSelfTestsMixinService
-from .consts import PKG
 
 # microdrop imports
 from message_router.consts import ACTOR_TOPIC_ROUTES
@@ -21,7 +20,7 @@ logger = get_logger(__name__)
 
 class DropbotControllerPlugin(Plugin):
     id = PKG + '.plugin'
-    name = 'Dropbot Controller Plugin'
+    name = f'{PKG_name} Plugin'
 
     # this plugin contributes some service offers
     service_offers = List(contributes_to=SERVICE_OFFERS)

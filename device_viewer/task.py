@@ -1,6 +1,5 @@
 # system imports.
 import json
-from functools import partial
 import os
 import dramatiq
 
@@ -16,6 +15,7 @@ from .views.device_view_pane import DeviceViewerPane
 from device_viewer.views.electrode_view.electrode_layer import ElectrodeLayer
 from .consts import ELECTRODES_STATE_CHANGE
 from .services.electrode_interaction_service import ElectrodeInteractionControllerService
+from .consts import PKG
 
 from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
 from microdrop_utils._logger import get_logger
@@ -24,6 +24,7 @@ from microdrop_utils.i_dramatiq_controller_base import IDramatiqControllerBase
 logger = get_logger(__name__)
 DEFAULT_SVG_FILE = f"{os.path.dirname(__file__)}{os.sep}2x3device.svg"
 
+listener_name = f"{PKG}_listener"
 
 @provides(IDramatiqControllerBase)
 class DeviceViewerTask(Task):
@@ -33,8 +34,8 @@ class DeviceViewerTask(Task):
 
     #### 'Task' interface #####################################################
 
-    id = "device_viewer.task"
-    name = "Device Viewer"
+    id = f"{PKG}.task"
+    name = PKG.title().replace("_", " ")
 
     menu_bar = SMenuBar(
 

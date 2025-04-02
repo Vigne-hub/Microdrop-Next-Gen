@@ -9,7 +9,7 @@ from envisage.api import Plugin, PREFERENCES, PREFERENCES_PANES, TASKS
 from envisage.ui.tasks.api import TaskFactory
 
 # local imports
-from .consts import ACTOR_TOPIC_DICT
+from .consts import ACTOR_TOPIC_DICT, PKG, PKG_name
 
 class DeviceViewerPlugin(Plugin):
     """Device Viewer plugin based on enthought envisage's The chaotic attractors plugin."""
@@ -17,10 +17,10 @@ class DeviceViewerPlugin(Plugin):
     #### 'IPlugin' interface ##################################################
 
     # The plugin's unique identifier.
-    id = "device_viewer"
+    id = PKG
 
     # The plugin's name (suitable for displaying to the user).
-    name = "Device Viewer"
+    name = PKG_name + " Plugin"
 
     #### Contributions to extension points made by this plugin ################
 
@@ -48,8 +48,8 @@ class DeviceViewerPlugin(Plugin):
 
         return [
             TaskFactory(
-                id="device_viewer.task",
-                name="Device Viewer Widget",
+                id=f"{PKG}.task",
+                name=f"{PKG_name} Widget",
                 factory=DeviceViewerTask,
             )
         ]

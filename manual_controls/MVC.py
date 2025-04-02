@@ -2,11 +2,15 @@ from traits.api import HasTraits, Range
 from traitsui.api import View, Group, Item, Controller
 
 from microdrop_utils._logger import get_logger
+
 logger = get_logger(__name__)
 
 from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
 
 from dropbot_controller.consts import SET_VOLTAGE, SET_FREQUENCY
+
+from .consts import PKG_name
+
 
 class ManualControlModel(HasTraits):
     voltage = Range(0, 1000, desc="the voltage to set on the dropbot device")
@@ -27,7 +31,7 @@ ManualControlView = View(
             resizable=True,
         ),
     ),
-    title='Manual Controls',
+    title=PKG_name,
     resizable=True,
 )
 

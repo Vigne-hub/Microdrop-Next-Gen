@@ -3,7 +3,7 @@ from traits.api import List, Str, Dict, Instance
 import dramatiq
 import uuid
 
-from .consts import ACTOR_TOPIC_ROUTES, PKG
+from .consts import ACTOR_TOPIC_ROUTES, PKG, PKG_name
 from microdrop_utils._logger import get_logger
 from microdrop_utils.dramatiq_pub_sub_helpers import MessageRouterActor
 
@@ -17,7 +17,7 @@ for el in dramatiq.get_broker().middleware:
 
 class MessageRouterPlugin(Plugin):
     id = PKG + '.plugin'
-    name = 'Message Router Plugin'
+    name = f'{PKG_name} Plugin'
     router_actor = Instance(MessageRouterActor)
     listener_queue = "_" + str(uuid.uuid4())  # queue names cannot start with number, has to be letter on underscore.
 

@@ -1,5 +1,6 @@
 # This module's package.
 PKG = '.'.join(__name__.split('.')[:-1])
+PKG_name = PKG.title().replace("_", " ")
 
 # dropbot DB3-120 hardware id
 DROPBOT_DB3_120_HWID = 'VID:PID=16C0:0483'
