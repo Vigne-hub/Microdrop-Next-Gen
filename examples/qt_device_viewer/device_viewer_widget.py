@@ -5,8 +5,8 @@ from PySide6.QtOpenGLWidgets import QOpenGLWidget
 from PySide6.QtWidgets import QWidget, QPushButton, QGraphicsScene, QBoxLayout, QLabel, QGroupBox, QGridLayout, \
     QSpinBox, QFileDialog
 
-from ..models.electrodes import Electrodes
-from ..utils.auto_fit_graphics_view import AutoFitGraphicsView
+from device_viewer.models.electrodes import Electrodes
+from device_viewer.utils.auto_fit_graphics_view import AutoFitGraphicsView
 from device_viewer.views.electrode_view.electrode_layer import ElectrodeLayer
 from microdrop_utils._logger import get_logger
 
