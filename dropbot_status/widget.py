@@ -29,7 +29,7 @@ class DropBotStatusLabel(QLabel):
 
     def __init__(self):
         super().__init__()
-        self.setFixedSize(500, 100)
+        self.setFixedSize(250, 100)
 
         self.status_bar = QHBoxLayout()
 
