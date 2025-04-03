@@ -5,7 +5,7 @@ from traits.api import Instance
 
 from microdrop_utils._logger import get_logger
 from microdrop_utils.dramatiq_controller_base import generate_class_method_dramatiq_listener_actor
-from microdrop_utils.base_dropbot_qwidget import BaseControllableDropBotQWidget
+from microdrop_utils.base_dropbot_qwidget import BaseDramatiqControllableDropBotQWidget
 
 logger = get_logger(__name__)
 
@@ -19,7 +19,7 @@ class DramatiqDropbotStatusController(HasTraits):
     Needs to be added as an attribute to a view.
     """
 
-    view = Instance(BaseControllableDropBotQWidget, desc="The DropbotStatusWidget object")
+    view = Instance(BaseDramatiqControllableDropBotQWidget, desc="The DropbotStatusWidget object")
 
     ##########################################################
     # 'IDramatiqControllerBase' interface.

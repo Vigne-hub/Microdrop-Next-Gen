@@ -4,16 +4,22 @@ import pyqtgraph as pg
 from PySide6.QtWidgets import QVBoxLayout
 from PySide6.QtCore import QTimer, Qt
 from microdrop_utils._logger import get_logger
-from microdrop_utils.base_dropbot_qwidget import BaseControllableDropBotQWidget
+from microdrop_utils.base_dropbot_qwidget import BaseDramatiqControllableDropBotQWidget
 
 logger = get_logger(__name__)
 
 
-class BaseDropBotStatusPlotWidget(BaseControllableDropBotQWidget):
+class BaseDropBotStatusPlotWidget(BaseDramatiqControllableDropBotQWidget):
     """Widget for displaying real-time voltage data."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.value_tracked_name = kwargs.get('value_tracked_name')
+        self.value_tracked_unit = kwargs.get('value_tracked_unit')
+
+        if self.value_tracked_name is None or self.value_tracked_unit is None:
+            raise ValueError("'value_tracked_name' and 'value_tracked_unit' must be set")
+
         self.init_ui(*args, **kwargs)
 
     def init_ui(self, *args, **kwargs):
@@ -21,8 +27,6 @@ class BaseDropBotStatusPlotWidget(BaseControllableDropBotQWidget):
         # Create main layout
         self.layout = QVBoxLayout()
 
-        self.value_tracked_name = kwargs.get('value_tracked_name')
-        self.value_tracked_unit = kwargs.get('value_tracked_unit')
 
         # Create plot widget
         self.plot_widget = pg.PlotWidget()
@@ -99,3 +103,17 @@ class BaseDropBotStatusPlotWidget(BaseControllableDropBotQWidget):
             self.times.pop(0)
 
         self.tracked_value_curve.setData(self.times, self.tracked_values)
+
+    ###################################################################################################################
+    # Subscriber methods
+    ###################################################################################################################
+
+    ######################################### Handler methods #############################################
+
+    ################# Capacitance Voltage readings ##################
+    def _on_capacitance_updated_triggered(self, body):
+        data = json.loads(body)
+        tracked_value = data.get(self.value_tracked_name, f'0 {self.value_tracked_unit}')
+
+        # Update capacitance plot
+        self.update_tracked_value(tracked_value)

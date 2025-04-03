@@ -9,7 +9,7 @@ from PySide6.QtGui import QPixmap
 
 # local imports
 from microdrop_utils._logger import get_logger
-from microdrop_utils.base_dropbot_qwidget import BaseControllableDropBotQWidget
+from microdrop_utils.base_dropbot_qwidget import BaseDramatiqControllableDropBotQWidget
 from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
 
 logger = get_logger(__name__)
@@ -102,7 +102,7 @@ class DropBotStatusLabel(QLabel):
         self.dropbot_voltage_reading.setText(f"Voltage: {voltage}")
 
 
-class DropBotStatusWidget(BaseControllableDropBotQWidget):
+class DropBotStatusWidget(BaseDramatiqControllableDropBotQWidget):
     def __init__(self):
         super().__init__()
 
