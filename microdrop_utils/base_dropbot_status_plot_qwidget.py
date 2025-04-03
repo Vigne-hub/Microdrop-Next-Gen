@@ -63,9 +63,9 @@ class BaseDropBotStatusPlotWidget(BaseDramatiqControllableDropBotQWidget):
         self.layout.addWidget(self.plot_widget)
 
         # Data storage
-        self.times = []
         self.tracked_values = []
         self.start_time = time.time()
+        self.times = []
 
         # Update timer
         self.timer = QTimer()
@@ -83,9 +83,14 @@ class BaseDropBotStatusPlotWidget(BaseDramatiqControllableDropBotQWidget):
             voltage = float(tracked_value_str.split()[0])
             self.tracked_values.append(voltage)
 
+            # update the time of data acquisition as well
+            current_time = time.time() - self.start_time
+            self.times.append(current_time)
+
             # Keep only last 100 seconds of data
             if len(self.tracked_values) > 1000:  # 100 seconds at 10Hz
                 self.tracked_values.pop(0)
+                self.times.pop(0)
 
         except (ValueError, IndexError) as e:
             logger.error(f"Error parsing {self.value_tracked_name} value: {e}")
@@ -94,13 +99,6 @@ class BaseDropBotStatusPlotWidget(BaseDramatiqControllableDropBotQWidget):
         """Update the plot with current data."""
         if not self.tracked_values:
             return
-
-        current_time = time.time() - self.start_time
-        self.times.append(current_time)
-
-        # Keep time array in sync with voltage array
-        if len(self.times) > len(self.tracked_values):
-            self.times.pop(0)
 
         self.tracked_value_curve.setData(self.times, self.tracked_values)
 
