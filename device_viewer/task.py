@@ -9,6 +9,7 @@ from pyface.tasks.api import Task, TaskLayout, Tabbed
 from pyface.api import FileDialog, OK
 from traits.api import Instance, Str, provides
 
+from microdrop_utils.i_dramatiq_controller_base import IDramatiqControllerBase
 # Local imports.
 from .models.electrodes import Electrodes
 from .views.device_view_pane import DeviceViewerPane
@@ -28,6 +29,7 @@ DEFAULT_SVG_FILE = f"{os.path.dirname(__file__)}{os.sep}2x3device.svg"
 listener_name = f"{PKG}_listener"
 
 
+@provides(IDramatiqControllerBase)
 class DeviceViewerTask(Task):
     ##########################################################
     # 'IDramatiqControllerBase' interface.
