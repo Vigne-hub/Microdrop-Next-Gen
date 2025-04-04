@@ -6,6 +6,7 @@ from traits.api import Instance
 from microdrop_utils._logger import get_logger
 from microdrop_utils.dramatiq_controller_base import generate_class_method_dramatiq_listener_actor
 from microdrop_utils.base_dropbot_qwidget import BaseDramatiqControllableDropBotQWidget
+from microdrop_utils.dramatiq_controller_base import invoke_class_method
 
 logger = get_logger(__name__)
 
@@ -64,22 +65,21 @@ class DramatiqDropbotStatusController(HasTraits):
         sub_topic = topic.split('/')[-2]
         method = f"_on_{head_topic}_triggered"
 
-        if hasattr(self.view, method) and callable(getattr(self.view, method)):
-            logger.debug(f"Method for {head_topic}, {method} getting called.")
-            getattr(self.view, method)(message)
+        err_msg = invoke_class_method(self.view, method, message)
+        if err_msg:
 
-        # special topic warnings. Catch them all and print out to screen. Generic method for all warnings in case no
-        # specific implementations for them defined.
-        elif sub_topic == "warnings":
-            logger.info(f"Warning triggered. No special method for warning {head_topic}. Generic message produced")
+            # special topic warnings. Catch them all and print out to screen. Generic method for all warnings in case no
+            # specific implementations for them defined.
+            if sub_topic == "warnings":
+                logger.info(f"Warning triggered. No special method for warning {head_topic}. Generic message produced")
 
-            title = head_topic.replace('_', ' ').title()
+                title = head_topic.replace('_', ' ').title()
 
-            self.view._on_show_warning_triggered(json.dumps(
+                self.view._on_show_warning_triggered(json.dumps(
 
-                {'title': title,
-                 'message': message}
-            ))
+                    {'title': title,
+                     'message': message}
+                ))
 
-        else:
-            logger.warning(f"Method for {head_topic}, {method} not found.")
+            else:
+                logger.warning(f"Method for {head_topic}, {method} not executed: Error: {err_msg}")
