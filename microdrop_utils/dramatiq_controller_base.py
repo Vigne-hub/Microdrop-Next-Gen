@@ -155,7 +155,6 @@ def invoke_class_method(parent_obj, requested_method: str, *args, **kwargs):
             # Invoke the requested method with the provided arguments and log any errors calling it
             try:
                 class_method(*args, **kwargs)
-                logger.log(error_msg)
                 return error_msg
 
             except Exception as e:
