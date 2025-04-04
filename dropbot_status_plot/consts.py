@@ -10,7 +10,7 @@ CAPACITANCE_LISTENER = f"{PKG}_capacitance_listener"
 
 # Topics actor declared by plugin subscribes to
 ACTOR_TOPIC_DICT = {
-    VOLTAGE_LISTENER: ["dropbot/signals/#"],
-    CAPACITANCE_LISTENER: ["dropbot/signals/#"]
+    VOLTAGE_LISTENER: ["dropbot/signals/capacitance_updated"],
+    CAPACITANCE_LISTENER: ["dropbot/signals/capacitance_updated"],
 
 }
