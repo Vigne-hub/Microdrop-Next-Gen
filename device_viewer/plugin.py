@@ -11,6 +11,7 @@ from envisage.ui.tasks.api import TaskFactory
 # local imports
 from .consts import ACTOR_TOPIC_DICT, PKG, PKG_name
 
+
 class DeviceViewerPlugin(Plugin):
     """Device Viewer plugin based on enthought envisage's The chaotic attractors plugin."""
 
