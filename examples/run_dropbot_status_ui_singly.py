@@ -10,6 +10,7 @@ def main(args):
     """Run the application."""
 
     from dropbot_status.plugin import DropbotStatusPlugin
+    from dropbot_status_plot.plugin import DropbotStatusPlotPlugin
     from message_router.plugin import MessageRouterPlugin
     from BlankMicrodropCanvas.plugin import BlankMicrodropCanvasPlugin
 
@@ -19,6 +20,7 @@ def main(args):
         CorePlugin(),
         TasksPlugin(),
         BlankMicrodropCanvasPlugin(),
+        DropbotStatusPlotPlugin(task_id_to_contribute_view="microdrop_canvas.task"),
         DropbotStatusPlugin(task_id_to_contribute_view="microdrop_canvas.task"),
         MessageRouterPlugin(),
     ]

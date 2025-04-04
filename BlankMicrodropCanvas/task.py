@@ -8,6 +8,11 @@ class MicrodropCanvasTask(Task):
     name = "Microdrop Canvas"
 
     menu_bar = SMenuBar(
+
+        SMenu(id="Edit", name="&Edit"),
+
+        SMenu(id="Tools", name="&Tools"),
+
         SMenu(TaskToggleGroup(), id="View", name="&View")
     )
 

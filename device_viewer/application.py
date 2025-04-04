@@ -28,6 +28,8 @@ class DeviceViewerApplication(TasksApplication):
     # The application's user-visible name.
     name = "Microdrop Next Gen"
 
+    #### 'TasksApplication' interface #########################################
+
     #: The directory on the local file system used to persist window layout
     #: information.
     state_location = Path.home() / ".microdrop_next_gen"
@@ -35,8 +37,6 @@ class DeviceViewerApplication(TasksApplication):
     #: The filename that the application uses to persist window layout
     #: information.
     state_filename = DEFAULT_STATE_FILENAME
-
-    #### 'TasksApplication' interface #########################################
 
     # The default window-level layout for the application.
     default_layout = List(TaskWindowLayout)
@@ -54,6 +54,7 @@ class DeviceViewerApplication(TasksApplication):
         image=ImageResource(f'{os.path.dirname(__file__)}{os.sep}scibots.jpg'),
         text="Microdrop-Next-Gen v.alpha"
     )
+
     #### 'Application' interface ####################################
 
     preferences_helper = Instance(DeviceViewerPreferences)

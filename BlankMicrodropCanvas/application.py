@@ -1,8 +1,15 @@
+import os
 from pathlib import Path
+
+from pyface.image_resource import ImageResource
+from traits.api import observe
 
 from envisage.ui.tasks.tasks_application import TasksApplication, DEFAULT_STATE_FILENAME
 from pyface.action.schema.schema import SMenuBar, SMenu
 from pyface.tasks.action.task_toggle_group import TaskToggleGroup
+
+from dropbot_controller.consts import START_DEVICE_MONITORING
+from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
 
 
 class MicrodropCanvasTaskApplication(TasksApplication):
@@ -16,16 +23,9 @@ class MicrodropCanvasTaskApplication(TasksApplication):
     # The application's user-visible name.
     name = "Microdrop Canvas"
 
-    always_use_default_layout = False
+    # branding
+    icon = ImageResource(f'{os.path.dirname(__file__)}{os.sep}microdrop.ico')
 
-    #: The directory on the local file system used to persist window layout
-    #: information.
-    state_location = Path.home() / ".microdrop_next_gen_blank_canvas"
-
-    #: The filename that the application uses to persist window layout
-    #: information.
-    state_filename = DEFAULT_STATE_FILENAME
-
-    menu_bar = SMenuBar(
-        SMenu(TaskToggleGroup(), id="View", name="&View")
-    )
+    @observe('started')
+    def _on_application_started(self, event):
+        publish_message(message="", topic=START_DEVICE_MONITORING)
