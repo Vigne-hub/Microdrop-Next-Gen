@@ -130,15 +130,45 @@ def basic_listener_actor_routine(parent_obj: object, message: any, topic: str,
     topic_key = topic_parts[-1]
 
     # Compute the handler method name using the provided pattern.
-    method_name = handler_name_pattern.format(topic=topic_key)
+    requested_method = handler_name_pattern.format(topic=topic_key)
 
-    # Check if the parent object has an attribute with the computed method name.
-    if hasattr(parent_obj, method_name):
-        handler = getattr(parent_obj, method_name)
+    # invoke the method, and check if any error_message shows up
+    err_msg = invoke_class_method(parent_obj, requested_method, message)
+
+    if err_msg:
+        logger.error(f"{parent_obj.name}: Received message: {message} from topic: {topic} Failed to execute due to "
+                     f"error: {err_msg}")
+
+
+def invoke_class_method(parent_obj, requested_method: str, *args, **kwargs):
+    """
+    Method to invoke a requested method that could be defined within a parent object class with some arguments
+    """
+    error_msg = ""
+
+    # check if parent obj has the requested method
+    if hasattr(parent_obj, requested_method):
+        class_method = getattr(parent_obj, requested_method)
+
         # Ensure that the attribute is callable before invoking it.
-        if callable(handler):
-            handler(message)
+        if callable(class_method):
+            # Invoke the requested method with the provided arguments and log any errors calling it
+            try:
+                class_method(*args, **kwargs)
+                logger.log(error_msg)
+                return error_msg
+
+            except Exception as e:
+                error_msg = f"Error executing '{requested_method}': \nArguments: {args, kwargs}\n Exception: {e}"
+                logger.error(error_msg)
+                return error_msg
+        # log a warning if the requested method is an attribute but not a callable
         else:
-            logger.warning(f"{parent_obj.name}: Attribute '{method_name}' exists but is not callable.")
+            error_msg = f"{parent_obj}: Attribute '{requested_method}' exists but is not callable."
+            logger.warning(error_msg)
+            return error_msg
+
     else:
-        logger.warning(f"{parent_obj.name}: Method for topic '{topic_key}' not found.")
+        error_msg = f"Method '{requested_method}' not found for {parent_obj}."
+        logger.warning(error_msg)
+        return error_msg

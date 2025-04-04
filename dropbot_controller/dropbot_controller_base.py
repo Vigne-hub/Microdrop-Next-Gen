@@ -7,7 +7,7 @@ import dramatiq
 # unit handling
 from pint import UnitRegistry
 
-from microdrop_utils.dramatiq_controller_base import generate_class_method_dramatiq_listener_actor
+from microdrop_utils.dramatiq_controller_base import generate_class_method_dramatiq_listener_actor, invoke_class_method
 
 ureg = UnitRegistry()
 
@@ -96,7 +96,12 @@ class DropbotControllerBase(HasTraits):
             logger.info(f"Ignored request from topic '{topic}': Not a Dropbot-related request.")
 
         if requested_method:
-            self.__invoke_method(requested_method, message)
+            err_msg = invoke_class_method(self, requested_method, message)
+
+            if err_msg:
+                logger.error(
+                    f" {self.listener_name}; Received message: {message} from topic: {topic} Failed to execute due to "
+                    f"error: {err_msg}")
 
     def traits_init(self):
         """
@@ -196,19 +201,3 @@ class DropbotControllerBase(HasTraits):
             publish_message(topic=CHIP_NOT_INSERTED, message='Chip not inserted')
         else:
             logger.warn(f"Unknown signal received: {signal}")
-
-    #####################################
-    # Protected methods
-    #####################################
-    def __invoke_method(self, requested_method: str, arguments: str) -> None:
-        """
-        Method to invoke a requested method that could be defined within this class with arguments specified by message
-        """
-        if hasattr(self, requested_method) and callable(getattr(self, requested_method)):
-            try:
-                # Invoke the requested method with the provided message
-                getattr(self, requested_method)(arguments)
-            except Exception as e:
-                logger.error(f"Error executing '{requested_method}': \nMessage: {arguments}\n Exception: {e}")
-        else:
-            logger.warning(f"Method '{requested_method}' not found.")
