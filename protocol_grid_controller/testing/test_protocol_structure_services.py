@@ -1,18 +1,11 @@
-import io
-from contextlib import redirect_stdout
 from unittest.mock import patch
 
 import pytest
-import json
 import os
 from collections import OrderedDict
 
-import h5py
-from traits.api import HasTraits, Dict, Callable, Any, Str, List, provides
-
-from ..interfaces.i_protocol_grid_controller_service import IPGSService
 from microdrop_utils._logger import get_logger
-from ..services.protocol_grid_structure_services import ProtocolGridStructureService
+from protocol_grid_controller.services.protocol_grid_structure_services import ProtocolGridStructureService
 
 logger = get_logger(__name__)
 

@@ -13,7 +13,7 @@ from dramatiq.brokers.stub import StubBroker
 from dramatiq.rate_limits import backends as rl_backends
 from dramatiq.results import backends as res_backends
 
-from .common import RABBITMQ_CREDENTIALS
+from protocol_grid_controller.testing.common import RABBITMQ_CREDENTIALS
 
 logfmt = "[%(asctime)s] [%(threadName)s] [%(name)s] [%(levelname)s] %(message)s"
 logging.basicConfig(level=logging.INFO, format=logfmt)

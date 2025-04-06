@@ -5,10 +5,10 @@ from collections import OrderedDict
 
 import dramatiq
 import h5py
-from traits.api import Dict, Callable, Any, HasTraits, provides
+from traits.api import Dict, HasTraits, provides
 from traits.trait_types import Str, List
 
-from ..interfaces.i_protocol_grid_controller_service import IPGSService
+from protocol_grid_controller.interfaces.i_protocol_grid_controller_service import IPGSService
 from microdrop_utils._logger import get_logger
 
 logger = get_logger(__name__)

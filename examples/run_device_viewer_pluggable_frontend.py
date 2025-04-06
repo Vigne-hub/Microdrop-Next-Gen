@@ -1,6 +1,4 @@
 # Plugin imports.
-import dramatiq
-from dramatiq import Worker
 from envisage.api import CorePlugin
 from envisage.ui.tasks.api import TasksPlugin
 
@@ -13,7 +11,7 @@ def main(args):
     from dropbot_status.plugin import DropbotStatusPlugin
     from message_router.plugin import MessageRouterPlugin
     from manual_controls.plugin import ManualControlsPlugin
-    from microdrop.plugins.frontend_plugins.protocol_grid_controller.protocol_grid_controller_plugin import ProtocolGridControllerPlugin
+    from protocol_grid_controller.protocol_grid_controller.protocol_grid_controller_plugin import ProtocolGridControllerPlugin
     from dropbot_tools_menu.plugin import DropbotToolsMenuPlugin
 
     plugins = [
