@@ -71,20 +71,3 @@ def test_extract_commands(protocol_service, example_protocol):
         {'Description': 'Monkas5', 'Duration': 10, 'Voltage': 55, 'Frequency': 50000}
     ]
     assert commands == expected_commands
-
-
-def test_execute_protocol(protocol_service, example_protocol):
-    global call_count
-    call_count = 0
-    filename = "test_protocol.h5"
-    ProtocolGridStructureService.save_protocol_to_hdf5(example_protocol, filename)
-    protocol = ProtocolGridStructureService.load_protocol_from_hdf5(filename)
-    order = ProtocolGridStructureService.create_execution_order(protocol)
-
-    with patch.object(protocol_service, 'execute_step', wraps=protocol_service.execute_step) as mock_execute_step:
-        protocol_service.execute_protocol(protocol, order)
-        assert mock_execute_step.call_count == len(order)
-
-    # Clean up
-    if os.path.exists(filename):
-        os.remove(filename)

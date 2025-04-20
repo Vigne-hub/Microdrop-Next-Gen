@@ -11,7 +11,7 @@ def main(args):
     from dropbot_status.plugin import DropbotStatusPlugin
     from message_router.plugin import MessageRouterPlugin
     from manual_controls.plugin import ManualControlsPlugin
-    from protocol_grid_controller.protocol_grid_controller.protocol_grid_controller_plugin import ProtocolGridControllerPlugin
+    from protocol_grid_controller_ui.protocol_grid_controller_plugin import ProtocolGridControllerPlugin
     from dropbot_tools_menu.plugin import DropbotToolsMenuPlugin
 
     plugins = [

@@ -2,14 +2,11 @@ from collections import OrderedDict
 
 import dramatiq
 # import h5py
-from PySide6.QtWidgets import (QApplication, QTreeView, QVBoxLayout, QWidget,
-                               QPushButton, QHBoxLayout, QLineEdit, QStyledItemDelegate, QSpinBox, QDoubleSpinBox,
+from PySide6.QtWidgets import (QTreeView, QVBoxLayout, QWidget,
+                               QPushButton, QHBoxLayout, QStyledItemDelegate, QSpinBox, QDoubleSpinBox,
                                QStyle, QSizePolicy)
-from PySide6.QtCore import Qt, QEvent, Signal
-from PySide6.QtGui import QIntValidator, QDoubleValidator, QStandardItemModel, QStandardItem
-from envisage.ids import TASK_EXTENSIONS
-from envisage.plugin import Plugin
-from traits.trait_types import List
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QStandardItemModel, QStandardItem
 from microdrop_utils._logger import get_logger
 from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
 
@@ -64,9 +61,6 @@ class PGCItem(QStandardItem):
 class PGCWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.pgc_ui_listener = self.create_PGC_UI_listener_actor()
-        # self.register_into_messagerouter()
-        # create View
         self.tree = QTreeView()
         self.tree.setSelectionMode(QTreeView.SelectionMode.SingleSelection)
 
@@ -323,29 +317,3 @@ class PGCWidget(QWidget):
             process_item(root_item.child(i), protocol)
 
         publish_message(message=protocol, topic="pgc_ui/protocol_data/cell_changed")
-
-    def create_PGC_UI_listener_actor(self):
-        """
-        Create a Dramatiq actor for listening for protocol data messages.
-
-        Returns:
-        dramatiq.Actor: The created Dramatiq actor.
-        """
-
-        @dramatiq.actor
-        def PGC_UI_listener(message, topic):
-            """
-            A Dramatiq actor that listens to protocol data messages.
-
-            Parameters:
-            message (str): The received message.
-            topic (str): The topic of the message.
-            """
-            logger.info(f"PGC UI LISTENER: Received message: {message} from topic: {topic}")
-
-            topic = topic.split("/")
-
-            if topic[-1] == "protocol_data":
-                pass
-
-        return PGC_UI_listener

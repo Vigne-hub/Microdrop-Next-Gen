@@ -43,12 +43,3 @@ class IPGSService(Interface):
     def on_electrode_clicked(self, args, kwargs):
         """When device viewer is clicked it should fire message signal to GUI and
         this will be activated to modify stored data structure to key track of triggered/untriggered electrode"""
-
-    def publish_electrodes_active_to_device_view(self, kwargs):
-        """Publish which electrodes should be active based on rows highlighted to the device view"""
-
-    def create_device_view_update_publisher(self):
-        """Creates publisher for device view updates"""
-
-    def create_protocol_view_update_publisher(self):
-        """Creates publisher for protocol view updates"""

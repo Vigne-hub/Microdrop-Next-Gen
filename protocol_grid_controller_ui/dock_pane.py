@@ -2,10 +2,9 @@
 from pyface.tasks.dock_pane import DockPane
 
 # local imports
-from protocol_grid_controller.protocol_grid_controller.protocol_grid_controller_widget import PGCWidget
+from .widget import PGCWidget
 
-# This module's package.
-PKG = '.'.join(__name__.split('.')[:-1])
+from .consts import PKG, PKG_name
 
 
 class PGCDockPane(DockPane):
@@ -14,10 +13,8 @@ class PGCDockPane(DockPane):
     """
     #### 'ITaskPane' interface ################################################
 
-    id = PKG + ".pgc_widget"
-    name = "Protocol Grid Controller"
-
-    #### 'ManualControlsPane' interface ##########################################
+    id = PKG + ".widget"
+    name = PKG_name
 
     def create_contents(self, parent):
         return PGCWidget()

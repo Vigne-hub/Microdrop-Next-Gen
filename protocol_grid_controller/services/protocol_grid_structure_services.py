@@ -18,22 +18,12 @@ logger = get_logger(__name__)
 class ProtocolGridStructureService(HasTraits):
     id = "app.protocol_grid_structure_services"
     name = "Protocol Grid Structure Services"
-    steps = List()
-    electrodes_on = Dict(key_trait=Str(), value_trait=List(Str))
-    file_save_dir = Str()
-    file_name = Str()
+    steps = List(default_value=[])
+    electrodes_on = Dict(key_trait=Str(), value_trait=List(Str), default_value={})
+    file_save_dir = Str(default_value=f"{os.getcwd()}{os.sep}Protocol_Saves")
+    file_name = Str(default_value="")
     selected_step = 0
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.steps = []
-        self.protocol_data = []
-        self.electrodes_on = {}
-        self.file_save_dir = f"{os.getcwd()}{os.sep}Protocol_Saves"
-        self.file_name = ""
-
-        self.pgc_backend_listener = self.create_pgc_backend_listener_actor()
-        self.actor_topics_dict = {"pgc_backend_listener": ["device_view/signal/#", "pgc_frontend/#"]}
+    protocol_data = List(default_value=[])
 
     def add_step(self, step: str, electrodes_on: list[str]):
         self.steps.append(step)
@@ -147,40 +137,6 @@ class ProtocolGridStructureService(HasTraits):
         for key, value in temp_protocol_data.items():
             self.protocol_data[key] = value
 
-    def on_electrode_clicked(self, message):
-        """
-        Callback function on message received to update the electrodes_on snapshot of the
-        current protocol grid controller. This is only for electrodes storing not for view data.
-
-        should give data in form b'[int, int, int]'
-        """
-        electrode_clicked = json.loads(message)
-        steps_highlighted = kwargs["steps"]  # list
-        electrodes_on = kwargs["electrodes"]  # list
-
-        for step in steps_highlighted:
-            self.electrodes_on[step] = electrodes_on
-
-        # decide with vignesh whether on click when highlighting multiple rows if it should add
-        # the electrode on state to each row or to the last row
-
-    def on_step_changed_request(self, message):
-        pass
-
-    def create_pgc_backend_listener_actor(self):
-
-        @dramatiq.actor
-        def pgc_backend_listener(message, topic):
-            logger.info(f"UI_LISTENER: Received message: {message} from topic: {topic}")
-            topic_elements = topic.split("/")
-            if topic_elements[-1] == "electrode_clicked":
-                # if electrode clicked
-                self.on_electrode_clicked(message)
-            elif topic_elements[-1] == "cell_changed":
-                self.on_cell_changed(message)
-
-        return pgc_backend_listener
-
 
 if __name__ == '__main__':
     example_protocol = OrderedDict([
@@ -222,4 +178,3 @@ if __name__ == '__main__':
     print(f"protocol: {protocol}")
     order = ProtocolGridStructureService.generate_steps_list(protocol)
     print(f"Step List: {order}")
-    ProtocolGridStructureService().execute_protocol(protocol)

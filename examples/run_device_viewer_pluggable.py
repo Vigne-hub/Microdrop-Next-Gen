@@ -14,9 +14,9 @@ def main(args):
     from dropbot_controller.plugin import DropbotControllerPlugin
     from manual_controls.plugin import ManualControlsPlugin
     from electrode_controller.plugin import ElectrodeControllerPlugin
-    from protocol_grid_controller.protocol_grid_controller.protocol_grid_controller_plugin import ProtocolGridControllerPlugin
     from dropbot_tools_menu.plugin import DropbotToolsMenuPlugin
     from dropbot_status_plot.plugin import DropbotStatusPlotPlugin
+    from protocol_grid_controller_ui.plugin import ProtocolGridControllerUIPlugin
 
     plugins = [
         CorePlugin(),
@@ -27,7 +27,7 @@ def main(args):
         MessageRouterPlugin(),
         DropbotControllerPlugin(),
         ManualControlsPlugin(),
-        ProtocolGridControllerPlugin(),
+        ProtocolGridControllerUIPlugin(),
         DropbotToolsMenuPlugin(),
         DropbotStatusPlotPlugin()
     ]
