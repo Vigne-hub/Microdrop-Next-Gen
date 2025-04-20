@@ -86,20 +86,13 @@ class Group(BaseModel):
         return G
 
 
-def serialize_group(group: Group) -> str:
-    return group.json()
-
-
-def deserialize_group(json_data: str) -> Group:
-    return Group.parse_raw(json_data)
-
-
 if __name__ == "__main__":
     # Create initial group structure
     step1 = Step(name="Step1", parameters={"param1": "value1"})
     group = Group(id="root", name="Group1")
     group.add_step(step1)
 
+    # add a bunch of steps and sub groups
     sub_group = Group(name="SubGroup1")
     group.add_sub_group(sub_group)
 
@@ -121,4 +114,32 @@ if __name__ == "__main__":
     step3 = Step(name="NewStep3", parameters={"Newparam3": "Newvalue3"})
     group.find_group(group_id="root.group.group").add_step(step3)
 
-    group.visualize()
+    # view the protocol tree view
+    group.visualize(file_name="tree_data.png")
+
+    # check model JSON read / write methods
+    json_model = group.model_dump_json(indent=4)
+
+    # try writing to a json file
+    with open('tree_data_save.json', 'w') as outfile:
+        outfile.write(json_model)
+
+    # try loading from a JSON file
+    with open('tree_data_save.json', 'r') as outfile:
+        json_model_loaded = json.load(outfile)
+
+    test_group = Group.model_validate(json_model_loaded)
+
+    # check if loaded model is the same as the json model printed to the file
+    print(test_group.model_dump_json(indent=4) == json_model)
+
+    # try loading model using json string
+
+    json_string_loaded = json.dumps(json_model_loaded)
+    test_group = Group.model_validate_json(json_string_loaded)
+
+    print(test_group.model_dump_json(indent=4) == json_model)
+
+
+
+
