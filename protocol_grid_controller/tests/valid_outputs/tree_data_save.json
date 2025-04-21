@@ -1,0 +1,88 @@
+{
+    "group_id": "root",
+    "group_name": "Root Group",
+    "steps": [
+        {
+            "id": "root.step1",
+            "name": "Step1",
+            "parameters": {
+                "param1": "value1"
+            }
+        },
+        {
+            "id": "root.step2",
+            "name": "newStep1",
+            "parameters": {
+                "newparam2": "value2",
+                "newparam3": "value3"
+            }
+        }
+    ],
+    "sub_groups": [
+        {
+            "group_id": "root.group1",
+            "group_name": "Level 1",
+            "steps": [
+                {
+                    "id": "root.group1.step1",
+                    "name": "Step2",
+                    "parameters": {
+                        "param2": "value2"
+                    }
+                },
+                {
+                    "id": "root.group1.step2",
+                    "name": "NewStep2",
+                    "parameters": {
+                        "Newparam2": "Newvalue2"
+                    }
+                }
+            ],
+            "sub_groups": [
+                {
+                    "group_id": "root.group1.group1",
+                    "group_name": "Level 2",
+                    "steps": [
+                        {
+                            "id": "root.group1.group1.step1",
+                            "name": "Step3",
+                            "parameters": {
+                                "param3": "value3"
+                            }
+                        },
+                        {
+                            "id": "root.group1.group1.step2",
+                            "name": "NewStep3",
+                            "parameters": {
+                                "Newparam3": "Newvalue3"
+                            }
+                        }
+                    ],
+                    "sub_groups": []
+                },
+                {
+                    "group_id": "root.group1.group2",
+                    "group_name": "Level 2, group 2",
+                    "steps": [
+                        {
+                            "id": "root.group1.group2.step1",
+                            "name": "Step1_copy",
+                            "parameters": {
+                                "param1": "value1"
+                            }
+                        },
+                        {
+                            "id": "root.group1.group2.step2",
+                            "name": "newStep1_copy",
+                            "parameters": {
+                                "newparam2": "value2",
+                                "newparam3": "value3"
+                            }
+                        }
+                    ],
+                    "sub_groups": []
+                }
+            ]
+        }
+    ]
+}

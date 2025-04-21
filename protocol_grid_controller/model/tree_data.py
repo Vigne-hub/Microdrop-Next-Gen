@@ -1,37 +1,62 @@
 from pydantic import BaseModel, Field, validator
 from typing import List, Optional, Dict, Any
-import pygraphviz as pgv
 import json
 
 
 # Define the Step model
-class Step(BaseModel):
+class ProtocolStep(BaseModel):
     id: str = ""
     name: str
     parameters: Dict[str, Any]
 
 
 # Define the Group model
-class Group(BaseModel):
-    id: str = ""
-    name: str
-    steps: Optional[List[Step]] = Field(default_factory=list)
-    sub_groups: Optional[List['Group']] = Field(default_factory=list)
+class ProtocolGroup(BaseModel):
+    group_id: str = ""
+    group_name: str
+
+    steps: Optional[List[ProtocolStep]] = Field(default_factory=list)
+    sub_groups: Optional[List['ProtocolGroup']] = Field(default_factory=list)
 
     def __init__(self, **data):
         super().__init__(**data)
 
-    @staticmethod
-    def generate_step_id(parent_id: str, index: int) -> str:
-        return f"{parent_id}.{index}"
+    @property
+    def id(self):
+        return self.group_id
 
-    def add_step(self, step: Step):
-        step.id = f"{self.id}.{len(self.steps) + 1}"
-        self.steps.append(step)
+    @id.setter
+    def id(self, value):
+        self.group_id = value
 
-    def add_sub_group(self, group: 'Group'):
-        group.id = f"{self.id}.group"
-        self.sub_groups.append(group)
+        # this group has been added to a super group. update its subgroups, and steps to reflect the new structure
+        for sub_group in self.sub_groups:
+            sub_group.id = f"{value}.{sub_group.id}"
+
+        for steps in self.steps:
+            steps.id = f"{value}.{steps.id}"
+
+    def add_step(self, new_step: ProtocolStep):
+        new_step_id = f"step{len(self.steps) + 1}"
+
+        # add the self id to the subgroup id if it exists.
+        if self.id:
+            new_step.id = f"{self.id}.{new_step_id}"
+        else:
+            new_step.id = new_step_id
+
+        self.steps.append(new_step)
+
+    def add_sub_group(self, new_subgroup: 'ProtocolGroup'):
+        sub_group_id = f"group{len(self.sub_groups) + 1}"
+
+        # add the self id to the subgroup id if it exists.
+        if self.id:
+            new_subgroup.id = f"{self.id}.{sub_group_id}"
+        else:
+            new_subgroup.id = sub_group_id
+
+        self.sub_groups.append(new_subgroup)
 
     def update_step_parameters(self, step_id: str, new_parameters: Dict[str, Any]):
         for step in self.steps:
@@ -42,104 +67,21 @@ class Group(BaseModel):
         for sub_group in self.sub_groups:
             sub_group.update_step_parameters(step_id, new_parameters)
 
-    def find_step(self, step_id: str) -> Optional[Step]:
+    def get_step(self, step_id: str) -> Optional[ProtocolStep]:
         for step in self.steps:
             if step.id == step_id:
                 return step
         for sub_group in self.sub_groups:
-            found_step = sub_group.find_step(step_id)
+            found_step = sub_group.get_step(step_id)
             if found_step:
                 return found_step
         return None
 
-    def find_group(self, group_id: str) -> Optional['Group']:
+    def get_group(self, group_id: str) -> Optional['ProtocolGroup']:
         if self.id == group_id:
             return self
         for sub_group in self.sub_groups:
-            found_group = sub_group.find_group(group_id)
+            found_group = sub_group.get_group(group_id)
             if found_group:
                 return found_group
         return None
-
-    def visualize(self, file_name="tree_data.png") -> pgv.AGraph:
-        G = pgv.AGraph(directed=True)
-        G.add_node(self.id)
-
-        def add_nodes_edges(graph, parent):
-
-            # first create nodes for the root layer:
-            for step in parent.steps:
-                step_label = f"{step.name}\nParameters: {json.dumps(step.parameters, indent=2)}"
-                graph.add_node(step.id, label=step_label)
-                graph.add_edge(parent.id, step.id)
-
-            # next repeat the same for each subgroup and recursively within them
-            for idx, sub_group in enumerate(parent.sub_groups):
-                group_label = sub_group.name
-                graph.add_node(sub_group.id, label=group_label)
-                graph.add_edge(parent.id, sub_group.id)
-                add_nodes_edges(graph, sub_group)
-
-        add_nodes_edges(G, self)
-        G.layout()
-        G.draw(file_name, prog="dot")
-        return G
-
-
-if __name__ == "__main__":
-    # Create initial group structure
-    step1 = Step(name="Step1", parameters={"param1": "value1"})
-    group = Group(id="root", name="Group1")
-    group.add_step(step1)
-
-    # add a bunch of steps and sub groups
-    sub_group = Group(name="SubGroup1")
-    group.add_sub_group(sub_group)
-
-    step2 = Step(name="Step2", parameters={"param2": "value2"})
-    sub_group.add_step(step2)
-
-    sub_sub_group = Group(name="SubSubGroup1")
-    sub_group.add_sub_group(sub_sub_group)
-
-    step3 = Step(name="Step3", parameters={"param3": "value3"})
-    sub_sub_group.add_step(step3)
-
-    step1 = Step(name="newStep1", parameters={"newparam2": "value2", "newparam3": "value3"})
-    group.add_step(step1)
-
-    step2 = Step(name="NewStep2", parameters={"Newparam2": "Newvalue2"})
-    sub_group.add_step(step2)
-
-    step3 = Step(name="NewStep3", parameters={"Newparam3": "Newvalue3"})
-    group.find_group(group_id="root.group.group").add_step(step3)
-
-    # view the protocol tree view
-    group.visualize(file_name="tree_data.png")
-
-    # check model JSON read / write methods
-    json_model = group.model_dump_json(indent=4)
-
-    # try writing to a json file
-    with open('tree_data_save.json', 'w') as outfile:
-        outfile.write(json_model)
-
-    # try loading from a JSON file
-    with open('tree_data_save.json', 'r') as outfile:
-        json_model_loaded = json.load(outfile)
-
-    test_group = Group.model_validate(json_model_loaded)
-
-    # check if loaded model is the same as the json model printed to the file
-    print(test_group.model_dump_json(indent=4) == json_model)
-
-    # try loading model using json string
-
-    json_string_loaded = json.dumps(json_model_loaded)
-    test_group = Group.model_validate_json(json_string_loaded)
-
-    print(test_group.model_dump_json(indent=4) == json_model)
-
-
-
-

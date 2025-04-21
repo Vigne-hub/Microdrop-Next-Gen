@@ -1,11 +1,14 @@
 import os
 import platform
 from contextlib import contextmanager
-import pika
 import pytest
 from dramatiq.threading import is_gevent_active
 from dramatiq import get_broker, Worker
 from pydantic import BaseModel
+
+from pathlib import Path
+
+VALID_OUTPUTS = Path(__file__).parent / 'valid_outputs'
 
 BROKER = get_broker()
 
@@ -39,7 +42,6 @@ skip_without_gevent = pytest.mark.skipif(not is_gevent_active(), reason="Behavio
 
 RABBITMQ_USERNAME = os.getenv("RABBITMQ_USERNAME", "guest")
 RABBITMQ_PASSWORD = os.getenv("RABBITMQ_PASSWORD", "guest")
-RABBITMQ_CREDENTIALS = pika.credentials.PlainCredentials(RABBITMQ_USERNAME, RABBITMQ_PASSWORD)
 
 
 class TestMessage(BaseModel):
