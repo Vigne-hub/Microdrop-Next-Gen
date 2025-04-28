@@ -73,11 +73,6 @@ class PGCWidget(QWidget):
         # set Headers for columns
         self.model.setHorizontalHeaderLabels(["Description", "Repetitions", "Duration", "Voltage", "Frequency"])
 
-        self.model.itemChanged.connect(self.send_protocol_from_view)
-        self.model.rowsInserted.connect(self.send_protocol_from_view)
-        self.model.rowsRemoved.connect(self.send_protocol_from_view)
-        self.tree.selectionModel().selectionChanged.connect(self.send_request_to_update_device_view)
-
         # Set delegates
         repetition_delegate = SpinBoxDelegate(self, integer=True)
         duration_delegate = SpinBoxDelegate(self, integer=False)
@@ -115,73 +110,6 @@ class PGCWidget(QWidget):
         self.layout.addWidget(self.tree)
         self.layout.addLayout(button_layout)
         self.setLayout(self.layout)
-
-        self.setup_buttons()
-
-    def setup_buttons(self):
-        self.hbox_control_flow = QHBoxLayout()
-        self.hbox_control_flow.setAlignment(Qt.AlignmentFlag.AlignTop)
-        self.hbox_control_flow.setContentsMargins(0, 0, 0, 0)
-
-        self.goto_first_button = QPushButton(
-            icon=self.style().standardIcon(QStyle.StandardPixmap.SP_MediaSkipBackward))
-        self.goto_first_button.setIconSize(self.goto_first_button.sizeHint())
-        self.goto_first_button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        self.goto_first_button.clicked.connect(self.goto_first)
-        self.hbox_control_flow.addWidget(self.goto_first_button)
-
-        self.previous_step_button = QPushButton(
-            icon=self.style().standardIcon(QStyle.StandardPixmap.SP_MediaSeekBackward))
-        self.previous_step_button.setIconSize(self.previous_step_button.sizeHint())
-        self.previous_step_button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        self.previous_step_button.clicked.connect(self.previous_step)
-        self.hbox_control_flow.addWidget(self.previous_step_button)
-
-        self.run_button = QPushButton(icon=self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay))
-        self.run_button.setIconSize(self.run_button.sizeHint())
-        self.run_button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        self.run_button.clicked.connect(self.run_protocol)
-        self.hbox_control_flow.addWidget(self.run_button)
-
-        self.next_step_button = QPushButton(
-            icon=self.style().standardIcon(QStyle.StandardPixmap.SP_MediaSeekForward))
-        self.next_step_button.setIconSize(self.next_step_button.sizeHint())
-        self.next_step_button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        self.next_step_button.clicked.connect(self.next_step)
-        self.hbox_control_flow.addWidget(self.next_step_button)
-
-        self.goto_last_button = QPushButton(
-            icon=self.style().standardIcon(QStyle.StandardPixmap.SP_MediaSkipForward))
-        self.goto_last_button.setIconSize(self.goto_last_button.sizeHint())
-        self.goto_last_button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        self.goto_last_button.clicked.connect(self.goto_last)
-        self.hbox_control_flow.addWidget(self.goto_last_button)
-
-        self.goto_first_button.setStyleSheet("QPushButton { background-color: white; }")
-        self.goto_last_button.setStyleSheet("QPushButton { background-color: white; }")
-        self.previous_step_button.setStyleSheet("QPushButton { background-color: white; }")
-        self.run_button.setStyleSheet("QPushButton { background-color: white; }")
-        self.next_step_button.setStyleSheet("QPushButton { background-color: white; }")
-
-        self.layout.addLayout(self.hbox_control_flow)
-
-    def send_request_to_update_device_view(self):
-        pass
-
-    def goto_first(self):
-        pass
-
-    def previous_step(self):
-        pass
-
-    def run_protocol(self):
-        pass
-
-    def next_step(self):
-        pass
-
-    def goto_last(self):
-        pass
 
     def add_group(self, into=False):
         """
@@ -277,43 +205,18 @@ class PGCWidget(QWidget):
         add_items(root_item, protocol)
         self.tree.expandAll()
 
-    def send_protocol_from_view(self):
-        protocol = OrderedDict()
 
-        def process_item(item, parent_protocol):
+from PySide6.QtWidgets import QApplication, QMainWindow
+import sys
 
-            description = item.get_item_data()
-            item_type = item.get_item_type()
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Protocol Editor Demo")
+        self.setCentralWidget(PGCWidget())
 
-            # Determine if the item is a group or a step
-            if item_type == "Group":  # It's a Group
-                repetitions = int(item.get_item_data())
-                group_name = description
-                group_data = OrderedDict(Type="Group", Repetitions=repetitions)
-
-                # Iterate over children (which are steps in this case)
-                for i in range(item.rowCount()):
-                    child = item.child(i)
-                    child_description = child.data()
-                    child_data = {
-                        "Description": child_description,
-                        "Duration": float(child.child(0, 2).data()),
-                        "Voltage": float(child.child(0, 3).data()),
-                        "Frequency": float(child.child(0, 4).data())
-                    }
-                    group_data[f"Step {i + 1}"] = child_data
-
-                parent_protocol[group_name] = group_data
-            else:  # It's a Step
-                parent_protocol[description] = OrderedDict(
-                    Description=description,
-                    Duration=float(item.child(0, 2).data()),
-                    Voltage=float(item.child(0, 3).data()),
-                    Frequency=float(item.child(0, 4).data())
-                )
-
-        root_item = self.model.invisibleRootItem()
-        for i in range(root_item.rowCount()):
-            process_item(root_item.child(i), protocol)
-
-        publish_message(message=protocol, topic="pgc_ui/protocol_data/cell_changed")
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
+    sys.exit(app.exec())
