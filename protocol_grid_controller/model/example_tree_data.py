@@ -60,7 +60,7 @@ def load_protocol_tree_from_json(filename: str) -> ProtocolGroup:
     return ProtocolGroup.model_validate(json_model_loaded)
 
 
-def test_protocol_model_serialization(json_model: str):
+def protocol_model_serialization(json_model: str):
     json_string_loaded = json.dumps(json.loads(json_model))
     test_group = ProtocolGroup.model_validate_json(json_string_loaded)
     assert test_group.model_dump_json(indent=4) == json_model
@@ -88,7 +88,7 @@ def main():
     loaded_group = load_protocol_tree_from_json("tree_data_save.json")
 
     # Verify serialization
-    test_group = test_protocol_model_serialization(json_model)
+    test_group = protocol_model_serialization(json_model)
 
     # Visualize from JSON string
     visualize_protocol_from_json(json_model, "tree_data_from_json_string")

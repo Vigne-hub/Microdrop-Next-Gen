@@ -2,7 +2,7 @@ import pygraphviz as pgv
 from typing import Union
 
 from microdrop_utils.json_helpers import load_python_object_from_json
-from protocol_grid_controller.model.tree_data import ProtocolGroup
+from protocol_grid_controller.model.tree_data import ProtocolGroup,ProtocolStep
 
 # Custom colors by type
 color_map = {
@@ -27,22 +27,27 @@ base_node_attr = {
 
 def add_nodes_edges(graph, parent):
     # Add steps
-    for step in parent.steps:
-        params_string = format_steps_param_as_string(step)
+    for element in parent.elements:
+        if isinstance(element, ProtocolStep):
+            step = element
 
-        step_label = (f"ID: {step.id}\n"
-                      f"Name: {step.name}\n"
-                      f"{params_string}")
+            params_string = format_steps_param_as_string(step)
 
-        graph.add_node(step.id, label=step_label, type="step")
-        graph.add_edge(parent.id, step.id)
+            step_label = (f"IDX: {str(step.idx)}\n"
+                          f"Name: {step.name}\n"
+                          f"{params_string}")
 
-    # Add subgroups recursively
-    for sub_group in parent.sub_groups:
-        group_label = f"ID: {sub_group.id}\nName: {sub_group.group_name}"
-        graph.add_node(sub_group.id, label=group_label, type="group")
-        graph.add_edge(parent.id, sub_group.id)
-        add_nodes_edges(graph, sub_group)
+            graph.add_node(str(step.idx), label=step_label, type="step")
+            graph.add_edge(str(parent.idx), str(step.idx))
+
+        # Add subgroups recursively
+        elif isinstance(element, ProtocolGroup):
+            sub_group = element
+
+            group_label = f"IDX: {str(sub_group.idx)}\nName: {sub_group.name}"
+            graph.add_node(str(sub_group.idx), label=group_label, type="group")
+            graph.add_edge(str(parent.idx), str(sub_group.idx))
+            add_nodes_edges(graph, sub_group)
 
 
 def format_steps_param_as_string(step):
@@ -62,7 +67,7 @@ def get_protocol_graph(ProtocolGroup) -> pgv.AGraph:
         rankdir="TB",  # Left-to-right as requested
     )
 
-    G.add_node(ProtocolGroup.id, label=f"ID: {ProtocolGroup.id}\nName: {ProtocolGroup.group_name}", type="root")
+    G.add_node(ProtocolGroup.idx, label=f"IDX: {str(ProtocolGroup.idx)}\nName: {ProtocolGroup.name}", type="root")
     add_nodes_edges(G, ProtocolGroup)
 
     return G
