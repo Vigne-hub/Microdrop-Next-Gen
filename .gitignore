@@ -1,3 +1,6 @@
 /.idea
 /examples/application_logs
 /microdrop/application_logs
+application_logs
+**/__pycache__
+dump.rdb
