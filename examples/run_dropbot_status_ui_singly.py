@@ -3,12 +3,11 @@
 from envisage.api import CorePlugin
 from envisage.ui.tasks.api import TasksPlugin
 
-from microdrop_utils.broker_server_helpers import dramatiq_workers
-
 
 def main(args):
     """Run the application."""
 
+    from microdrop_utils.broker_server_helpers import dramatiq_workers
     from dropbot_status.plugin import DropbotStatusPlugin
     from dropbot_status_plot.plugin import DropbotStatusPlotPlugin
     from message_router.plugin import MessageRouterPlugin
