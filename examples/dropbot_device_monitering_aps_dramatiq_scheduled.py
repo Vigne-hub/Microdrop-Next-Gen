@@ -7,20 +7,20 @@ from microdrop_utils.dramatiq_pub_sub_helpers import publish_message, MessageRou
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 import dramatiq
-from serial.tools.list_ports import grep
+from serial.tools.list_ports import grep, comports
 from microdrop_utils._logger import get_logger
 import re
 
 logger = get_logger(__name__)
 
 
-def check_connected_ports_hwid(id_to_screen, regexp='USB Serial'):
+def check_connected_ports_hwid(hwid = 'USB VID:PID=16C0:0483'):#id_to_screen, regexp='USB Serial'):
     """
     Check connected USB ports for a specific hardware id.
     """
 
     # get connected ports to usb serial
-    connected_ports = grep(regexp)
+    connected_ports = comports()#grep(regexp)
 
     # initialize list to store valid ports
     valid_ports = []
@@ -29,12 +29,13 @@ def check_connected_ports_hwid(id_to_screen, regexp='USB Serial'):
     # try using regex: neglect PID use the VID
     for port in connected_ports:
         # Regex pattern to find the VID in the hwid string
-        pattern = re.compile(f".*{id_to_screen}.*")
+        # pattern = re.compile(f".*{id_to_screen}.*")
 
         # Search for the pattern in the string
-        teensy = re.search(pattern, port.hwid)
+        # teensy = re.search(pattern, port.hwid)
 
-        if bool(teensy):
+        # if bool(teensy):
+        if hwid in port.hwid:
             valid_ports.append(port)
 
     return valid_ports
@@ -68,7 +69,7 @@ class DropBotDeviceConnectionMonitor(HasTraits):
                     if valid_ports:
 
                         # Extract port names
-                        port_names = [port.name for port in valid_ports]
+                        port_names = [port.device for port in valid_ports]
 
                         # Check if there are new port names
                         if port_names != self.port_names:

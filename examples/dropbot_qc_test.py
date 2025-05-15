@@ -14,7 +14,7 @@ def get_port_name_for_id_to_screen(id_to_screen):
         pattern = re.compile(f".*{id_to_screen}.*")
         teensy = re.search(pattern, port.hwid)
         if bool(teensy):
-            return port.name
+            return port.device
 
 
 # List of on-board self-tests.
