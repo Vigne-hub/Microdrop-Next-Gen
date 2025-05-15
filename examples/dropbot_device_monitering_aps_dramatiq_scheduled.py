@@ -167,17 +167,13 @@ def main(args):
 
 
 if __name__ == "__main__":
-    from dramatiq import Worker
-    from examples.broker import BROKER
 
-    from microdrop_utils.broker_server_helpers import init_broker_server, stop_broker_server
+    import sys
+    import os
 
-    try:
-        init_broker_server(BROKER)
-        worker = Worker(BROKER, worker_threads=1)
-        worker.start()
-        main(sys.argv[1:])
-    finally:
-        BROKER.flush_all()
-        worker.stop()
-        stop_broker_server(BROKER)
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+    from microdrop_utils.broker_server_helpers import dramatiq_workers, redis_server_context
+
+    with redis_server_context():
+        with dramatiq_workers():
+            main(sys.argv)
