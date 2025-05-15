@@ -93,6 +93,8 @@ Dramatiq is a fast and reliable distributed task processing library for Python. 
 
 1. **Python 3.11** 
 
+We are using redis since it can be installed from the binstar anaconda channel while rabbitmq is more complicated to install.
+
 If rabbitmq is needed:
 2. **RabbitMQ** download from [here](https://www.rabbitmq.com/download.html)  
    Windows Installer: [here](https://www.rabbitmq.com/docs/install-windows)
@@ -107,10 +109,3 @@ The command to create the environment is:
 
 And remember to startup the redis or rabbitmq server. In the case of rabbitmq, there is a GUI that can be used to start the server. In the case of redis, the command to start the server is:
 ```redis-server``` that needs to be run from a terminal. 
-
-
-## **Important Notes on Documentation**
-
-When @Vigne-hub and I (@MJAquarion2413) originally worked on this project, our goal was to port an old software that utilized GTK2 and Glade with other old packages in python 2 and was not updated for more than half a decade. We found that documentation and availablity of support for these old python packages was one of the most difficult roadblocks to overcome. In this software we decided to use the latest technologies and packages to ensure that the software would be maintainable and easily accessible for future developers. In addition, we will document the methods used and the documentation behind these methods and tools in case the developers make the old documentation unavailable for any reason. This is part of the reason we have made the core application use as little dependencies as possible. 
-
-FOR FUTURE DEVELOPERS: Try to make plugins that have similar documentation to support future developers, especially those that are students, or non-professional developers that need new use cases for their individual experiments.

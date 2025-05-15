@@ -13,7 +13,6 @@ def main(args):
     from dropbot_status.plugin import DropbotStatusPlugin
     from message_router.plugin import MessageRouterPlugin
     from manual_controls.plugin import ManualControlsPlugin
-    from microdrop.plugins.frontend_plugins.protocol_grid_controller.protocol_grid_controller_plugin import ProtocolGridControllerPlugin
     from dropbot_tools_menu.plugin import DropbotToolsMenuPlugin
 
     plugins = [
@@ -23,7 +22,6 @@ def main(args):
         DropbotStatusPlugin(),
         MessageRouterPlugin(),
         ManualControlsPlugin(),
-        ProtocolGridControllerPlugin(),
         DropbotToolsMenuPlugin()
     ]
 
