@@ -26,6 +26,6 @@ class MicrodropCanvasTaskApplication(TasksApplication):
     # branding
     icon = ImageResource(f'{os.path.dirname(__file__)}{os.sep}microdrop.ico')
 
-    @observe('started')
+    @observe('application_initialized')
     def _on_application_started(self, event):
         publish_message(message="", topic=START_DEVICE_MONITORING)
