@@ -1,3 +1,4 @@
+import re
 import warnings
 
 import dramatiq
@@ -18,21 +19,26 @@ class DramatiqControllerBase(HasTraits):
 
     Attributes:
         listener_name (str): Name identifier for the Dramatiq actor
+        listener_queue (str): "The unique queue actor is listening to"
         listener (Actor): Dramatiq actor instance that handles message processing
 
     Example:
         >>> class MyController(DramatiqControllerBase):
-        ...     listener_name = "my_listener"
-        ...
-        ...     def listener_actor_routine(parent_obj, message: str, topic: str) -> None:
-        ...         print(f"Processing {message} from {topic}")
-
-        >>> dramatiq_controller = DramatiqControllerBase(listener_name=listener_name, listener_actor_routine=method)
+        ...     # return a listener actor method if one is not provided on initialization
+        ...     def _listener_actor_method_default(self, message: str, topic: str) -> None:
+        ...         def listener_actor_method(self, message: str, topic: str) -> None:
+        ...             print(f"Processing {message} from {topic}")
+        ...         return listener_actor_method
+        >>> dramatiq_controller = MyController()
+        >>> def method():
+        ...     return None
+        >>> dramatiq_controller = DramatiqControllerBase(listener_name=listener_name, listener_actor_method=method)
         >>> dramatiq_controller.listener_actor.__class__
         >>> <class 'dramatiq.actor.Actor'>
     """
 
-    listener_name: str = Str(desc="Unique identifier for the Dramatiq actor")
+    listener_name = Str(desc="Unique identifier for the Dramatiq actor")
+    listener_queue = Str("default", desc="The unique queue actor is listening to")
     listener_actor_method = Callable(desc="Routine to be wrapped into listener_actor"
                                            "Should accept parent_obj, message, topic parameters")
     listener_actor: Actor = Instance(Actor, desc="Dramatiq actor instance for message handling")
@@ -52,6 +58,15 @@ class DramatiqControllerBase(HasTraits):
 
         self.listener_actor = self._listener_actor_default()
 
+    def _listener_name_default(self):
+        """ set the default listener actor name to be class name in snake_case"""
+
+        class_name = self.__class__.__name__  # class name in camel case
+
+        # convert to snake case
+        class_name = re.sub(r'([a-z])([A-Z])', r'\1_\2', class_name).lower()
+        return class_name
+
     def _listener_actor_default(self) -> Actor:
         """Create and configure the Dramatiq actor for message handling.
 
@@ -63,12 +78,11 @@ class DramatiqControllerBase(HasTraits):
             route messages to the listener_routine method.
         """
 
-        @dramatiq.actor(actor_name=self.listener_name)
+        @dramatiq.actor(actor_name=self.listener_name, queue_name=self.listener_queue)
         def create_listener_actor(message: str, topic: str) -> None:
             """Handle incoming Dramatiq messages.
 
             Args:
-                parent_obj: Parent class this listener actor should belong to and control.
                 message: Content of the received message
                 topic: Topic/routing key of the message
             """
@@ -77,23 +91,25 @@ class DramatiqControllerBase(HasTraits):
         return create_listener_actor
 
 
-def generate_class_method_dramatiq_listener_actor(listener_name, class_method) -> Actor:
+def generate_class_method_dramatiq_listener_actor(listener_name, class_method, listener_queue="default") -> Actor:
     """
     Method to generate a Dramatiq Actor for message handling for a class based on one of its methods.
 
     Params:
     listener_name (str): Name identifier for the Dramatiq actor.
+    listener_queue (str): "The unique queue actor is listening to"
     class_method (Callable): Method that handles message handling that requires to be wrapped up as an Actor
     """
     # If the given listener name is not registered,
     if listener_name in dramatiq.get_broker().actors:
-        warnings.warn("Dramatiq actor with this name has already been registered.This plugin already has a listener "
-                        "actor. No need to create a new actor.")
+        warnings.warn("Dramatiq actor with this name has already been registered. No need to create a new actor.")
 
     else:
 
-        # Dramatiq controller base class made  with listener actor generated as an attribute
-        dramatiq_controller = DramatiqControllerBase(listener_name=listener_name, listener_actor_method=class_method)
+        # Dramatiq controller base class made with listener actor generated as an attribute
+        dramatiq_controller = DramatiqControllerBase(listener_name=listener_name,
+                                                     listener_actor_method=class_method,
+                                                     listener_queue=listener_queue)
 
         return dramatiq_controller.listener_actor
 

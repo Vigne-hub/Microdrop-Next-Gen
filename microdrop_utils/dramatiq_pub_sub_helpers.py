@@ -1,6 +1,7 @@
 from traits.api import HasTraits, Dict, Str, Instance
 import dramatiq
 
+from microdrop_utils.dramatiq_controller_base import DramatiqControllerBase
 from microdrop_utils.redis_manager import RedisHashDictProxy
 
 from microdrop_utils._logger import get_logger
@@ -315,34 +316,25 @@ class MessageRouterData(HasTraits):
             return False
 
 
-class MessageRouterActor:
+class MessageRouterActor(DramatiqControllerBase):
     """
     A class that routes messages to subscribers based on topics.
 
     Each instance of this class has one message router actor with a specific queue unique to it.
     """
 
-    def __init__(self, message_router_data: MessageRouterData = None, listener_queue="default"):
-        if message_router_data is None:
-            message_router_data = MessageRouterData(listener_queue=listener_queue)
+    ######## Message Router Interface #######################################################
+    message_router_data = Instance(MessageRouterData)
 
-        self.message_router_data = message_router_data
-        self.listener_queue = listener_queue  # unique queue for this message router actor to listen to
-        self.message_router_actor = self.create_message_router_actor()
+    def _message_router_data_default(self):
+        return MessageRouterData(listener_queue=self.listener_queue)
 
-        # We define this actor here like this since we need to access self.message_router_data but cannot have this
-        # actor as a method of this class since we cannot have other processes call this with the self object.
+    ##################### Dramatiq Controller Base Interface #######################
 
-    def create_message_router_actor(self):
-        """
-        Create a message router actor that routes messages to subscribers based on topics.
-        """
+    def _listener_actor_method_default(self):
+        """returns a default listener actor method for message routing"""
 
-        @dramatiq.actor(queue_name=self.listener_queue)
-        def message_router_actor(message: Str, topic: Str):
-            """
-            A Dramatiq actor that routes messages to subscribers based on topics.
-            """
+        def listener_actor_method(message: Str, topic: Str):
             logger.debug(f"MESSAGE_ROUTER: Received message: {message} on topic: {topic}")
 
             subscribing_actor_names = self.message_router_data.get_subscribers_for_topic(topic)
@@ -355,4 +347,4 @@ class MessageRouterActor:
             logger.debug(
                 f"MESSAGE_ROUTER: Message: {message} on topic {topic} published to {len(subscribing_actor_names)} subscribers")
 
-        return message_router_actor
+        return listener_actor_method
