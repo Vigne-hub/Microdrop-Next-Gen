@@ -337,14 +337,14 @@ class MessageRouterActor(DramatiqControllerBase):
         def listener_actor_method(message: Str, topic: Str):
             logger.debug(f"MESSAGE_ROUTER: Received message: {message} on topic: {topic}")
 
-            subscribing_actor_names = self.message_router_data.get_subscribers_for_topic(topic)
+            subscribing_actor_queue_info = self.message_router_data.get_subscribers_for_topic(topic)
 
-            for subscribing_actor, queue in subscribing_actor_names:
+            for subscribing_actor, queue in subscribing_actor_queue_info:
                 logger.debug(f"MESSAGE_ROUTER: Publishing message: {message} to actor: {subscribing_actor}")
 
                 publish_message(message, topic, subscribing_actor, queue_name=queue)
 
             logger.debug(
-                f"MESSAGE_ROUTER: Message: {message} on topic {topic} published to {len(subscribing_actor_names)} subscribers")
+                f"MESSAGE_ROUTER: Message: {message} on topic {topic} published to {len(subscribing_actor_queue_info)} subscribers")
 
         return listener_actor_method
