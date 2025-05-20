@@ -170,11 +170,17 @@ class DropBotStatusWidget(BaseDramatiqControllableDropBotQWidget):
     def _on_disconnected_triggered(self, body):
         self.status_label.update_status_icon(dropbot_connected=False, chip_inserted=False)
 
+    def _on_connected_triggered(self, body):
+        self.status_label.update_status_icon(dropbot_connected=True, chip_inserted=False)
+
     def _on_chip_not_inserted_triggered(self, body):
         self.status_label.update_status_icon(dropbot_connected=True, chip_inserted=False)
 
     def _on_chip_inserted_triggered(self, body):
         self.status_label.update_status_icon(dropbot_connected=True, chip_inserted=True)
+
+    def _on_setup_success_triggered(self, body):
+        self.status_label.update_status_icon(dropbot_connected=True, chip_inserted=False)
 
     ##################################################################################################
 
