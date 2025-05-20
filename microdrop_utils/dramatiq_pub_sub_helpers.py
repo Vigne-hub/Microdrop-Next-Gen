@@ -23,7 +23,7 @@ def publish_message(message, topic, actor_to_send="message_router_actor", queue_
         actor_name=actor_to_send,
         args=(message, topic),
         kwargs=message_kwargs,
-        options={"max_retires": 1},
+        options={"max_retries": 1},
     )
 
     broker.enqueue(message)
