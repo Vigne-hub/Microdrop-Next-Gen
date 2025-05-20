@@ -91,7 +91,7 @@ class DropbotMonitorMixinService(HasTraits):
         self.dropbot_connection_active = False
         if not self._no_power:
             logger.info(
-                "DropBot disconnected \n Attempting to terminate proxy and resume monitoring to find DropBot again.")
+                "DropBot disconnected. Attempting to terminate proxy and resume monitoring to find DropBot again.")
 
             if self.proxy is not None:
                 if self.proxy.monitor is not None:
