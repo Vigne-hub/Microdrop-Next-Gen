@@ -11,7 +11,7 @@ logger = get_logger(__name__)
 DEFAULT_STORAGE_KEY_NAME = "microdrop:message_router_data"
 
 
-def publish_message(message, topic, actor_to_send="message_router_actor", queue_name="default", **message_kwargs):
+def publish_message(message, topic, actor_to_send="message_router_actor", queue_name="default", message_kwargs=None, message_options=None):
     """
     Publish a message to a given actor with a certain topic
     """
@@ -19,12 +19,15 @@ def publish_message(message, topic, actor_to_send="message_router_actor", queue_
     # print(f"Publishing message: {message} to actor: {actor_to_send} on topic: {topic}")
     broker = dramatiq.get_broker()
 
+    if message_options is None:
+        message_options = {"max_retries": 1}
+
     message = dramatiq.Message(
         queue_name=queue_name,
         actor_name=actor_to_send,
         args=(message, topic),
         kwargs=message_kwargs,
-        options={"max_retires": 1},
+        options=message_options,
     )
 
     broker.enqueue(message)
