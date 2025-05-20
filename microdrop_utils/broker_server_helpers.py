@@ -22,16 +22,20 @@ def is_redis_running():
 
 def start_redis_server(retries=5, wait=3):
     """Start the Redis server."""
-    process = subprocess.Popen(["redis-server", f"{os.path.dirname(__file__)}{os.sep}redis.conf"])
-    for _ in range(retries):  # Retry up to 5 times
-        if is_redis_running():
-            print("Redis server is running.")
-            return process
-        else:
-            print("Waiting for Redis server to start...")
-            time.sleep(wait)
-    print("Failed to start Redis server.")
-    process.terminate()
+    if not is_redis_running():
+        process = subprocess.Popen(["redis-server", f"{os.path.dirname(__file__)}{os.sep}redis.conf"])
+        for _ in range(retries):  # Retry up to 5 times
+            if is_redis_running():
+                print("Redis server is running.")
+                return process
+            else:
+                print("Waiting for Redis server to start...")
+                time.sleep(wait)
+        print("Failed to start Redis server.")
+        process.terminate()
+
+    else:
+        print("Redis server is already running.")
     return None
 
 
@@ -82,7 +86,7 @@ def redis_server_context():
 
 
 @contextmanager
-def dramatiq_workers(**kwargs):
+def dramatiq_workers_context(**kwargs):
     """
     Context manager for apps that make use of dramatiq. They need the workers to exist.
     """
@@ -126,6 +130,5 @@ if __name__ == "__main__":
                 exit(0)
 
 
-    with redis_server_context():
-        with dramatiq_workers():
+    with redis_server_context(), dramatiq_workers_context():
             example_app_routine()

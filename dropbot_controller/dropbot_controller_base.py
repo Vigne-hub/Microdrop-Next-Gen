@@ -80,7 +80,13 @@ class DropbotControllerBase(HasTraits):
             elif topic in [START_DEVICE_MONITORING, RETRY_CONNECTION]:
                 if self.dropbot_connection_active:
                     logger.warning(
-                        "Redundant request to start device monitoring denied: Dropbot is already connected.")
+                        "Redundant request to start device monitoring denied: Dropbot is already connected."
+                        "Publishing message to UI about dropbot chip insertion status.")
+                    if not self.proxy.digital_read(OUTPUT_ENABLE_PIN):
+                        publish_message(topic=CHIP_INSERTED, message='Chip inserted')
+                    else:
+                        publish_message(topic=CHIP_NOT_INSERTED, message='Chip not inserted')
+
                 else:
                     requested_method = f"on_{specific_sub_topic}_request"
                     logger.info(f"Executing {specific_sub_topic} method as Dropbot is currently disconnected.")
@@ -116,7 +122,7 @@ class DropbotControllerBase(HasTraits):
 
         """
 
-        logger.info("Starting DeviceViewer listener")
+        logger.info("Starting DropbotController listener")
         self.dramatiq_listener_actor = generate_class_method_dramatiq_listener_actor(
             listener_name=self.listener_name,
             class_method=self.listener_actor_routine)

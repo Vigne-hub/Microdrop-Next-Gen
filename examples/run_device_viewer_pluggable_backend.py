@@ -1,14 +1,13 @@
-# Plugin imports.
+import sys
+import os
 import signal
 import time
 
-import dramatiq
-from dramatiq import Worker
 from envisage.api import CorePlugin
 from envisage.application import Application
 
-from dropbot_controller.consts import START_DEVICE_MONITORING
-from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from microdrop_utils.broker_server_helpers import redis_server_context, dramatiq_workers_context
 
 
 def main(args):
@@ -38,7 +37,7 @@ def main(args):
     signal.signal(signal.SIGTERM, stop_app)
 
     # Need to run with a dramatiq broker context since app requires plugins that use dramatiq
-    with dramatiq_workers():
+    with redis_server_context(), dramatiq_workers_context():
 
         app.run()
 
@@ -47,10 +46,4 @@ def main(args):
 
 
 if __name__ == "__main__":
-    import sys
-    import os
-
-    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-    from microdrop_utils.broker_server_helpers import dramatiq_workers
-
     main(sys.argv)
