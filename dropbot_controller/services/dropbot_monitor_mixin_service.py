@@ -39,31 +39,20 @@ class DropbotMonitorMixinService(HasTraits):
         Method to start looking for dropbots connected using their hwids.
         If dropbot already connected, publishes dropbot connected signal.
         """
+        if not hwids_to_check:
+            hwids_to_check = [DROPBOT_DB3_120_HWID]
 
-        # check if dropbot already connected
-        if self.dropbot_connection_active:
-            # send out signal about dropbot status as connected and chip insertion information
-            if not self.proxy.digital_read(OUTPUT_ENABLE_PIN):
-                publish_message(topic=CHIP_INSERTED, message='Chip inserted')
+        scheduler = BackgroundScheduler()
+        scheduler.add_job(
+            func=functools.partial(check_devices_available, hwids_to_check),
+            trigger=IntervalTrigger(seconds=2),
+        )
+        scheduler.add_listener(self._on_dropbot_port_found, EVENT_JOB_EXECUTED)
+        self.monitor_scheduler = scheduler
 
-            else:
-                publish_message(topic=CHIP_NOT_INSERTED, message='Chip not inserted')
+        logger.info("DropBot monitor created and started")
 
-        else:
-            if not hwids_to_check:
-                hwids_to_check = [DROPBOT_DB3_120_HWID]
-
-            scheduler = BackgroundScheduler()
-            scheduler.add_job(
-                func=functools.partial(check_devices_available, hwids_to_check),
-                trigger=IntervalTrigger(seconds=2),
-            )
-            scheduler.add_listener(self._on_dropbot_port_found, EVENT_JOB_EXECUTED)
-            self.monitor_scheduler = scheduler
-
-            logger.info("DropBot monitor created and started")
-
-            self.monitor_scheduler.start()
+        self.monitor_scheduler.start()
 
     def on_detect_shorts_request(self, message):
         if self.proxy is not None:
