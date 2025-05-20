@@ -1,7 +1,11 @@
-# Plugin imports.
+import os
+import sys
 
 from envisage.api import CorePlugin
 from envisage.ui.tasks.api import TasksPlugin
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from microdrop_utils.broker_server_helpers import dramatiq_workers_context, redis_server_context
 
 
 def main(args):
@@ -32,16 +36,9 @@ def main(args):
 
     app = DeviceViewerApplication(plugins=plugins)
 
-    with dramatiq_workers():
+    with redis_server_context(), dramatiq_workers_context():
         app.run()
 
 
 if __name__ == "__main__":
-    import sys
-    import os
-
-    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-    from microdrop_utils.broker_server_helpers import dramatiq_workers, redis_server_context
-
-    with redis_server_context():
-        main(sys.argv)
+    main(sys.argv)
