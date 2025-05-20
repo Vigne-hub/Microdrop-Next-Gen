@@ -12,6 +12,10 @@ MessageRouterData keeps track of all of the pub/sub info, and provides the relav
 
 An example of how it works can be found in /examples/tests/tests_with_redis_server_need/test_message_router.py
 
+### Dramatiq Controller
+
+If you find any class methods of the form "_on_{topic}_triggered", with no referenced anywhere else in the codebase, its probably being triggered by microdrop_utils/dramatiq_controller_base.py. These trigger when 
+
 # Files/Folders
 
 ## /microdrop
@@ -34,7 +38,7 @@ Imports functions from /microdrop_utils/broker_server_helpers.py that no longer 
 
 Requires dropbot to be plugged in to operate.
 
-## /examples/run_device_viewer_pluggable_backend.py
+### /examples/run_device_viewer_pluggable_backend.py
 
 
 
@@ -65,11 +69,21 @@ Most tests can be found in /examples/tests/. There are additional tests scattere
 
 ### To create environment
 
-```
+```bash
 conda env create -f environment.yml
+```
+or
+```bash
+micromamba env create -f environment.yml
 ```
 ### To delete environment
 
-```
+Remember to deactivate the conda env first
+
+```bash
 conda env remove -n microdrop --all
+```
+or
+```bash
+micromamba env remove -n microdrop --all
 ```
