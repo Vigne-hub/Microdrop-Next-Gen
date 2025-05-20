@@ -179,7 +179,7 @@ class DropBotStatusWidget(BaseDramatiqControllableDropBotQWidget):
     ##################################################################################################
 
     ########## Warning methods ################
-    def _on_show_warning_triggered(self, body):
+    def _on_show_warning_triggered(self, body): # This is not controlled by the dramatiq controller! Called manually in dramatiq_dropbot_status_controller.py
         body = json.loads(body)
 
         title = body.get('title', ''),
