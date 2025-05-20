@@ -36,7 +36,16 @@ class DramatiqDropbotStatusController(HasTraits):
 
     def listener_actor_routine(self, message, topic):
         logger.debug(f"UI_LISTENER: Received message: {message} from topic: {topic}. Triggering UI Signal")
-        self.view.controller_signal.emit(json.dumps({'message': message, 'topic': topic}))
+        if hasattr(self, 'view') and self.view is not None:
+            try:
+                self.view.controller_signal.emit(json.dumps({'message': message, 'topic': topic}))
+            except RuntimeError as e:
+                if "Signal source has been deleted" in str(e):
+                    logger.warning("View has been deleted, stopping signal emission")
+                else:
+                    raise
+        else:
+            logger.warning("View not available, skipping signal emission")
 
     def traits_init(self):
         """
