@@ -12,7 +12,7 @@ connection_flags = {"connected": CONNECTED, "disconnected": DISCONNECTED}
 class DramatiqDropbotSerialProxy(SerialProxy):
 
     def connect(self):
-        self.terminate()
+        monitor = super().connect()
 
         # We need to signal to the dramatiq pub sub system that the dropbot has been disconnected/connected we are
         # writing a wrapper will still do everything the original monitor function does except for the dramatiq pub
@@ -23,13 +23,7 @@ class DramatiqDropbotSerialProxy(SerialProxy):
             f()
             publish_message(f'dropbot_{signal_name}', connection_flags[signal_name])
 
-        monitor = bnr.ser_async.BaseNodeSerialMonitor(port=self.port)
-
         monitor.connected_event.set = ft.partial(publish_wrapper, monitor.connected_event.set, 'connected')
         monitor.disconnected_event.set = ft.partial(publish_wrapper, monitor.disconnected_event.set, 'disconnected')
 
-        monitor.start()
-
-        monitor.connected_event.wait()
-        self.monitor = monitor
-        return self.monitor
+        return monitor
