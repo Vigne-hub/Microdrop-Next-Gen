@@ -22,6 +22,9 @@ def publish_message(message, topic, actor_to_send="message_router_actor", queue_
     if message_options is None:
         message_options = {"max_retries": 1}
 
+    if message_kwargs is None:
+        message_kwargs = {}
+
     message = dramatiq.Message(
         queue_name=queue_name,
         actor_name=actor_to_send,
