@@ -3,10 +3,12 @@ import dramatiq
 import json
 from traits.api import Instance
 
+from dropbot_controller.consts import START_DEVICE_MONITORING
 from microdrop_utils._logger import get_logger
 from microdrop_utils.dramatiq_controller_base import generate_class_method_dramatiq_listener_actor
 from microdrop_utils.base_dropbot_qwidget import BaseDramatiqControllableDropBotQWidget
 from microdrop_utils.dramatiq_controller_base import invoke_class_method
+from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
 
 logger = get_logger(__name__)
 
@@ -49,7 +51,7 @@ class DramatiqDropbotStatusController(HasTraits):
 
         """
 
-        logger.info("Starting DeviceViewer listener")
+        logger.info("Starting Device listener")
         self.dramatiq_listener_actor = generate_class_method_dramatiq_listener_actor(
             listener_name=self.listener_name,
             class_method=self.listener_actor_routine)
@@ -82,4 +84,4 @@ class DramatiqDropbotStatusController(HasTraits):
                 ))
 
             else:
-                logger.warning(f"Method for {head_topic}, {method} not executed: Error: {err_msg}")
+                logger.debug(f"Method for {head_topic}, {method} not executed: Error: {err_msg}")

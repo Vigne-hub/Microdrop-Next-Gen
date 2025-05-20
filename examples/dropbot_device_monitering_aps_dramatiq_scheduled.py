@@ -173,8 +173,7 @@ if __name__ == "__main__":
     import os
 
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-    from microdrop_utils.broker_server_helpers import dramatiq_workers, redis_server_context
+    from microdrop_utils.broker_server_helpers import dramatiq_workers_context, redis_server_context
 
-    with redis_server_context():
-        with dramatiq_workers():
+    with redis_server_context(), dramatiq_workers_context():
             main(sys.argv)
