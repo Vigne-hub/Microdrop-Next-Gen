@@ -1,20 +1,24 @@
-from traits.api import HasTraits, Range
+from traits.api import HasTraits, Range, Bool
 from traitsui.api import View, Group, Item, Controller
-
 from microdrop_utils._logger import get_logger
-
-logger = get_logger(__name__)
-
 from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
-
-from dropbot_controller.consts import SET_VOLTAGE, SET_FREQUENCY
-
+from dropbot_controller.consts import SET_VOLTAGE, SET_FREQUENCY, SET_REALTIME_MODE
 from .consts import PKG_name
 
 
+logger = get_logger(__name__, level="DEBUG")
+
+
 class ManualControlModel(HasTraits):
-    voltage = Range(0, 1000, desc="the voltage to set on the dropbot device")
-    frequency = Range(0, 100000, desc="the frequency to set on the dropbot device")
+    voltage = Range(
+        30, 1000,
+        desc="the voltage to set on the dropbot device"
+    )
+    frequency = Range(
+        100, 20000,
+        desc="the frequency to set on the dropbot device"
+    )
+    realtime_mode = Bool(False, desc="Enable or disable realtime mode")
 
 
 ManualControlView = View(
@@ -24,10 +28,15 @@ ManualControlView = View(
             label='Voltage (V)',
             resizable=True,
         ),
-
         Item(
             name='frequency',
             label='Frequency (Hz)',
+            resizable=True,
+        ),
+        Item(
+            name='realtime_mode',
+            label='Realtime Mode',
+            style='simple',
             resizable=True,
         ),
     ),
@@ -45,7 +54,15 @@ class ManualControlControl(Controller):
 
     def frequency_setattr(self, info, object, traitname, value):
         publish_message(topic=SET_FREQUENCY, message=str(value))
-        logger.debug(f"Requesting Frequency change to {value} V")
+        logger.debug(f"Requesting Frequency change to {value} Hz")
+        return super().setattr(info, object, traitname, value)
+
+    def realtime_mode_setattr(self, info, object, traitname, value):
+        publish_message(
+            topic=SET_REALTIME_MODE,
+            message=str(value)
+        )
+        logger.debug(f"Set realtime mode to {value}")
         return super().setattr(info, object, traitname, value)
 
 
