@@ -15,9 +15,9 @@ from microdrop_utils.hardware_device_monitoring_helpers import check_devices_ava
 from ..interfaces.i_dropbot_control_mixin_service import IDropbotControlMixinService
 
 from ..consts import NO_DROPBOT_AVAILABLE, SHORTS_DETECTED, NO_POWER, DROPBOT_DB3_120_HWID, RETRY_CONNECTION, \
-    OUTPUT_ENABLE_PIN, CHIP_NOT_INSERTED, CHIP_INSERTED, DROPBOT_SETUP_SUCCESS
+    OUTPUT_ENABLE_PIN, CHIP_INSERTED, DROPBOT_SETUP_SUCCESS
 
-logger = get_logger(__name__)
+logger = get_logger(__name__, level="DEBUG")
 
 
 @provides(IDropbotControlMixinService)
@@ -61,6 +61,12 @@ class DropbotMonitorMixinService(HasTraits):
             logger.info(f"Detected shorts: {shorts_dict}")
             publish_message(topic=SHORTS_DETECTED, message=json.dumps(shorts_dict))
 
+    def on_chip_check_request(self, message):
+        if self.proxy is not None:
+            chip_check_result = not bool(self.proxy.digital_read(OUTPUT_ENABLE_PIN))
+            logger.info(f"Chip check result: {chip_check_result}")
+            publish_message(topic=CHIP_INSERTED, message=f'{chip_check_result}')
+    
     def on_retry_connection_request(self, message):
         logger.info("Attempting to retry connecting with a dropbot")
         self.monitor_scheduler.resume()
@@ -143,7 +149,7 @@ class DropbotMonitorMixinService(HasTraits):
 
             else:
                 logger.info(f"Connected to DropBot on port {port_name}")
-                logger.debug(f"Checking if chip is inserted AND connecting DropBot BLINKER signals to handlers")
+                logger.debug(f"Connecting DropBot BLINKER signals to handlers")
 
                 self._on_dropbot_proxy_connected()
 
