@@ -49,7 +49,7 @@ class ManualControlControl(Controller):
 
     def voltage_setattr(self, info, object, traitname, value):
         publish_message(topic=SET_VOLTAGE, message=str(value))
-        logger.debug(f"Requesting Voltage changee to {value} V")
+        logger.debug(f"Requesting Voltage change to {value} V")
         return super().setattr(info, object, traitname, value)
 
     def frequency_setattr(self, info, object, traitname, value):
