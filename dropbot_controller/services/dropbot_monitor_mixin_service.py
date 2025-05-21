@@ -78,6 +78,13 @@ class DropbotMonitorMixinService(HasTraits):
                                 voltage=0)
         logger.error("Halted DropBot: Disconnect everything and reconnect")
 
+    def on_set_realtime_mode_request(self, message):
+        if message == "True":
+            self.realtime_mode = True
+        else:
+            self.realtime_mode = False
+        logger.info(f"Set realtime mode to {self.realtime_mode}")
+    
     ############################################################
     # Connect / Disconnect signal handlers
     ############################################################
