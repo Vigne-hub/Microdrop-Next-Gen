@@ -69,7 +69,7 @@ class DropBotStatusLabel(QLabel):
         self.status_bar.addStretch(1)
 
         self.setLayout(self.status_bar)
-        self.setStyleSheet('QLabel { color: white; font-size: 12px; }')
+        self.setStyleSheet('QLabel { font-size: 12px; }')
         self.dropbot_connected = False
 
     def update_status_icon(self, dropbot_connected=None, chip_inserted=False):
@@ -118,7 +118,7 @@ class DropBotStatusLabel(QLabel):
         self.dropbot_icon.setPixmap(pixmap.scaled(self.dropbot_icon.size(), 
                                                   Qt.AspectRatioMode.KeepAspectRatio, 
                                                   Qt.TransformationMode.SmoothTransformation))
-        self.dropbot_icon.setStyleSheet('QLabel { background-color : %s ; }' % status_color)
+        self.dropbot_icon.setStyleSheet(f'QLabel {{ background-color : {status_color} ; }}')
 
     def update_capacitance_reading(self, capacitance):
         self.dropbot_capacitance_reading.setText(f"Capacitance: {capacitance}")
