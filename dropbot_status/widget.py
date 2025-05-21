@@ -12,10 +12,13 @@ from microdrop_utils._logger import get_logger
 from microdrop_utils.base_dropbot_qwidget import BaseDramatiqControllableDropBotQWidget
 from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
 
-logger = get_logger(__name__)
-from dropbot_controller.consts import DETECT_SHORTS, RETRY_CONNECTION
+from dropbot_controller.consts import DETECT_SHORTS, RETRY_CONNECTION, START_DEVICE_MONITORING, CHIP_CHECK
 
 from .consts import DROPBOT_IMAGE, DROPBOT_CHIP_INSERTED_IMAGE
+
+from traits.api import HasTraits, Range, Bool
+
+logger = get_logger(__name__, level="DEBUG")
 
 red = '#f15854'
 yellow = '#decf3f'
@@ -29,15 +32,21 @@ class DropBotStatusLabel(QLabel):
 
     def __init__(self):
         super().__init__()
-        self.setFixedSize(250, 100)
+        self.setFixedSize(300, 120)
+        self.setContentsMargins(10, 10, 10, 10)
 
         self.status_bar = QHBoxLayout()
+        self.status_bar.setContentsMargins(0, 0, 0, 0)
+        self.status_bar.setSpacing(10)
 
         self.dropbot_icon = QLabel()
         self.dropbot_icon.setFixedSize(100, 100)
+        self.dropbot_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.status_bar.addWidget(self.dropbot_icon)
 
         self.text_layout = QVBoxLayout()
+        self.text_layout.setContentsMargins(0, 0, 0, 0)
+        self.text_layout.setSpacing(5)
 
         # Default status to disconnected
         self.dropbot_connection_status = QLabel()
@@ -45,23 +54,37 @@ class DropBotStatusLabel(QLabel):
         self.update_status_icon(dropbot_connected=False, chip_inserted=False)
 
         # report readings
-        self.dropbot_capacitance_reading = QLabel("Capacitance: 0")
-        self.dropbot_voltage_reading = QLabel("Voltage: 0")
+        self.dropbot_capacitance_reading = QLabel("Capacitance: 0 pF")
+        self.dropbot_voltage_reading = QLabel("Voltage: 0 V")
+        self.dropbot_capacitance_reading.setContentsMargins(0, 0, 0, 0)
+        self.dropbot_voltage_reading.setContentsMargins(0, 0, 0, 0)
 
         self.text_layout.addWidget(self.dropbot_connection_status)
         self.text_layout.addWidget(self.dropbot_chip_status)
         self.text_layout.addWidget(self.dropbot_capacitance_reading)
         self.text_layout.addWidget(self.dropbot_voltage_reading)
+        self.text_layout.addStretch(1)
 
         self.status_bar.addLayout(self.text_layout)
+        self.status_bar.addStretch(1)
 
         self.setLayout(self.status_bar)
+        self.setStyleSheet('QLabel { color: white; font-size: 12px; }')
+        self.dropbot_connected = False
 
-    def update_status_icon(self, dropbot_connected, chip_inserted):
+    def update_status_icon(self, dropbot_connected=None, chip_inserted=False):
         """
         Update status based on if device connected and chip inserted or not.
         """
-
+        
+        if dropbot_connected is not None:
+            self.dropbot_connected = dropbot_connected
+            if dropbot_connected:
+                # request chip check
+                publish_message(topic=CHIP_CHECK, message='')
+        else:
+            dropbot_connected = self.dropbot_connected
+        
         if dropbot_connected:
             logger.info("Dropbot Connected")
             self.dropbot_connection_status.setText("Connected")
@@ -91,8 +114,10 @@ class DropBotStatusLabel(QLabel):
         pixmap = QPixmap(img_path)
         if pixmap.isNull():
             logger.error(f"Failed to load image: {img_path}")
-
-        self.dropbot_icon.setPixmap(pixmap.scaled(100, 150, Qt.AspectRatioMode.KeepAspectRatio))
+        # Always scale to fit the label size
+        self.dropbot_icon.setPixmap(pixmap.scaled(self.dropbot_icon.size(), 
+                                                  Qt.AspectRatioMode.KeepAspectRatio, 
+                                                  Qt.TransformationMode.SmoothTransformation))
         self.dropbot_icon.setStyleSheet('QLabel { background-color : %s ; }' % status_color)
 
     def update_capacitance_reading(self, capacitance):
@@ -168,19 +193,24 @@ class DropBotStatusWidget(BaseDramatiqControllableDropBotQWidget):
     ####### Dropbot Icon Image Control Methods ###########
 
     def _on_disconnected_triggered(self, body):
-        self.status_label.update_status_icon(dropbot_connected=False, chip_inserted=False)
+        self.status_label.update_status_icon(dropbot_connected=False)
 
     def _on_connected_triggered(self, body):
-        self.status_label.update_status_icon(dropbot_connected=True, chip_inserted=False)
-
-    def _on_chip_not_inserted_triggered(self, body):
-        self.status_label.update_status_icon(dropbot_connected=True, chip_inserted=False)
-
+        self.status_label.update_status_icon(dropbot_connected=True)
+        
     def _on_chip_inserted_triggered(self, body):
-        self.status_label.update_status_icon(dropbot_connected=True, chip_inserted=True)
-
-    def _on_setup_success_triggered(self, body):
-        self.status_label.update_status_icon(dropbot_connected=True, chip_inserted=False)
+        if body == 'True':
+            chip_inserted = True
+        elif body == 'False':
+            chip_inserted = False
+        else:
+            logger.error(f"Invalid chip inserted value: {body}")
+            chip_inserted = False
+        logger.debug(f"Chip inserted: {chip_inserted}")
+        self.status_label.update_status_icon(chip_inserted=chip_inserted)
+    
+    # def _on_chip_not_inserted_triggered(self, body):
+    #     self.status_label.update_status_icon(chip_inserted=False)
 
     ##################################################################################################
 
@@ -255,3 +285,9 @@ class DropBotStatusWidget(BaseDramatiqControllableDropBotQWidget):
 
         self.halted_popup.exec()
 
+    ##################################################################################################
+    
+    ####### handlers for dramatiq listener topics ##########
+    def _on_setup_success_triggered(self, message):
+        publish_message(message="", topic=START_DEVICE_MONITORING)
+    ##################################################################################################

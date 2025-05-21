@@ -22,7 +22,6 @@ ACTOR_TOPIC_DICT = {
 NO_DROPBOT_AVAILABLE = 'dropbot/signals/warnings/no_dropbot_available'
 NO_POWER = 'dropbot/signals/warnings/no_power'
 HALTED = 'dropbot/signals/halted'
-CHIP_NOT_INSERTED = 'dropbot/signals/chip_not_inserted'
 CHIP_INSERTED = 'dropbot/signals/chip_inserted'
 SHORTS_DETECTED = 'dropbot/signals/shorts_detected'
 CAPACITANCE_UPDATED = 'dropbot/signals/capacitance_updated'
@@ -41,3 +40,6 @@ TEST_VOLTAGE = "dropbot/requests/test_voltage"
 TEST_ON_BOARD_FEEDBACK_CALIBRATION = "dropbot/requests/test_on_board_feedback_calibration"
 TEST_SHORTS = "dropbot/requests/test_shorts"
 TEST_CHANNELS = "dropbot/requests/test_channels"
+
+# Chip Check Topic
+CHIP_CHECK = "dropbot/requests/chip_check"
