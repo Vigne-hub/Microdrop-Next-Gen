@@ -61,4 +61,14 @@ class DropbotControllerPlugin(Plugin):
         services = self.application.get_services(IDropbotControlMixinService) + [DropbotControllerBase]
         logger.debug(f"The following dropbot services are going to be initialized: {services} ")
 
-        self.dropbot_controller = type('DropbotController', tuple(services), {})()
+        # Create a new class that inherits from all services
+        class DropbotController(*services):
+            pass
+
+        self.dropbot_controller = DropbotController()
+
+    def stop(self):
+        """Cleanup when the plugin is stopped."""
+        if hasattr(self, 'dropbot_controller'):
+            self.dropbot_controller.cleanup()
+            logger.info("DropbotController plugin stopped")
