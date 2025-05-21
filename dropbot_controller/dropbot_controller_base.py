@@ -1,6 +1,6 @@
 import json
 
-from dropbot import EVENT_CHANNELS_UPDATED, EVENT_SHORTS_DETECTED, EVENT_ENABLE
+from dropbot import EVENT_CHANNELS_UPDATED, EVENT_SHORTS_DETECTED, EVENT_ENABLE, EVENT_DROPS_DETECTED, EVENT_ACTUATED_CHANNEL_CAPACITANCES
 from traits.api import Instance
 import dramatiq
 
@@ -11,8 +11,8 @@ from microdrop_utils.dramatiq_controller_base import generate_class_method_drama
 
 ureg = UnitRegistry()
 
-from .consts import (CHIP_INSERTED, CHIP_NOT_INSERTED, CAPACITANCE_UPDATED, HALTED, HALT, START_DEVICE_MONITORING,
-                     RETRY_CONNECTION, OUTPUT_ENABLE_PIN, SHORTS_DETECTED, PKG)
+from .consts import (CHIP_INSERTED, CAPACITANCE_UPDATED, HALTED, HALT, START_DEVICE_MONITORING,
+                     RETRY_CONNECTION, OUTPUT_ENABLE_PIN, SHORTS_DETECTED, PKG, DROPBOT_SETUP_SUCCESS)
 
 from .interfaces.i_dropbot_controller_base import IDropbotControllerBase
 
@@ -22,7 +22,7 @@ from microdrop_utils.dramatiq_pub_sub_helpers import publish_message
 
 from microdrop_utils._logger import get_logger
 
-logger = get_logger(__name__)
+logger = get_logger(__name__, level="DEBUG")
 
 
 @provides(IDropbotControllerBase)
@@ -42,6 +42,23 @@ class DropbotControllerBase(HasTraits):
 
     listener_name = f"{PKG}_listener"
 
+    def __del__(self):
+        """Cleanup when the controller is destroyed."""
+        self.cleanup()
+
+    def cleanup(self):
+        """Cleanup resources when the controller is stopped."""
+        logger.info("Cleaning up DropbotController resources")
+        if self.proxy is not None:
+            try:
+                self.proxy.terminate()
+                logger.info("Dropbot proxy terminated")
+            except Exception as e:
+                logger.error(f"Error terminating dropbot proxy: {e}")
+            finally:
+                self.proxy = None
+                self.dropbot_connection_active = False
+
     def listener_actor_routine(self, message, topic):
         """
         A Dramatiq actor that listens to messages.
@@ -52,7 +69,7 @@ class DropbotControllerBase(HasTraits):
 
         """
 
-        logger.info(f"DROPBOT BACKEND LISTENER: Received message: '{message}' from topic: '{topic}'")
+        logger.debug(f"DROPBOT BACKEND LISTENER: Received message: '{message}' from topic: '{topic}'")
 
         # find the topics hierarchy: first element is the head topic. Last element is the specific topic
         topics_tree = topic.split("/")
@@ -74,22 +91,18 @@ class DropbotControllerBase(HasTraits):
             # 2. Handle the connected / disconnected signals
             if topic in [CONNECTED, DISCONNECTED]:
                 requested_method = f"on_{specific_sub_topic}_signal"
+            # Handle setup success signal
+            elif topic == DROPBOT_SETUP_SUCCESS:
+                self.dropbot_connection_active = True
+                logger.info("Dropbot connection activated")
+                return
 
             # 3. Handle specific dropbot requests that would change dropbot connectivity
             ## 3.1. Request to activate dropbot connection
             elif topic in [START_DEVICE_MONITORING, RETRY_CONNECTION]:
-                if self.dropbot_connection_active:
-                    logger.warning(
-                        "Redundant request to start device monitoring denied: Dropbot is already connected."
-                        "Publishing message to UI about dropbot chip insertion status.")
-                    if not self.proxy.digital_read(OUTPUT_ENABLE_PIN):
-                        publish_message(topic=CHIP_INSERTED, message='Chip inserted')
-                    else:
-                        publish_message(topic=CHIP_NOT_INSERTED, message='Chip not inserted')
-
-                else:
+                if not self.dropbot_connection_active:
                     requested_method = f"on_{specific_sub_topic}_request"
-                    logger.info(f"Executing {specific_sub_topic} method as Dropbot is currently disconnected.")
+                    logger.debug(f"Executing {specific_sub_topic} method as Dropbot is currently disconnected.")
 
             # 4. Handle all other requests
             elif primary_sub_topic == 'requests':
@@ -99,7 +112,7 @@ class DropbotControllerBase(HasTraits):
                     logger.warning(f"Request for {specific_sub_topic} denied: Dropbot is disconnected.")
 
         else:
-            logger.info(f"Ignored request from topic '{topic}': Not a Dropbot-related request.")
+            logger.debug(f"Ignored request from topic '{topic}': Not a Dropbot-related request.")
 
         if requested_method:
             err_msg = invoke_class_method(self, requested_method, message)
@@ -134,38 +147,33 @@ class DropbotControllerBase(HasTraits):
     # proxy signal handlers done this way so that these methods can be overrided externally
 
     def _on_dropbot_proxy_connected(self):
-        # do initial check on if chip inserted or not
-        if self.proxy.digital_read(OUTPUT_ENABLE_PIN):
-            logger.info("Publishing Chip Not Inserted")
-            publish_message(topic=CHIP_NOT_INSERTED, message='Chip not inserted')
-        else:
-            logger.info("Publishing Chip inserted")
-            publish_message(topic=CHIP_INSERTED, message='Chip inserted')
-            self.on_detect_shorts_request("")
-
-        self.proxy.signals.signal('output_enabled').connect(self._output_state_changed_wrapper)
-        self.proxy.signals.signal('output_disabled').connect(self._output_state_changed_wrapper)
-        self.proxy.signals.signal('halted').connect(self._halted_event_wrapper, weak=False)
-        self.proxy.signals.signal('capacitance-updated').connect(self._capacitance_updated_wrapper)
-        self.proxy.signals.signal('shorts-detected').connect(self._shorts_detected_wrapper)
-
+        
+        # Initialize switching boards
+        self.proxy.initialize_switching_boards()
+        
         # Initial Proxy State Update
-        self.proxy.update_state(capacitance_update_interval_ms=250,
+        # TODO: capacitance update interval should be set by the UI [default 100ms]
+        self.proxy.update_state(capacitance_update_interval_ms=100,
+                                hv_output_selected=False,
+                                hv_output_enabled=False,
                                 event_mask=EVENT_CHANNELS_UPDATED |
                                            EVENT_SHORTS_DETECTED |
                                            EVENT_ENABLE)
+        
+        # Connect proxy signals
+        self.proxy.signals.signal('halted').connect(self._halted_event_wrapper, weak=False)
+        self.proxy.signals.signal('output_enabled').connect(self._output_state_changed_wrapper, weak=False)
+        self.proxy.signals.signal('output_disabled').connect(self._output_state_changed_wrapper, weak=False)
+        self.proxy.signals.signal('capacitance-updated').connect(self._capacitance_updated_wrapper)
+        self.proxy.signals.signal('shorts-detected').connect(self._shorts_detected_wrapper)
+        
         # If the feedback capacitor is < 300nF, disable the chip load
         # saturation check to prevent false positive triggers.
         if self.proxy.config.C16 < 0.3e-6:
             self.proxy.update_state(chip_load_range_margin=-1)
 
-        self.proxy.update_state(hv_output_selected=True,
-                                hv_output_enabled=True,
-                                voltage=75,
-                                )
-
         self.proxy.turn_off_all_channels()
-
+    
     @staticmethod
     def _capacitance_updated_wrapper(signal: dict[str, str]):
         capacitance = float(signal.get('new_value', 0.0)) * ureg.farad
@@ -200,10 +208,10 @@ class DropbotControllerBase(HasTraits):
     @staticmethod
     def _output_state_changed_wrapper(signal: dict[str, str]):
         if signal['event'] == 'output_enabled':
-            logger.info("Publishing Chip Inserted")
-            publish_message(topic=CHIP_INSERTED, message='Chip inserted')
+            logger.debug("Publishing Chip Inserted")
+            publish_message(topic=CHIP_INSERTED, message='True')
         elif signal['event'] == 'output_disabled':
-            logger.info("Publishing Chip Not Inserted")
-            publish_message(topic=CHIP_NOT_INSERTED, message='Chip not inserted')
+            logger.debug("Publishing Chip Not Inserted")
+            publish_message(topic=CHIP_INSERTED, message='False')
         else:
             logger.warn(f"Unknown signal received: {signal}")
