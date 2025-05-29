@@ -5,8 +5,9 @@ from envisage.api import Plugin, TASK_EXTENSIONS
 from envisage.ui.tasks.api import TaskExtension
 
 from device_viewer.consts import PKG as device_viewer_PKG
+from message_router.consts import ACTOR_TOPIC_ROUTES
 
-from .consts import PKG, PKG_name
+from .consts import PKG, PKG_name, ACTOR_TOPIC_DICT
 
 
 class ManualControlsPlugin(Plugin):
@@ -26,6 +27,9 @@ class ManualControlsPlugin(Plugin):
     #### Contributions to extension points made by this plugin ################
 
     contributed_task_extensions = List(contributes_to=TASK_EXTENSIONS)
+
+    # This plugin contributes some actors that can be called using certain routing keys.
+    actor_topic_routing = List([ACTOR_TOPIC_DICT], contributes_to=ACTOR_TOPIC_ROUTES)
 
     #### Trait initializers ###################################################
 
