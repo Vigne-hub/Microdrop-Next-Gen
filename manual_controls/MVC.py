@@ -4,7 +4,8 @@ from traits.trait_types import Instance, Str
 from traitsui.api import View, Group, Item, Controller
 
 from microdrop_utils._logger import get_logger
-from microdrop_utils.dramatiq_controller_base import generate_class_method_dramatiq_listener_actor
+from microdrop_utils.dramatiq_controller_base import generate_class_method_dramatiq_listener_actor, \
+    basic_listener_actor_routine
 
 logger = get_logger(__name__)
 
@@ -55,10 +56,13 @@ class ManualControlControl(Controller):
 
     # This class is not immediately initialized here as in device viewer and in dropbot controller
     # this can be set later by whatever UI view that uses it
-    listener_name = Str(f"{PKG}_listener", desc="Unique identifier for the Dramatiq actor")
+    name = Str(PKG, desc="Unique identifier for the Dramatiq actor")
 
     def listener_actor_routine(self, message, topic):
-        print(f"Received message: {message} from topic: {topic} in Manual Control")
+        return basic_listener_actor_routine(self, message, topic)
+
+    def _on_setup_success_triggered(self, *args):
+        print("MANUAL CONTROL: Setup success message recieved")
 
     def traits_init(self):
         """
@@ -75,7 +79,7 @@ class ManualControlControl(Controller):
 
         logger.info("Starting Device listener")
         self.dramatiq_listener_actor = generate_class_method_dramatiq_listener_actor(
-            listener_name=self.listener_name,
+            listener_name=f"{self.name}_listener",
             class_method=self.listener_actor_routine)
 
 
