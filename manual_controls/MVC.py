@@ -61,8 +61,8 @@ class ManualControlControl(Controller):
     def listener_actor_routine(self, message, topic):
         return basic_listener_actor_routine(self, message, topic)
 
-    def _on_setup_success_triggered(self, *args):
-        print("MANUAL CONTROL: Setup success message recieved")
+    def _on_setup_success_triggered(self, message):
+        print(f"MANUAL CONTROL: Setup success message recieved: {message}")
 
     def traits_init(self):
         """
