@@ -54,8 +54,6 @@ class ManualControlControl(Controller):
 
     dramatiq_listener_actor = Instance(dramatiq.Actor)
 
-    # This class is not immediately initialized here as in device viewer and in dropbot controller
-    # this can be set later by whatever UI view that uses it
     name = Str(PKG, desc="Unique identifier for the Dramatiq actor")
 
     def listener_actor_routine(self, message, topic):

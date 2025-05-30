@@ -115,7 +115,8 @@ class ElectrodeScene(QGraphicsScene):
                 self.interaction_service.handle_electrode_click(self.electrode_ids_visited[0])
 
         else:
-            logger.info(self.electrode_channels_visited)
+            # logger.info(self.electrode_channels_visited)
+            pass
 
         self.electrode_pressed = None
         self.electrode_channels_visited = []

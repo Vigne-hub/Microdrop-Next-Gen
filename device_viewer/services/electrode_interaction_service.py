@@ -46,8 +46,8 @@ class ElectrodeInteractionControllerService(HasTraits):
 
         updated_channels_states_map = self.electrodes_model.channels_states_map
 
-        logger.info(f"New electrode channels states map: {updated_channels_states_map}")
-        logger.info(f"Number of electrodes actuated now: {sum(self.electrodes_model.electrode_states)}")
+        # logger.info(f"New electrode channels states map: {updated_channels_states_map}")
+        # logger.info(f"Number of electrodes actuated now: {sum(self.electrodes_model.electrode_states)}")
 
         # publish event to all interested. Mainly to backend actors who need to know user has requested the electrode
         # to be actuated / unactuated.

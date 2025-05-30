@@ -52,7 +52,7 @@ class DropbotControllerBase(HasTraits):
 
         """
 
-        logger.info(f"DROPBOT BACKEND LISTENER: Received message: '{message}' from topic: '{topic}'")
+        # logger.info(f"DROPBOT BACKEND LISTENER: Received message: '{message}' from topic: '{topic}'")
 
         # find the topics hierarchy: first element is the head topic. Last element is the specific topic
         topics_tree = topic.split("/")
