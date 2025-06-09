@@ -64,7 +64,7 @@ def get_protocol_graph(ProtocolGroup) -> pgv.AGraph:
     G = pgv.AGraph(
         directed=True,
         strict=True,
-        rankdir="TB",  # Left-to-right as requested
+        rankdir="TB",
     )
 
     G.add_node(ProtocolGroup.idx, label=f"IDX: {str(ProtocolGroup.idx)}\nName: {ProtocolGroup.name}", type="root")
